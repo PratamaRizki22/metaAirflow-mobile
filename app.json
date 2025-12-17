@@ -30,6 +30,11 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.pratamarizki22.listingProperty"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "44fcd971-2279-4aec-b65b-e2bd19033fda"
+      }
     }
   }
 }
