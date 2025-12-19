@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, Inter_400Regular } from '@expo-google-fonts/inter';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import { OnboardingProvider, useOnboarding } from './contexts/OnboardingContext';
+import { OnboardingScreen } from './screens/OnboardingScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import { RegisterScreen } from './screens/RegisterScreen';
 import { View, Text, TouchableOpacity } from 'react-native';
@@ -10,9 +12,17 @@ import './global.css';
 
 function AppContent() {
   const { isDark } = useTheme();
+  const { hasSeenOnboarding, completeOnboarding } = useOnboarding();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
 
+  // TEMPORARY: Always show onboarding for testing
+  // TODO: Remove this line after testing
+  if (true) { // Change to: if (!hasSeenOnboarding) {
+    return <OnboardingScreen onComplete={completeOnboarding} />;
+  }
+
+  // Show auth screens if not authenticated
   if (!isAuthenticated) {
     if (showRegister) {
       return (
@@ -61,9 +71,10 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <AppContent />
-      <StatusBar style="auto" />
+      <OnboardingProvider>
+        <AppContent />
+        <StatusBar style="auto" />
+      </OnboardingProvider>
     </ThemeProvider>
   );
 }
-
