@@ -7,10 +7,12 @@ import {
     FlatList,
     ViewToken,
     StyleSheet,
+    SafeAreaView,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import LottieView from 'lottie-react-native';
 import Svg, { Path } from 'react-native-svg';
+import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
@@ -78,10 +80,6 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         }
     };
 
-    const handleSkip = () => {
-        onComplete();
-    };
-
     const renderSlide = ({ item }: { item: OnboardingSlide }) => (
         <View style={{ width }} className="flex-1 items-center justify-center px-8">
             <View className="h-80 w-80 items-center justify-center mb-8">
@@ -105,14 +103,6 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
     return (
         <View className={`flex-1 ${bgColor}`}>
-            {/* Skip Button */}
-            <TouchableOpacity
-                onPress={handleSkip}
-                className="absolute top-12 right-6 z-10 px-4 py-2"
-            >
-                <Text className="text-primary font-semibold">Skip</Text>
-            </TouchableOpacity>
-
             {/* Slides */}
             <FlatList
                 ref={flatListRef}
@@ -126,32 +116,82 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                 viewabilityConfig={viewabilityConfig}
             />
 
-            {/* Bottom Section */}
-            <View className="pb-12 px-8">
-                {/* Pagination Dots */}
-                <View className="flex-row justify-center mb-8">
-                    {slides.map((_, index) => (
-                        <View
-                            key={index}
-                            className={`h-2 rounded-full mx-1 ${index === currentIndex
-                                ? 'bg-primary w-8'
-                                : isDark
-                                    ? 'bg-border-dark w-2'
-                                    : 'bg-border-light w-2'
-                                }`}
-                        />
-                    ))}
-                </View>
-
-                {/* Next/Get Started Button */}
-                <TouchableOpacity
-                    onPress={handleNext}
-                    className="bg-primary rounded-lg py-4"
+            {/* Bottom Section with Curved Shape */}
+            <View className="absolute bottom-0 left-0 right-0" style={{ height: 200 }}>
+                {/* SVG Curved Background */}
+                <Svg
+                    height="200"
+                    width={width}
+                    viewBox={`0 0 ${width} 200`}
+                    style={StyleSheet.absoluteFillObject}
                 >
-                    <Text className="text-white text-center font-semibold text-base">
-                        {currentIndex === slides.length - 1 ? 'Get Started' : 'Next'}
-                    </Text>
-                </TouchableOpacity>
+                    <Path
+                        d={`M 0 60 Q ${width / 4} 20 ${width / 2} 40 T ${width} 60 L ${width} 200 L 0 200 Z`}
+                        fill="#14B8A6"
+                    />
+                </Svg>
+
+                {/* Content on top of curve */}
+                <View className="flex-1 justify-end px-8" style={{ paddingBottom: 60, marginBottom: 8 }}>
+                    {/* Pagination Dots and Button in one row */}
+                    <View className="flex-row justify-between" style={{ height: 56, alignItems: 'center' }}>
+                        {/* Pagination Dots */}
+                        <View className="flex-row items-center">
+                            {slides.map((_, index) => (
+                                <View
+                                    key={index}
+                                    style={{
+                                        width: index === currentIndex ? 24 : 6,
+                                        height: 6,
+                                        borderRadius: 3,
+                                        backgroundColor: index === currentIndex ? '#FFFFFF' : 'rgba(255, 255, 255, 0.3)',
+                                        marginHorizontal: 3,
+                                    }}
+                                />
+                            ))}
+                        </View>
+
+                        {/* Button: Circular Arrow or Get Started */}
+                        {currentIndex === slides.length - 1 ? (
+                            // Last slide: Get Started button
+                            <TouchableOpacity
+                                onPress={handleNext}
+                                className="bg-white items-center justify-center px-10"
+                                style={{
+                                    height: 56,
+                                    borderRadius: 28,
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 2 },
+                                    shadowOpacity: 0.15,
+                                    shadowRadius: 6,
+                                    elevation: 4,
+                                }}
+                            >
+                                <Text className="text-primary text-center font-bold text-base">
+                                    Get Started
+                                </Text>
+                            </TouchableOpacity>
+                        ) : (
+                            // Other slides: Circular Next Button
+                            <TouchableOpacity
+                                onPress={handleNext}
+                                className="bg-white items-center justify-center"
+                                style={{
+                                    width: 56,
+                                    height: 56,
+                                    borderRadius: 28,
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 2 },
+                                    shadowOpacity: 0.15,
+                                    shadowRadius: 6,
+                                    elevation: 4,
+                                }}
+                            >
+                                <Ionicons name="arrow-forward" size={24} color="#14B8A6" />
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                </View>
             </View>
         </View>
     );

@@ -157,7 +157,7 @@ export function PreferenceScreen({ onComplete }: PreferenceScreenProps) {
                     style={{ backgroundColor: surfaceColor, ...CARD_STYLE }}
                 >
                     <Text className="text-primary font-semibold text-base">
-                        Lewati
+                        Simpan
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -184,8 +184,8 @@ export function PreferenceScreen({ onComplete }: PreferenceScreenProps) {
                                 key={lang.code}
                                 onPress={() => handleLanguageSelect(lang.code)}
                                 className={`flex-row items-center justify-between p-4 rounded-2xl mb-3 ${selectedLanguage === lang.code
-                                        ? 'bg-primary'
-                                        : isDark ? 'bg-[#0F172A]' : 'bg-[#F9FAFB]'
+                                    ? 'bg-primary'
+                                    : isDark ? 'bg-[#0F172A]' : 'bg-[#F9FAFB]'
                                     }`}
                             >
                                 <View className="flex-row items-center">
@@ -196,8 +196,8 @@ export function PreferenceScreen({ onComplete }: PreferenceScreenProps) {
                                         style={{ marginRight: 12 }}
                                     />
                                     <Text className={`text-base font-medium ${selectedLanguage === lang.code
-                                            ? 'text-white'
-                                            : isDark ? 'text-[#F1F5F9]' : 'text-[#1F2937]'
+                                        ? 'text-white'
+                                        : isDark ? 'text-[#F1F5F9]' : 'text-[#1F2937]'
                                         }`}>
                                         {lang.name}
                                     </Text>

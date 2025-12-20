@@ -22,20 +22,43 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
     const insets = useSafeAreaInsets();
 
     // Tab bar dimensions
-    const tabBarWidth = width - 48; // 24px margin on each side
+    const tabBarWidth = width - 32; // 16px margin on each side
     const tabBarHeight = 67;
     const tabCount = state.routes.length;
-    const tabWidth = tabBarWidth / tabCount;
+    const indicatorPadding = 16;
 
     // Animated indicator position
     const indicatorPosition = useSharedValue(0);
 
+    // Calculate actual tab width accounting for container padding
+    // Container has paddingHorizontal: 16, so content area = tabBarWidth - 32
+    const containerPadding = 16;
+    const contentWidth = tabBarWidth - (containerPadding * 2);
+    const actualTabWidth = contentWidth / tabCount;
+
+    // Indicator should be slightly smaller than tab width for visual spacing
+    const indicatorWidth = actualTabWidth - 8; // 4px padding on each side (wider for text)
+    const indicatorOffset = 4; // Center the indicator within the tab
+
     useEffect(() => {
-        indicatorPosition.value = withSpring(state.index * tabWidth, {
-            damping: 20,
-            stiffness: 150,
+        // Skip animation if Add tab is selected (it has its own visual treatment)
+        const currentRoute = state.routes[state.index];
+        if (currentRoute.name === 'Add') {
+            return;
+        }
+
+        // Calculate the actual position based on the current tab index
+        // Layout: [Home=0] [Search=1] [Add=2] [Favorites=3] [Profile=4]
+        // Each tab occupies actualTabWidth, indicator aligns with the tab
+        // Start from the tab position + offset to center it
+        const targetPosition = state.index * actualTabWidth + indicatorOffset;
+
+        indicatorPosition.value = withSpring(targetPosition, {
+            damping: 40,
+            stiffness: 200,
+            overshootClamping: true,
         });
-    }, [state.index, tabWidth]);
+    }, [state.index, actualTabWidth]);
 
     const animatedIndicatorStyle = useAnimatedStyle(() => {
         return {
@@ -58,7 +81,7 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
             case 'Search':
                 return <SearchIcon {...iconProps} />;
             case 'Add':
-                return <AddIcon {...iconProps} color="#FFFFFF" />;
+                return <AddIcon width={32} height={32} color="#FFFFFF" />;
             case 'Favorites':
                 return <FavoritesIcon {...iconProps} />;
             case 'Profile':
@@ -77,15 +100,15 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
         <View
             style={{
                 position: 'absolute',
-                bottom: insets.bottom > 0 ? insets.bottom : 21,
-                left: 24,
-                right: 24,
+                bottom: insets.bottom > 0 ? insets.bottom + 14 : 35,
+                left: 16,
+                right: 16,
                 height: tabBarHeight,
                 backgroundColor: bgColor,
                 borderRadius: 40,
                 flexDirection: 'row',
                 alignItems: 'center',
-                paddingHorizontal: 6,
+                paddingHorizontal: 16,
                 // Shadow for iOS
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 4 },
@@ -95,20 +118,24 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
                 elevation: 8,
             }}
         >
-            {/* Animated Indicator */}
-            <Animated.View
-                style={[
-                    {
-                        position: 'absolute',
-                        left: 6,
-                        width: tabWidth - 12,
-                        height: tabBarHeight - 12,
-                        backgroundColor: indicatorColor,
-                        borderRadius: 40,
-                    },
-                    animatedIndicatorStyle,
-                ]}
-            />
+            {/* Animated Indicator - Hidden when Add tab is selected */}
+            {state.routes[state.index].name !== 'Add' && (
+                <Animated.View
+                    style={[
+                        {
+                            position: 'absolute',
+                            left: 16, // Match container's paddingHorizontal
+                            width: indicatorWidth,
+                            height: tabBarHeight - 12,
+                            backgroundColor: indicatorColor,
+                            borderRadius: 100, // More rounded pill shape
+                            top: 6,
+                            zIndex: 0, // Below the Add button (zIndex: 2)
+                        },
+                        animatedIndicatorStyle,
+                    ]}
+                />
+            )}
 
             {/* Tab Items */}
             {state.routes.map((route: any, index: number) => {
@@ -138,6 +165,46 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
                 // Special styling for Add button
                 const isAddButton = route.name === 'Add';
 
+                // Render Add button with special elevated design
+                if (isAddButton) {
+                    return (
+                        <TouchableOpacity
+                            key={route.key}
+                            accessibilityRole="button"
+                            accessibilityState={isFocused ? { selected: true } : {}}
+                            accessibilityLabel={options.tabBarAccessibilityLabel}
+                            testID={options.tabBarTestID}
+                            onPress={onPress}
+                            onLongPress={onLongPress}
+                            style={{
+                                flex: 1,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                zIndex: 2,
+                                height: '100%',
+                            }}
+                        >
+                            <View
+                                style={{
+                                    width: 60,
+                                    height: 60,
+                                    borderRadius: 30,
+                                    backgroundColor: indicatorColor,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 4 },
+                                    shadowOpacity: 0.3,
+                                    shadowRadius: 8,
+                                    elevation: 8,
+                                }}
+                            >
+                                {getIcon(route.name, true)}
+                            </View>
+                        </TouchableOpacity>
+                    );
+                }
+
                 return (
                     <TouchableOpacity
                         key={route.key}
@@ -152,21 +219,20 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
                             alignItems: 'center',
                             justifyContent: 'center',
                             zIndex: 1,
+                            height: '100%',
                         }}
                     >
-                        <View style={{ alignItems: 'center', gap: 4 }}>
+                        <View style={{ alignItems: 'center', justifyContent: 'center', gap: 2 }}>
                             {getIcon(route.name, isFocused)}
-                            {!isAddButton && (
-                                <Text
-                                    style={{
-                                        fontSize: 11,
-                                        fontWeight: '600',
-                                        color: isFocused ? textColorActive : textColorInactive,
-                                    }}
-                                >
-                                    {label}
-                                </Text>
-                            )}
+                            <Text
+                                style={{
+                                    fontSize: 11,
+                                    fontWeight: '600',
+                                    color: isFocused ? textColorActive : textColorInactive,
+                                }}
+                            >
+                                {label}
+                            </Text>
                         </View>
                     </TouchableOpacity>
                 );

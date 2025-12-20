@@ -19,8 +19,19 @@ function AppContent() {
   const { hasSeenOnboarding, completeOnboarding } = useOnboarding();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(!hasSeenOnboarding);
   const [showPreference, setShowPreference] = useState(false);
+
+  // Always show splash screen first
+  if (showSplash) {
+    return (
+      <>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <SplashScreen onFinish={() => setShowSplash(false)} />
+      </>
+    );
+  }
 
   // Show welcome splash first
   if (showWelcome) {
@@ -48,46 +59,51 @@ function AppContent() {
   }
 
   // Show onboarding if user hasn't seen it yet
-  // TEMPORARY: Always show onboarding for development
-  if (true) {
+  if (!hasSeenOnboarding) {
     return (
       <>
         <StatusBar style={isDark ? 'light' : 'dark'} />
         <OnboardingScreen onComplete={() => {
-          // Do nothing after onboarding for now
-          console.log('Onboarding completed');
+          completeOnboarding();
         }} />
       </>
     );
   }
 
-  // COMMENTED OUT: Auth screens - will enable later
-  /*
+  // Show auth screens if not authenticated
   if (!isAuthenticated) {
     if (showRegister) {
       return (
-        <RegisterScreen
-          onRegisterSuccess={() => setIsAuthenticated(true)}
-          onNavigateToLogin={() => setShowRegister(false)}
-        />
+        <>
+          <StatusBar style={isDark ? 'light' : 'dark'} />
+          <RegisterScreen
+            onRegisterSuccess={() => setIsAuthenticated(true)}
+            onNavigateToLogin={() => setShowRegister(false)}
+          />
+        </>
       );
     }
 
     return (
-      <LoginScreen
-        onLoginSuccess={() => setIsAuthenticated(true)}
-        onNavigateToRegister={() => setShowRegister(true)}
-      />
+      <>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <LoginScreen
+          onLoginSuccess={() => setIsAuthenticated(true)}
+          onNavigateToRegister={() => setShowRegister(true)}
+        />
+      </>
     );
   }
 
   // Main app with tab navigation
   return (
-    <NavigationContainer>
-      <MainTabNavigator />
-    </NavigationContainer>
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <NavigationContainer>
+        <MainTabNavigator />
+      </NavigationContainer>
+    </>
   );
-  */
 }
 
 export default function App() {
