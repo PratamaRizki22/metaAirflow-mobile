@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { GOOGLE_WEB_CLIENT_ID } from '@env';
 
 interface GoogleUser {
     idToken: string | null;
@@ -21,9 +22,20 @@ export function GoogleSignIn() {
     const [userInfo, setUserInfo] = useState<GoogleUser | null>(null);
 
     useEffect(() => {
+        // Debug: Check if Web Client ID is loaded
+        console.log('GOOGLE_WEB_CLIENT_ID from env:', GOOGLE_WEB_CLIENT_ID);
+
+        // TEMPORARY: Hardcode for testing
+        // TODO: Remove after fixing
+        const webClientId = GOOGLE_WEB_CLIENT_ID || 'YOUR_WEB_CLIENT_ID_HERE.apps.googleusercontent.com';
+        console.log('Using Web Client ID:', webClientId);
+
+        // Show alert for debugging
+        Alert.alert('Debug', `Web Client ID: ${webClientId ? 'Loaded' : 'NOT LOADED'}\n\nValue: ${webClientId?.substring(0, 20)}...`);
+
         // Configure Google Sign-In
         GoogleSignin.configure({
-            webClientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com', // From Google Cloud Console
+            webClientId: webClientId,
             offlineAccess: true,
             forceCodeForRefreshToken: true,
         });
@@ -102,7 +114,7 @@ export function GoogleSignIn() {
     return (
         <View className="flex-1 items-center justify-center p-6 bg-white">
             <View className="items-center mb-12">
-                <Text className="text-3xl font-bold mb-2">Listing Property</Text>
+                <Text className="text-3xl font-bold mb-2">MetaAirflow</Text>
                 <Text className="text-gray-600 text-center">
                     Sign in to continue
                 </Text>

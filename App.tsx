@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, Inter_400Regular } from '@expo-google-fonts/inter';
+import { NavigationContainer } from '@react-navigation/native';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { OnboardingProvider, useOnboarding } from './contexts/OnboardingContext';
+import { SplashScreen } from './screens/SplashScreen';
+import { WelcomeSplash } from './screens/WelcomeSplash';
+import { PreferenceScreen } from './screens/PreferenceScreen';
 import { OnboardingScreen } from './screens/OnboardingScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import { RegisterScreen } from './screens/RegisterScreen';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { MainTabNavigator } from './navigation/MainTabNavigator';
 
 import './global.css';
 
@@ -15,14 +19,50 @@ function AppContent() {
   const { hasSeenOnboarding, completeOnboarding } = useOnboarding();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [showPreference, setShowPreference] = useState(false);
 
-  // TEMPORARY: Always show onboarding for testing
-  // TODO: Remove this line after testing
-  if (true) { // Change to: if (!hasSeenOnboarding) {
-    return <OnboardingScreen onComplete={completeOnboarding} />;
+  // Show welcome splash first
+  if (showWelcome) {
+    return (
+      <>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <WelcomeSplash onFinish={() => {
+          setShowWelcome(false);
+          setShowPreference(true);
+        }} />
+      </>
+    );
   }
 
-  // Show auth screens if not authenticated
+  // Show preference screen (theme + language)
+  if (showPreference) {
+    return (
+      <>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <PreferenceScreen onComplete={() => {
+          setShowPreference(false);
+        }} />
+      </>
+    );
+  }
+
+  // Show onboarding if user hasn't seen it yet
+  // TEMPORARY: Always show onboarding for development
+  if (true) {
+    return (
+      <>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <OnboardingScreen onComplete={() => {
+          // Do nothing after onboarding for now
+          console.log('Onboarding completed');
+        }} />
+      </>
+    );
+  }
+
+  // COMMENTED OUT: Auth screens - will enable later
+  /*
   if (!isAuthenticated) {
     if (showRegister) {
       return (
@@ -41,23 +81,13 @@ function AppContent() {
     );
   }
 
-  // Temporary home screen after login
-  const bgColor = isDark ? 'bg-background-dark' : 'bg-background-light';
-  const textColor = isDark ? 'text-text-primary-dark' : 'text-text-primary-light';
-
+  // Main app with tab navigation
   return (
-    <View className={`flex-1 items-center justify-center ${bgColor}`}>
-      <Text className={`text-2xl font-bold mb-4 ${textColor}`}>
-        Welcome to Listing Property!
-      </Text>
-      <TouchableOpacity
-        onPress={() => setIsAuthenticated(false)}
-        className="bg-primary px-6 py-3 rounded-lg"
-      >
-        <Text className="text-white font-semibold">Logout</Text>
-      </TouchableOpacity>
-    </View>
+    <NavigationContainer>
+      <MainTabNavigator />
+    </NavigationContainer>
   );
+  */
 }
 
 export default function App() {
@@ -73,7 +103,6 @@ export default function App() {
     <ThemeProvider>
       <OnboardingProvider>
         <AppContent />
-        <StatusBar style="auto" />
       </OnboardingProvider>
     </ThemeProvider>
   );

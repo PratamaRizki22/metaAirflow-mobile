@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { GOOGLE_WEB_CLIENT_ID } from '@env';
 
 interface RegisterScreenProps {
     onRegisterSuccess: () => void;
@@ -59,7 +60,7 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
             setError('');
 
             GoogleSignin.configure({
-                webClientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
+                webClientId: GOOGLE_WEB_CLIENT_ID,
                 offlineAccess: true,
             });
 
@@ -105,7 +106,7 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
                             Create Account
                         </Text>
                         <Text className={`text-base ${secondaryTextColor}`}>
-                            Sign up to get started with Listing Property
+                            Sign up to get started with MetaAirflow
                         </Text>
                     </View>
 

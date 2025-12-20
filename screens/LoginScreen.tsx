@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { GOOGLE_WEB_CLIENT_ID } from '@env';
 
 interface LoginScreenProps {
     onLoginSuccess: () => void;
@@ -47,9 +48,13 @@ export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScree
             setIsLoading(true);
             setError('');
 
+            // Debug: Check Web Client ID
+            console.log('Web Client ID:', GOOGLE_WEB_CLIENT_ID);
+            Alert.alert('Debug', `Web Client ID: ${GOOGLE_WEB_CLIENT_ID ? 'Loaded' : 'NOT LOADED'}`);
+
             // Configure Google Sign-In (should be done once, but safe to call multiple times)
             GoogleSignin.configure({
-                webClientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com', // TODO: Replace with actual Client ID
+                webClientId: GOOGLE_WEB_CLIENT_ID,
                 offlineAccess: true,
             });
 
@@ -101,7 +106,7 @@ export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScree
                             Welcome Back
                         </Text>
                         <Text className={`text-base ${secondaryTextColor}`}>
-                            Sign in to continue to Listing Property
+                            Sign in to continue to MetaAirflow
                         </Text>
                     </View>
 

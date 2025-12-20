@@ -6,9 +6,11 @@ import {
     Dimensions,
     FlatList,
     ViewToken,
+    StyleSheet,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import LottieView from 'lottie-react-native';
+import Svg, { Path } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
 
@@ -22,7 +24,7 @@ interface OnboardingSlide {
 const slides: OnboardingSlide[] = [
     {
         id: '1',
-        title: 'Welcome to Listing Property',
+        title: 'Welcome to MetaAirflow',
         description: 'Find your dream property with ease and convenience',
         animation: require('../assets/animations/onboarding-1.json'),
     },
@@ -132,10 +134,10 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                         <View
                             key={index}
                             className={`h-2 rounded-full mx-1 ${index === currentIndex
-                                    ? 'bg-primary w-8'
-                                    : isDark
-                                        ? 'bg-border-dark w-2'
-                                        : 'bg-border-light w-2'
+                                ? 'bg-primary w-8'
+                                : isDark
+                                    ? 'bg-border-dark w-2'
+                                    : 'bg-border-light w-2'
                                 }`}
                         />
                     ))}

@@ -8,7 +8,7 @@ interface OnboardingContextType {
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
 
-const ONBOARDING_KEY = '@listing_property_onboarding';
+const ONBOARDING_KEY = '@metaairflow_onboarding';
 
 export function OnboardingProvider({ children }: { children: React.ReactNode }) {
     const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
