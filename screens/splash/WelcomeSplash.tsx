@@ -1,52 +1,50 @@
-import React, { useEffect } from 'react';
-import { View, Animated, Dimensions, Image } from 'react-native';
-import { useTheme } from '../contexts/ThemeContext';
-
-const { width, height } = Dimensions.get('window');
+import React, { useEffect, useRef } from 'react';
+import { View, Animated, Image } from 'react-native';
 
 interface WelcomeSplashProps {
     onFinish: () => void;
 }
 
 export function WelcomeSplash({ onFinish }: WelcomeSplashProps) {
-    const { isDark } = useTheme();
-    const fadeAnim = new Animated.Value(0);
+    const fadeAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
         Animated.timing(fadeAnim, {
             toValue: 1,
-            duration: 800,
+            duration: 1000,
             useNativeDriver: true,
         }).start();
 
         const timer = setTimeout(() => {
             Animated.timing(fadeAnim, {
                 toValue: 0,
-                duration: 500,
+                duration: 600,
                 useNativeDriver: true,
             }).start(() => {
                 onFinish();
             });
-        }, 2500);
+        }, 4000);
 
         return () => clearTimeout(timer);
-    }, []);
-
-    const bgColor = isDark ? 'bg-background-dark' : 'bg-background-light';
+    }, [fadeAnim, onFinish]);
 
     return (
-        <View className={`flex-1 ${bgColor}`}>
+        <View style={{ flex: 1, backgroundColor: '#000' }}>
             <Animated.View
                 style={{
                     opacity: fadeAnim,
-                    flex: 1,
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
                 }}
             >
                 <Image
-                    source={require('../assets/welcome-splash.webp')}
+                    source={require('../../assets/welcome-splash.webp')}
                     style={{
-                        width: width,
-                        height: height,
+                        width: '100%',
+                        height: '100%',
                         resizeMode: 'cover',
                     }}
                 />

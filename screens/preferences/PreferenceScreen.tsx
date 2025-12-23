@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, Image, ViewStyle } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, Image, ViewStyle, Platform, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface PreferenceScreenProps {
     onComplete: () => void;
@@ -83,12 +83,21 @@ export function PreferenceScreen({ onComplete }: PreferenceScreenProps) {
     const textPrimaryColor = getColor('#1F2937', '#F1F5F9');
     const textSecondaryColor = getColor('#6B7280', '#CBD5E1');
     const iconColor = isDark ? '#14B8A6' : '#0D9488';
-    const houseImage = isDark ? require('../assets/darkmode.webp') : require('../assets/lightmode.webp');
+    const houseImage = isDark ? require('../../assets/darkmode.webp') : require('../../assets/lightmode.webp');
+
+    // Get status bar height for safe area
+    const statusBarHeight = Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 44;
 
     return (
         <View style={{ flex: 1, backgroundColor }}>
-            {/* Top Green Section */}
-            <View className="h-64 bg-primary rounded-b-3xl" />
+            {/* Top Green Section with Safe Area */}
+            <View
+                className="bg-primary rounded-b-3xl"
+                style={{
+                    height: 256 + statusBarHeight,
+                    paddingTop: statusBarHeight
+                }}
+            />
 
             {/* Content */}
             <View className="flex-1 px-6 -mt-32">

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, TouchableOpacity, Text, Dimensions, Platform } from 'react-native';
+import { View, TouchableOpacity, Text, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
     useSharedValue,
@@ -25,7 +25,6 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
     const tabBarWidth = width - 32; // 16px margin on each side
     const tabBarHeight = 67;
     const tabCount = state.routes.length;
-    const indicatorPadding = 16;
 
     // Animated indicator position
     const indicatorPosition = useSharedValue(0);
@@ -58,7 +57,7 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
             stiffness: 200,
             overshootClamping: true,
         });
-    }, [state.index, actualTabWidth]);
+    }, [state.index, state.routes, actualTabWidth, indicatorOffset, indicatorPosition]);
 
     const animatedIndicatorStyle = useAnimatedStyle(() => {
         return {

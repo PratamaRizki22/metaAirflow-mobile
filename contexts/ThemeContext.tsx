@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useColorScheme, View, Appearance } from 'react-native';
+import { useColorScheme, Appearance } from 'react-native';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -32,28 +32,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             // Force light or dark mode
             Appearance.setColorScheme(theme);
         }
-
-        console.log('=== APPEARANCE SET ===');
-        console.log('Setting Appearance to:', theme === 'system' ? 'null (system)' : theme);
-        console.log('======================');
     }, [theme]);
 
-    // Log on initial mount to verify system detection
-    useEffect(() => {
-        console.log('=== INITIAL MOUNT ===');
-        console.log('System detected as:', systemColorScheme);
-        console.log('====================');
-    }, []);
 
-    useEffect(() => {
-        console.log('=== THEME DEBUG ===');
-        console.log('Selected theme:', theme);
-        console.log('System color scheme:', systemColorScheme);
-        console.log('Calculated isDark:', isDark);
-        console.log('Should show DARK UI:', isDark ? 'YES' : 'NO');
-        console.log('Should show LIGHT UI:', isDark ? 'NO' : 'YES');
-        console.log('==================');
-    }, [theme, isDark, systemColorScheme]);
 
     const toggleTheme = () => {
         setTheme(isDark ? 'light' : 'dark');

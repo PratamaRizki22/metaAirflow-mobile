@@ -1,0 +1,1 @@
+export { PropertyDetailScreen } from './PropertyDetailScreen';

@@ -15,7 +15,7 @@ export function SearchScreen() {
                     Search Properties
                 </Text>
                 <Text className="text-text-secondary-light dark:text-text-secondary-dark mb-6">
-                    Find exactly what you're looking for
+                    Find exactly what you&apos;re looking for
                 </Text>
 
                 {/* Placeholder content */}

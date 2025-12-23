@@ -22,20 +22,9 @@ export function GoogleSignIn() {
     const [userInfo, setUserInfo] = useState<GoogleUser | null>(null);
 
     useEffect(() => {
-        // Debug: Check if Web Client ID is loaded
-        console.log('GOOGLE_WEB_CLIENT_ID from env:', GOOGLE_WEB_CLIENT_ID);
-
-        // TEMPORARY: Hardcode for testing
-        // TODO: Remove after fixing
-        const webClientId = GOOGLE_WEB_CLIENT_ID || 'YOUR_WEB_CLIENT_ID_HERE.apps.googleusercontent.com';
-        console.log('Using Web Client ID:', webClientId);
-
-        // Show alert for debugging
-        Alert.alert('Debug', `Web Client ID: ${webClientId ? 'Loaded' : 'NOT LOADED'}\n\nValue: ${webClientId?.substring(0, 20)}...`);
-
         // Configure Google Sign-In
         GoogleSignin.configure({
-            webClientId: webClientId,
+            webClientId: GOOGLE_WEB_CLIENT_ID,
             offlineAccess: true,
             forceCodeForRefreshToken: true,
         });

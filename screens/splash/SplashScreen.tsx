@@ -1,17 +1,13 @@
-import React, { useEffect } from 'react';
-import { View, Text, Animated, Dimensions } from 'react-native';
-import { useTheme } from '../contexts/ThemeContext';
-
-const { width, height } = Dimensions.get('window');
+import React, { useEffect, useRef } from 'react';
+import { View, Animated, Image } from 'react-native';
 
 interface SplashScreenProps {
     onFinish: () => void;
 }
 
 export function SplashScreen({ onFinish }: SplashScreenProps) {
-    const { isDark } = useTheme();
-    const fadeAnim = new Animated.Value(0);
-    const scaleAnim = new Animated.Value(0.9);
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const scaleAnim = useRef(new Animated.Value(0.9)).current;
 
     useEffect(() => {
         Animated.parallel([
@@ -39,22 +35,29 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
         }, 1500);
 
         return () => clearTimeout(timer);
-    }, []);
-
-    const bgColor = isDark ? 'bg-background-dark' : 'bg-background-light';
+    }, [fadeAnim, scaleAnim, onFinish]);
 
     return (
-        <View className={`flex-1 items-center justify-center ${bgColor}`}>
+        <View style={{ flex: 1, backgroundColor: '#000' }}>
             <Animated.View
                 style={{
                     opacity: fadeAnim,
                     transform: [{ scale: scaleAnim }],
-                    alignItems: 'center',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
                 }}
             >
-                <View className="w-32 h-32 rounded-full bg-primary items-center justify-center">
-                    <Text className="text-white text-5xl font-bold">M</Text>
-                </View>
+                <Image
+                    source={require('../../assets/splash.png')}
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                        resizeMode: 'cover',
+                    }}
+                />
             </Animated.View>
         </View>
     );
