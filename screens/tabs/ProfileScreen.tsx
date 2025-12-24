@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Modal, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { RegisterScreen } from '../auth/RegisterScreen';
+import { LoginScreen } from '../auth/LoginScreen';
 
 type Language = 'id' | 'en';
 type ThemeOption = 'light' | 'dark' | 'system';
@@ -22,10 +25,13 @@ const RadioButton = ({ selected }: { selected: boolean }) => (
     </View>
 );
 
-export function ProfileScreen() {
+export function ProfileScreen({ navigation }: any) {
     const { isDark, theme, setTheme } = useTheme();
+    const { user, isLoggedIn, logout } = useAuth();
     const [selectedLanguage, setSelectedLanguage] = useState<Language>('id');
     const [showLanguageModal, setShowLanguageModal] = useState(false);
+    const [showRegisterModal, setShowRegisterModal] = useState(false);
+    const [showLoginModal, setShowLoginModal] = useState(false);
 
     const languages = [
         { code: 'id' as Language, name: 'Bahasa Indonesia', flag: '🇮🇩' },
@@ -55,6 +61,122 @@ export function ProfileScreen() {
                 <Text className="text-text-secondary-light dark:text-text-secondary-dark mb-6">
                     Manage your account and preferences
                 </Text>
+
+                {/* Authentication Section */}
+                <View className="mb-6">
+                    {isLoggedIn ? (
+                        <>
+                            <Text className={`text-lg font-semibold mb-3 ${textColor}`}>
+                                Account
+                            </Text>
+                            <View
+                                className="p-4 rounded-2xl mb-3"
+                                style={{ backgroundColor: surfaceColor, ...CARD_STYLE }}
+                            >
+                                <View className="flex-row items-center mb-3">
+                                    <View className="w-16 h-16 rounded-full bg-primary items-center justify-center mr-4">
+                                        <Text className="text-white text-2xl font-bold">
+                                            {user?.firstName?.[0] || user?.name?.[0] || 'U'}
+                                        </Text>
+                                    </View>
+                                    <View className="flex-1">
+                                        <Text className="text-lg font-semibold" style={{ color: textPrimaryColor }}>
+                                            {user?.name || `${user?.firstName} ${user?.lastName}`}
+                                        </Text>
+                                        <Text className="text-sm" style={{ color: textSecondaryColor }}>
+                                            {user?.email}
+                                        </Text>
+                                    </View>
+                                </View>
+                                <TouchableOpacity
+                                    onPress={logout}
+                                    className="bg-error-light rounded-xl py-3 mt-2"
+                                >
+                                    <Text className="text-white text-center font-semibold">
+                                        Logout
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </>
+                    ) : (
+                        <>
+                            <Text className={`text-lg font-semibold mb-3 ${textColor}`}>
+                                Get Started
+                            </Text>
+                            <View
+                                className="p-4 rounded-2xl mb-3"
+                                style={{ backgroundColor: surfaceColor, ...CARD_STYLE }}
+                            >
+                                <Text className="text-base mb-4" style={{ color: textSecondaryColor }}>
+                                    Sign in to save favorites, post properties, and more
+                                </Text>
+                                <TouchableOpacity
+                                    onPress={() => setShowRegisterModal(true)}
+                                    className="bg-primary rounded-xl py-3 mb-3"
+                                >
+                                    <Text className="text-white text-center font-semibold">
+                                        Create Account
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={() => setShowLoginModal(true)}
+                                    className="border-2 border-primary rounded-xl py-3"
+                                >
+                                    <Text className="text-primary text-center font-semibold">
+                                        Sign In
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </>
+                    )}
+                </View>
+
+                {/* Become a Host Section - Only show if logged in and not landlord */}
+                {isLoggedIn && !user?.isLandlord && (
+                    <View className="mb-6">
+                        <View
+                            className="p-4 rounded-2xl"
+                            style={{ backgroundColor: surfaceColor, ...CARD_STYLE }}
+                        >
+                            <Text className={`text-lg font-semibold mb-2 ${textColor}`}>
+                                Menjadi Tuan Rumah
+                            </Text>
+                            <Text className="text-text-secondary-light dark:text-text-secondary-dark mb-3">
+                                Mulai menyewakan properti Anda dan dapatkan penghasilan tambahan
+                            </Text>
+                            <TouchableOpacity
+                                onPress={() => (navigation as any).navigate('BecomeHost')}
+                                className="bg-primary rounded-xl py-3"
+                            >
+                                <Text className="text-white text-center font-semibold">
+                                    Mulai Sekarang
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                )}
+
+                {/* Hosting Dashboard Link - Only show if landlord */}
+                {isLoggedIn && user?.isLandlord && (
+                    <View className="mb-6">
+                        <Text className={`text-lg font-semibold mb-3 ${textColor}`}>
+                            Hosting
+                        </Text>
+                        <TouchableOpacity
+                            onPress={() => (navigation as any).navigate('HostingDashboard')}
+                            className="flex-row items-center justify-between p-4 rounded-2xl"
+                            style={{ backgroundColor: surfaceColor, ...CARD_STYLE }}
+                        >
+                            <View className="flex-row items-center">
+                                <Ionicons name="home" size={22} color={iconColor} style={{ marginRight: 12 }} />
+                                <Text className="text-base font-medium" style={{ color: textPrimaryColor }}>
+                                    Dashboard Hosting
+                                </Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={20} color={textSecondaryColor} />
+                        </TouchableOpacity>
+                    </View>
+                )}
 
                 {/* Theme Settings */}
                 <View className="mb-6">
@@ -160,8 +282,8 @@ export function ProfileScreen() {
                                     setShowLanguageModal(false);
                                 }}
                                 className={`flex-row items-center justify-between p-4 rounded-2xl mb-3 ${selectedLanguage === lang.code
-                                        ? 'bg-primary'
-                                        : isDark ? 'bg-[#0F172A]' : 'bg-[#F9FAFB]'
+                                    ? 'bg-primary'
+                                    : isDark ? 'bg-[#0F172A]' : 'bg-[#F9FAFB]'
                                     }`}
                             >
                                 <View className="flex-row items-center">
@@ -172,8 +294,8 @@ export function ProfileScreen() {
                                         style={{ marginRight: 12 }}
                                     />
                                     <Text className={`text-base font-medium ${selectedLanguage === lang.code
-                                            ? 'text-white'
-                                            : isDark ? 'text-[#F1F5F9]' : 'text-[#1F2937]'
+                                        ? 'text-white'
+                                        : isDark ? 'text-[#F1F5F9]' : 'text-[#1F2937]'
                                         }`}>
                                         {lang.name}
                                     </Text>
@@ -185,6 +307,42 @@ export function ProfileScreen() {
                         ))}
                     </View>
                 </TouchableOpacity>
+            </Modal>
+
+            {/* Register Modal */}
+            <Modal
+                visible={showRegisterModal}
+                animationType="slide"
+                presentationStyle="pageSheet"
+                onRequestClose={() => setShowRegisterModal(false)}
+            >
+                <RegisterScreen
+                    onRegisterSuccess={() => {
+                        setShowRegisterModal(false);
+                    }}
+                    onNavigateToLogin={() => {
+                        setShowRegisterModal(false);
+                        setShowLoginModal(true);
+                    }}
+                />
+            </Modal>
+
+            {/* Login Modal */}
+            <Modal
+                visible={showLoginModal}
+                animationType="slide"
+                presentationStyle="pageSheet"
+                onRequestClose={() => setShowLoginModal(false)}
+            >
+                <LoginScreen
+                    onLoginSuccess={() => {
+                        setShowLoginModal(false);
+                    }}
+                    onNavigateToRegister={() => {
+                        setShowLoginModal(false);
+                        setShowRegisterModal(true);
+                    }}
+                />
             </Modal>
         </View>
     );

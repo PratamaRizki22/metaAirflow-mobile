@@ -1,11 +1,18 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import authService from '../services/authService';
 
 interface User {
     id: string;
     name: string;
     email: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    dateOfBirth?: string;
+    role?: string;
     avatar?: string;
+    isLandlord?: boolean;  // Client-side flag for dual role
 }
 
 interface AuthContextType {
@@ -13,8 +20,12 @@ interface AuthContextType {
     isLoggedIn: boolean;
     isLoading: boolean;
     login: (email: string, password: string) => Promise<void>;
-    register: (name: string, email: string, password: string) => Promise<void>;
+    loginWithGoogle: (idToken: string) => Promise<void>;
+    register: (firstName: string, lastName: string, email: string, password: string, phone: string, dateOfBirth: string) => Promise<void>;
     logout: () => Promise<void>;
+    refreshProfile: () => Promise<void>;
+    updateProfile: (data: any) => Promise<void>;
+    activateHosting: () => Promise<void>;  // Activate landlord features
     continueAsGuest: () => void;
 }
 
@@ -30,9 +41,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const checkAuthStatus = async () => {
         try {
-            const userJson = await AsyncStorage.getItem('user');
-            if (userJson) {
-                setUser(JSON.parse(userJson));
+            const currentUser = await authService.getCurrentUser();
+            if (currentUser) {
+                setUser({
+                    id: currentUser.id,
+                    name: currentUser.name,
+                    email: currentUser.email,
+                    firstName: currentUser.firstName,
+                    lastName: currentUser.lastName,
+                    phone: currentUser.phone,
+                    dateOfBirth: currentUser.dateOfBirth,
+                    role: currentUser.role,
+                });
             }
         } catch (error) {
             console.error('Failed to check auth status:', error);
@@ -42,33 +62,152 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const login = async (email: string, password: string) => {
-        // Mock login - replace with actual API call in production
-        const mockUser: User = {
-            id: '1',
-            name: 'John Doe',
-            email: email,
-            avatar: 'https://i.pravatar.cc/150?img=1',
-        };
+        try {
+            const response = await authService.login({ email, password });
 
-        await AsyncStorage.setItem('user', JSON.stringify(mockUser));
-        setUser(mockUser);
+            if (response.success && response.data) {
+                const userData = response.data.user;
+                setUser({
+                    id: userData.id,
+                    name: userData.name,
+                    email: userData.email,
+                    firstName: userData.firstName,
+                    lastName: userData.lastName,
+                    phone: userData.phone,
+                    dateOfBirth: userData.dateOfBirth,
+                    role: userData.role,
+                });
+            }
+        } catch (error) {
+            console.error('Login failed:', error);
+            throw error;
+        }
     };
 
-    const register = async (name: string, email: string, password: string) => {
-        // Mock register - replace with actual API call in production
-        const mockUser: User = {
-            id: Date.now().toString(),
-            name: name,
-            email: email,
-        };
+    const loginWithGoogle = async (idToken: string) => {
+        try {
+            const response = await authService.loginWithGoogle(idToken);
 
-        await AsyncStorage.setItem('user', JSON.stringify(mockUser));
-        setUser(mockUser);
+            if (response.success && response.data) {
+                const userData = response.data.user;
+                setUser({
+                    id: userData.id,
+                    name: userData.name,
+                    email: userData.email,
+                    firstName: userData.firstName,
+                    lastName: userData.lastName,
+                    phone: userData.phone,
+                    dateOfBirth: userData.dateOfBirth,
+                    role: userData.role,
+                });
+            }
+        } catch (error) {
+            console.error('Google login failed:', error);
+            throw error;
+        }
+    };
+
+    const register = async (
+        firstName: string,
+        lastName: string,
+        email: string,
+        password: string,
+        phone: string,
+        dateOfBirth: string
+    ) => {
+        try {
+            const response = await authService.register({
+                firstName,
+                lastName,
+                email,
+                password,
+                phone,
+                dateOfBirth,
+            });
+
+            if (response.success && response.data) {
+                const userData = response.data.user;
+                setUser({
+                    id: userData.id,
+                    name: userData.name,
+                    email: userData.email,
+                    firstName: userData.firstName,
+                    lastName: userData.lastName,
+                    phone: userData.phone,
+                    dateOfBirth: userData.dateOfBirth,
+                    role: userData.role,
+                });
+            }
+        } catch (error) {
+            console.error('Registration failed:', error);
+            throw error;
+        }
     };
 
     const logout = async () => {
-        await AsyncStorage.removeItem('user');
-        setUser(null);
+        try {
+            await authService.logout();
+            setUser(null);
+        } catch (error) {
+            console.error('Logout failed:', error);
+            throw error;
+        }
+    };
+
+    const refreshProfile = async () => {
+        try {
+            const userData = await authService.getProfile();
+            setUser({
+                id: userData.id,
+                name: userData.name,
+                email: userData.email,
+                firstName: userData.firstName,
+                lastName: userData.lastName,
+                phone: userData.phone,
+                dateOfBirth: userData.dateOfBirth,
+                role: userData.role,
+            });
+        } catch (error) {
+            console.error('Refresh profile failed:', error);
+            throw error;
+        }
+    };
+
+    const updateProfile = async (data: any) => {
+        try {
+            const updatedUser = await authService.updateProfile(data);
+            setUser({
+                id: updatedUser.id,
+                name: updatedUser.name,
+                email: updatedUser.email,
+                firstName: updatedUser.firstName,
+                lastName: updatedUser.lastName,
+                phone: updatedUser.phone,
+                dateOfBirth: updatedUser.dateOfBirth,
+                role: updatedUser.role,
+            });
+        } catch (error) {
+            console.error('Update profile failed:', error);
+            throw error;
+        }
+    };
+
+    const activateHosting = async () => {
+        try {
+            if (!user) throw new Error('User not logged in');
+
+            // Update user with landlord flag (client-side only)
+            const updatedUser = {
+                ...user,
+                isLandlord: true
+            };
+
+            setUser(updatedUser);
+            await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
+        } catch (error) {
+            console.error('Activate hosting failed:', error);
+            throw error;
+        }
     };
 
     const continueAsGuest = () => {
@@ -83,8 +222,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 isLoggedIn: !!user,
                 isLoading,
                 login,
+                loginWithGoogle,
                 register,
                 logout,
+                refreshProfile,
+                updateProfile,
+                activateHosting,
                 continueAsGuest,
             }}
         >

@@ -8,11 +8,13 @@ import {
     Platform,
     ScrollView,
     ActivityIndicator,
+    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { GOOGLE_WEB_CLIENT_ID } from '@env';
+import authService from '../../services/authService';
 
 interface LoginScreenProps {
     onLoginSuccess: () => void;
@@ -35,13 +37,35 @@ export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScree
             return;
         }
 
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            setError('Please enter a valid email address');
+            return;
+        }
+
         setIsLoading(true);
 
-        // Mock login - replace with actual API call
-        setTimeout(() => {
+        try {
+            const response = await authService.login({ email, password });
+
+            if (response.success) {
+                Alert.alert(
+                    'Success',
+                    'Login successful!',
+                    [
+                        {
+                            text: 'OK',
+                            onPress: onLoginSuccess,
+                        },
+                    ]
+                );
+            }
+        } catch (err: any) {
+            setError(err.message || 'Login failed. Please try again.');
+        } finally {
             setIsLoading(false);
-            onLoginSuccess();
-        }, 1000);
+        }
     };
 
     const handleGoogleSignIn = async () => {

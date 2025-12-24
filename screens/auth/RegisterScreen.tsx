@@ -8,11 +8,13 @@ import {
     Platform,
     ScrollView,
     ActivityIndicator,
+    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { GOOGLE_WEB_CLIENT_ID } from '@env';
+import authService from '../../services/authService';
 
 interface RegisterScreenProps {
     onRegisterSuccess: () => void;
@@ -21,10 +23,13 @@ interface RegisterScreenProps {
 
 export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: RegisterScreenProps) {
     const { isDark } = useTheme();
-    const [name, setName] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [phone, setPhone] = useState('');
+    const [dateOfBirth, setDateOfBirth] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -33,7 +38,7 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
     const handleRegister = async () => {
         setError('');
 
-        if (!name || !email || !password || !confirmPassword) {
+        if (!firstName || !lastName || !email || !password || !confirmPassword || !phone || !dateOfBirth) {
             setError('Please fill in all fields');
             return;
         }
@@ -48,13 +53,49 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
             return;
         }
 
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            setError('Please enter a valid email address');
+            return;
+        }
+
+        // Validate date format (YYYY-MM-DD)
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(dateOfBirth)) {
+            setError('Date of birth must be in YYYY-MM-DD format');
+            return;
+        }
+
         setIsLoading(true);
 
-        // Mock register - replace with actual API call
-        setTimeout(() => {
+        try {
+            const response = await authService.register({
+                email,
+                password,
+                firstName,
+                lastName,
+                dateOfBirth,
+                phone,
+            });
+
+            if (response.success) {
+                Alert.alert(
+                    'Success',
+                    response.message || 'Registration successful!',
+                    [
+                        {
+                            text: 'OK',
+                            onPress: onRegisterSuccess,
+                        },
+                    ]
+                );
+            }
+        } catch (err: any) {
+            setError(err.message || 'Registration failed. Please try again.');
+        } finally {
             setIsLoading(false);
-            onRegisterSuccess();
-        }, 1000);
+        }
     };
 
     const handleGoogleSignIn = async () => {
@@ -122,14 +163,28 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
                     <View className="space-y-4 mb-6">
                         <View>
                             <Text className={`text-sm font-medium mb-2 ${textColor}`}>
-                                Full Name
+                                First Name
                             </Text>
                             <TextInput
                                 className={`${inputBg} ${borderColor} border rounded-lg px-4 py-3 ${textColor}`}
-                                placeholder="Enter your full name"
+                                placeholder="Enter your first name"
                                 placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                                value={name}
-                                onChangeText={setName}
+                                value={firstName}
+                                onChangeText={setFirstName}
+                                editable={!isLoading}
+                            />
+                        </View>
+
+                        <View>
+                            <Text className={`text-sm font-medium mb-2 ${textColor}`}>
+                                Last Name
+                            </Text>
+                            <TextInput
+                                className={`${inputBg} ${borderColor} border rounded-lg px-4 py-3 ${textColor}`}
+                                placeholder="Enter your last name"
+                                placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
+                                value={lastName}
+                                onChangeText={setLastName}
                                 editable={!isLoading}
                             />
                         </View>
@@ -146,6 +201,35 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
                                 onChangeText={setEmail}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
+                                editable={!isLoading}
+                            />
+                        </View>
+
+                        <View>
+                            <Text className={`text-sm font-medium mb-2 ${textColor}`}>
+                                Phone Number
+                            </Text>
+                            <TextInput
+                                className={`${inputBg} ${borderColor} border rounded-lg px-4 py-3 ${textColor}`}
+                                placeholder="Enter your phone number"
+                                placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
+                                value={phone}
+                                onChangeText={setPhone}
+                                keyboardType="phone-pad"
+                                editable={!isLoading}
+                            />
+                        </View>
+
+                        <View>
+                            <Text className={`text-sm font-medium mb-2 ${textColor}`}>
+                                Date of Birth
+                            </Text>
+                            <TextInput
+                                className={`${inputBg} ${borderColor} border rounded-lg px-4 py-3 ${textColor}`}
+                                placeholder="YYYY-MM-DD"
+                                placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
+                                value={dateOfBirth}
+                                onChangeText={setDateOfBirth}
                                 editable={!isLoading}
                             />
                         </View>

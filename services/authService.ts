@@ -1,0 +1,229 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import api from './api';
+import {
+    RegisterRequest,
+    LoginRequest,
+    UpdateProfileRequest,
+    AuthResponse,
+    User
+} from '../types/api';
+
+class AuthService {
+    /**
+     * Register a new user
+     */
+    async register(data: RegisterRequest): Promise<AuthResponse> {
+        try {
+            const response = await api.post<AuthResponse>('/v1/m/auth/register', data);
+
+            // Save token and user data to AsyncStorage
+            if (response.data.success && response.data.data) {
+                await this.saveAuthData(
+                    response.data.data.token,
+                    response.data.data.user
+                );
+            }
+
+            return response.data;
+        } catch (error: any) {
+            console.error('Registration error:', error.response?.data || error.message);
+            throw this.handleError(error);
+        }
+    }
+
+    /**
+     * Login user
+     */
+    async login(data: LoginRequest): Promise<AuthResponse> {
+        try {
+            const response = await api.post<AuthResponse>('/v1/m/auth/login', data);
+
+            // Save token and user data to AsyncStorage
+            if (response.data.success && response.data.data) {
+                await this.saveAuthData(
+                    response.data.data.token,
+                    response.data.data.user
+                );
+            }
+
+            return response.data;
+        } catch (error: any) {
+            console.error('Login error:', error.response?.data || error.message);
+            throw this.handleError(error);
+        }
+    }
+
+    /**
+     * Login with Google
+     */
+    async loginWithGoogle(idToken: string): Promise<AuthResponse> {
+        try {
+            const response = await api.post<AuthResponse>('/v1/m/auth/google', { idToken });
+
+            // Save token and user data to AsyncStorage
+            if (response.data.success && response.data.data) {
+                await this.saveAuthData(
+                    response.data.data.token,
+                    response.data.data.user
+                );
+            }
+
+            return response.data;
+        } catch (error: any) {
+            console.error('Google login error:', error.response?.data || error.message);
+            throw this.handleError(error);
+        }
+    }
+
+    /**
+     * Logout user
+     */
+    async logout(): Promise<void> {
+        try {
+            // Call logout endpoint if available
+            await api.post('/auth/logout');
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            // Always clear local storage
+            await this.clearAuthData();
+        }
+    }
+
+    /**
+     * Get current user profile from backend
+     */
+    async getProfile(): Promise<User> {
+        try {
+            const response = await api.get<{ success: boolean; data: User }>('/v1/m/auth/me');
+
+            if (response.data.success && response.data.data) {
+                // Update local storage with fresh user data
+                await AsyncStorage.setItem('userData', JSON.stringify(response.data.data));
+                return response.data.data;
+            }
+
+            throw new Error('Failed to get user profile');
+        } catch (error: any) {
+            console.error('Get profile error:', error.response?.data || error.message);
+            throw this.handleError(error);
+        }
+    }
+
+    /**
+     * Update user profile
+     */
+    async updateProfile(data: UpdateProfileRequest): Promise<User> {
+        try {
+            const response = await api.put<{ success: boolean; message: string; data: User }>('/v1/m/users/profile', data);
+
+            if (response.data.success && response.data.data) {
+                // Update local storage with updated user data
+                await AsyncStorage.setItem('userData', JSON.stringify(response.data.data));
+                return response.data.data;
+            }
+
+            throw new Error('Failed to update profile');
+        } catch (error: any) {
+            console.error('Update profile error:', error.response?.data || error.message);
+            throw this.handleError(error);
+        }
+    }
+
+    /**
+     * Refresh JWT token
+     */
+    async refreshToken(): Promise<string> {
+        try {
+            const response = await api.post<{ success: boolean; data: { token: string } }>('/v1/m/auth/refresh-token');
+
+            if (response.data.success && response.data.data?.token) {
+                // Update token in AsyncStorage
+                await AsyncStorage.setItem('authToken', response.data.data.token);
+                return response.data.data.token;
+            }
+
+            throw new Error('Failed to refresh token');
+        } catch (error: any) {
+            console.error('Refresh token error:', error.response?.data || error.message);
+            throw this.handleError(error);
+        }
+    }
+
+    /**
+     * Get current user from storage
+     */
+    async getCurrentUser(): Promise<User | null> {
+        try {
+            const userJson = await AsyncStorage.getItem('userData');
+            return userJson ? JSON.parse(userJson) : null;
+        } catch (error) {
+            console.error('Error getting current user:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Get auth token from storage
+     */
+    async getToken(): Promise<string | null> {
+        try {
+            return await AsyncStorage.getItem('authToken');
+        } catch (error) {
+            console.error('Error getting token:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Check if user is authenticated
+     */
+    async isAuthenticated(): Promise<boolean> {
+        const token = await this.getToken();
+        return !!token;
+    }
+
+    /**
+     * Save authentication data to AsyncStorage
+     */
+    private async saveAuthData(token: string, user: User): Promise<void> {
+        try {
+            await AsyncStorage.setItem('authToken', token);
+            await AsyncStorage.setItem('userData', JSON.stringify(user));
+        } catch (error) {
+            console.error('Error saving auth data:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Clear authentication data from AsyncStorage
+     */
+    private async clearAuthData(): Promise<void> {
+        try {
+            await AsyncStorage.removeItem('authToken');
+            await AsyncStorage.removeItem('userData');
+        } catch (error) {
+            console.error('Error clearing auth data:', error);
+        }
+    }
+
+    /**
+     * Handle API errors
+     */
+    private handleError(error: any): Error {
+        if (error.response) {
+            // Server responded with error
+            const message = error.response.data?.message || 'An error occurred';
+            return new Error(message);
+        } else if (error.request) {
+            // Request made but no response
+            return new Error('Network error. Please check your connection.');
+        } else {
+            // Something else happened
+            return new Error(error.message || 'An unexpected error occurred');
+        }
+    }
+}
+
+export default new AuthService();
