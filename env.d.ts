@@ -4,4 +4,5 @@ declare module '@env' {
     export const GOOGLE_IOS_CLIENT_ID: string;
     export const API_BASE_URL: string;
     export const NODE_ENV: string;
+    export const STRIPE_PUBLISHABLE_KEY: string;
 }

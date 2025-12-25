@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { propertyService } from '../../services';
+import { propertyService, amenityService } from '../../services';
 import { PropertyCard } from '../../components/property';
 import { useThemeColors } from '../../hooks';
 
@@ -16,9 +16,33 @@ export function SearchScreen({ navigation }: any) {
     const [properties, setProperties] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
+    const [amenities, setAmenities] = useState<any[]>([]);
+    const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
 
     const { bgColor, textColor, cardBg, borderColor } = useThemeColors();
     const inputBg = isDark ? 'bg-surface-dark' : 'bg-white';
+
+    // Load amenities on mount
+    React.useEffect(() => {
+        loadAmenities();
+    }, []);
+
+    const loadAmenities = async () => {
+        try {
+            const response = await amenityService.getAmenities();
+            setAmenities(response.amenities || []);
+        } catch (error) {
+            console.error('Failed to load amenities:', error);
+        }
+    };
+
+    const toggleAmenity = (amenityId: string) => {
+        setSelectedAmenities(prev =>
+            prev.includes(amenityId)
+                ? prev.filter(id => id !== amenityId)
+                : [...prev, amenityId]
+        );
+    };
 
     const handleSearch = async () => {
         try {
@@ -31,11 +55,14 @@ export function SearchScreen({ navigation }: any) {
             if (minPrice) filters.minPrice = parseFloat(minPrice);
             if (maxPrice) filters.maxPrice = parseFloat(maxPrice);
             if (bedrooms) filters.bedrooms = parseInt(bedrooms);
+            if (selectedAmenities.length > 0) filters.amenities = selectedAmenities.join(',');
 
             const response = await propertyService.getMobileProperties(1, 50, filters);
             setProperties(response.data.properties);
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Failed to search properties');
+            console.error('SearchScreen - Get mobile properties error:', error);
+            // Don't show Alert to prevent infinite loop
+            setProperties([]); // Set empty array on error
         } finally {
             setLoading(false);
         }
@@ -47,6 +74,7 @@ export function SearchScreen({ navigation }: any) {
         setMinPrice('');
         setMaxPrice('');
         setBedrooms('');
+        setSelectedAmenities([]);
         setProperties([]);
         setHasSearched(false);
     };
@@ -161,6 +189,43 @@ export function SearchScreen({ navigation }: any) {
                             borderColor: isDark ? '#374151' : '#E5E7EB',
                         }}
                     />
+
+                    {/* Amenities */}
+                    {amenities.length > 0 && (
+                        <>
+                            <Text className={`text-sm font-medium mb-3 ${textColor}`}>Amenities</Text>
+                            <View className="flex-row flex-wrap gap-2 mb-4">
+                                {amenities.slice(0, 12).map((amenity) => (
+                                    <TouchableOpacity
+                                        key={amenity.id}
+                                        onPress={() => toggleAmenity(amenity.id)}
+                                        className={`px-4 py-2 rounded-full border ${selectedAmenities.includes(amenity.id)
+                                                ? 'bg-primary/10 border-primary'
+                                                : isDark
+                                                    ? 'bg-surface-dark border-gray-700'
+                                                    : 'bg-white border-gray-300'
+                                            }`}
+                                    >
+                                        <Text
+                                            className={`text-sm font-medium ${selectedAmenities.includes(amenity.id)
+                                                    ? 'text-primary'
+                                                    : textColor
+                                                }`}
+                                        >
+                                            {amenity.name}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                            {selectedAmenities.length > 0 && (
+                                <View className="bg-primary/10 px-3 py-2 rounded-lg mb-4">
+                                    <Text className="text-primary text-sm font-medium">
+                                        {selectedAmenities.length} amenity{selectedAmenities.length > 1 ? 'ies' : 'y'} selected
+                                    </Text>
+                                </View>
+                            )}
+                        </>
+                    )}
 
                     {/* Action Buttons */}
                     <View className="flex-row gap-3">

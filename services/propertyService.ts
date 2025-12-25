@@ -268,68 +268,7 @@ class PropertyService {
         }
     }
 
-    /**
-     * Get property types
-     */
-    async getPropertyTypes(): Promise<{ success: boolean; data: PropertyType[] }> {
-        try {
-            const response = await api.get<{ success: boolean; data: PropertyType[] }>(
-                '/v1/property-types'
-            );
-            return response.data;
-        } catch (error: any) {
-            console.error('Get property types error:', error.response?.data || error.message);
-            throw this.handleError(error);
-        }
-    }
 
-    /**
-     * Get property type by ID
-     */
-    async getPropertyTypeById(typeId: string): Promise<{ success: boolean; data: PropertyType }> {
-        try {
-            const response = await api.get<{ success: boolean; data: PropertyType }>(
-                `/v1/m/property-types/${typeId}`
-            );
-            return response.data;
-        } catch (error: any) {
-            console.error('Get property type error:', error.response?.data || error.message);
-            throw this.handleError(error);
-        }
-    }
-
-    /**
-     * Get amenities
-     */
-    async getAmenities(category?: string): Promise<{ success: boolean; data: Amenity[] }> {
-        try {
-            let url = '/v1/m/amenities';
-            if (category) {
-                url += `?category=${category}`;
-            }
-
-            const response = await api.get<{ success: boolean; data: Amenity[] }>(url);
-            return response.data;
-        } catch (error: any) {
-            console.error('Get amenities error:', error.response?.data || error.message);
-            throw this.handleError(error);
-        }
-    }
-
-    /**
-     * Get amenity categories
-     */
-    async getAmenityCategories(): Promise<{ success: boolean; data: string[] }> {
-        try {
-            const response = await api.get<{ success: boolean; data: string[] }>(
-                '/v1/m/amenities/categories'
-            );
-            return response.data;
-        } catch (error: any) {
-            console.error('Get amenity categories error:', error.response?.data || error.message);
-            throw this.handleError(error);
-        }
-    }
 
     /**
      * Rate a property

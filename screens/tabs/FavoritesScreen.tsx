@@ -35,7 +35,7 @@ export function FavoritesScreen({ navigation }: any) {
             setFavorites(response.data.favorites);
         } catch (error: any) {
             console.error('[FavoritesScreen] Error loading favorites:', error);
-            Alert.alert('Error', error.message || 'Failed to load favorites');
+            // Don't show Alert to prevent infinite loop
             setFavorites([]); // Set empty array on error
         } finally {
             setLoading(false);

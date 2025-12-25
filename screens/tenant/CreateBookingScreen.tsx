@@ -59,23 +59,27 @@ export default function CreateBookingScreen({ route, navigation }: any) {
 
         setLoading(true);
         try {
-            await bookingService.createBooking({
+            const response = await bookingService.createBooking({
                 propertyId,
                 startDate,
                 endDate,
                 message: message || undefined,
             });
 
-            Alert.alert(
-                'Success',
-                'Booking request submitted! Wait for owner approval.',
-                [
-                    {
-                        text: 'View My Trips',
-                        onPress: () => navigation.navigate('MyTrips')
-                    }
-                ]
-            );
+            // Get booking ID from response
+            const bookingId = response.data?.id;
+
+            if (!bookingId) {
+                throw new Error('Booking created but ID not found');
+            }
+
+            // Navigate to payment screen
+            navigation.navigate('Payment', {
+                bookingId,
+                amount: calculateTotal(),
+                propertyTitle,
+            });
+
         } catch (error: any) {
             Alert.alert('Error', error.message);
         } finally {

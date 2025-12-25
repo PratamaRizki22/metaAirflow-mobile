@@ -25,7 +25,7 @@ import {
 } from '../../components/search';
 import { PropertyCardSkeleton } from '../../components/common/Skeleton';
 import { useDebounce, useThemeColors } from '../../hooks';
-import { propertyService } from '../../services';
+import { propertyService, propertyTypeService } from '../../services';
 
 const CATEGORIES = [
     { id: 'all', label: 'All', icon: 'apps-outline' },
@@ -56,6 +56,7 @@ export function HomeScreen({ navigation }: any) {
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // Debounce search query to reduce API calls
     const debouncedSearch = useDebounce(searchQuery, 500);
@@ -69,8 +70,8 @@ export function HomeScreen({ navigation }: any) {
 
     const loadPropertyTypes = async () => {
         try {
-            const response = await propertyService.getPropertyTypes();
-            setPropertyTypes(response.data);
+            const response = await propertyTypeService.getPropertyTypes();
+            setPropertyTypes(response);
         } catch (error) {
             console.error('Error loading property types:', error);
         }
@@ -88,6 +89,7 @@ export function HomeScreen({ navigation }: any) {
         try {
             if (reset) {
                 setLoading(true);
+                setError(null); // Clear previous errors
             } else {
                 setLoadingMore(true);
             }
@@ -107,8 +109,14 @@ export function HomeScreen({ navigation }: any) {
 
             // Check if there are more properties
             setHasMore(newProperties.length === 20);
+            setError(null); // Clear error on success
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Failed to load properties');
+            console.error('Get mobile properties error:', error);
+            // Only set error state, don't show Alert to prevent re-renders
+            if (reset) {
+                setError(error.message || 'Failed to load properties. Please check your connection.');
+            }
+            // Don't retry automatically - user must manually refresh
         } finally {
             setLoading(false);
             setLoadingMore(false);
@@ -572,15 +580,38 @@ export function HomeScreen({ navigation }: any) {
                             ) : null
                         }
                         ListEmptyComponent={
-                            <View className="items-center justify-center py-12">
-                                <Ionicons name="home-outline" size={64} color="#9CA3AF" />
-                                <Text className={`text-lg font-semibold mt-4 ${textColor}`}>
-                                    No Properties Found
-                                </Text>
-                                <Text className={`text-sm mt-2 ${secondaryTextColor}`}>
-                                    Try adjusting your search or filters
-                                </Text>
-                            </View>
+                            !loading ? (
+                                error ? (
+                                    <View className="items-center justify-center py-12 px-6">
+                                        <Ionicons name="cloud-offline-outline" size={64} color="#EF4444" />
+                                        <Text className={`text-lg font-semibold mt-4 text-center ${textColor}`}>
+                                            Connection Error
+                                        </Text>
+                                        <Text className={`text-sm mt-2 text-center ${secondaryTextColor}`}>
+                                            {error}
+                                        </Text>
+                                        <TouchableOpacity
+                                            onPress={() => {
+                                                setPage(1);
+                                                loadProperties(1, true);
+                                            }}
+                                            className="mt-6 bg-primary px-6 py-3 rounded-xl"
+                                        >
+                                            <Text className="text-white font-semibold">Try Again</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                ) : (
+                                    <View className="items-center justify-center py-12">
+                                        <Ionicons name="home-outline" size={64} color="#9CA3AF" />
+                                        <Text className={`text-lg font-semibold mt-4 ${textColor}`}>
+                                            No Properties Found
+                                        </Text>
+                                        <Text className={`text-sm mt-2 ${secondaryTextColor}`}>
+                                            Try adjusting your search or filters
+                                        </Text>
+                                    </View>
+                                )
+                            ) : null
                         }
                         // Performance optimizations
                         initialNumToRender={5}

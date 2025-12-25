@@ -4,4 +4,9 @@ export { default as bookingService } from './bookingService';
 export { default as propertyService } from './propertyService';
 export { default as uploadService } from './uploadService';
 export { stripeService } from './stripeService';
+export { predictionService } from './predictionService';
+export { amenityService } from './amenityService';
+export { propertyTypeService } from './propertyTypeService';
 export { default as api } from './api';
+
+

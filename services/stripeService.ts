@@ -1,36 +1,90 @@
 import api from './api';
 
-export interface PaymentIntent {
-    clientSecret: string;
-    amount: number;
-    currency: string;
+export interface PaymentSheetParams {
+    paymentIntent: string;
+    ephemeralKey: string;
+    customer: string;
+    publishableKey: string;
+    paymentId: string;
 }
 
 export interface PaymentConfirmation {
+    paymentId: string;
     bookingId: string;
-    paymentIntentId: string;
     amount: number;
     status: string;
+    paymentIntentId: string;
+    completedAt: string;
+}
+
+export interface Payment {
+    id: string;
+    bookingId: string;
+    userId: string;
+    amount: number;
+    currency: string;
+    status: 'pending' | 'completed' | 'failed' | 'refunded';
+    paymentIntentId: string;
+    completedAt?: string;
+    refundedAt?: string;
+    createdAt: string;
+    updatedAt: string;
+    booking?: {
+        id: string;
+        propertyId: string;
+        checkIn: string;
+        checkOut: string;
+        totalPrice: number;
+        status: string;
+        property: {
+            title: string;
+            city: string;
+            state: string;
+            images: string[];
+        };
+    };
+}
+
+export interface PaymentHistoryParams {
+    page?: number;
+    limit?: number;
+    status?: 'pending' | 'completed' | 'failed' | 'refunded';
+}
+
+export interface PaymentHistoryResponse {
+    payments: Payment[];
+    pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+    };
+}
+
+export interface RefundResponse {
+    refundId: string;
+    amount: number;
+    status: string;
+    reason?: string;
+    createdAt: string;
 }
 
 class StripeService {
     /**
-     * Create payment intent for booking
+     * Get Payment Sheet parameters for booking
+     * This calls backend to create PaymentIntent securely
      */
-    async createPaymentIntent(
-        bookingId: string,
-        amount: number,
-        currency: string = 'myr'
-    ): Promise<PaymentIntent> {
+    async getPaymentSheetParams(bookingId: string): Promise<PaymentSheetParams> {
         try {
-            const response = await api.post('/payments/create-intent', {
+            const response = await api.post('/payments/payment-sheet', {
                 bookingId,
-                amount,
-                currency,
             });
-            return response.data;
+
+            // Backend returns { success: true, data: {...} }
+            return response.data.data || response.data;
         } catch (error: any) {
-            throw new Error(error.response?.data?.message || 'Failed to create payment intent');
+            const message = error.response?.data?.message || 'Failed to initialize payment';
+            throw new Error(message);
         }
     }
 
@@ -46,38 +100,54 @@ class StripeService {
                 bookingId,
                 paymentIntentId,
             });
-            return response.data;
+
+            // Backend returns { success: true, data: {...} }
+            return response.data.data || response.data;
         } catch (error: any) {
-            throw new Error(error.response?.data?.message || 'Failed to confirm payment');
+            const message = error.response?.data?.message || 'Failed to confirm payment';
+            throw new Error(message);
         }
     }
 
     /**
-     * Get payment history for user
+     * Get payment history for user with pagination
      */
-    async getPaymentHistory(): Promise<any[]> {
+    async getPaymentHistory(params?: PaymentHistoryParams): Promise<PaymentHistoryResponse> {
         try {
-            const response = await api.get('/payments/history');
-            return response.data;
+            const queryParams = new URLSearchParams();
+
+            if (params?.page) queryParams.append('page', params.page.toString());
+            if (params?.limit) queryParams.append('limit', params.limit.toString());
+            if (params?.status) queryParams.append('status', params.status);
+
+            const url = `/payments/history${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+            const response = await api.get(url);
+
+            // Backend returns { success: true, data: {...} }
+            return response.data.data || response.data;
         } catch (error: any) {
-            throw new Error(error.response?.data?.message || 'Failed to get payment history');
+            const message = error.response?.data?.message || 'Failed to get payment history';
+            throw new Error(message);
         }
     }
 
     /**
-     * Get payment details
+     * Get payment details by ID
      */
-    async getPaymentDetails(paymentId: string): Promise<any> {
+    async getPaymentDetails(paymentId: string): Promise<Payment> {
         try {
             const response = await api.get(`/payments/${paymentId}`);
-            return response.data;
+
+            // Backend returns { success: true, data: {...} }
+            return response.data.data || response.data;
         } catch (error: any) {
-            throw new Error(error.response?.data?.message || 'Failed to get payment details');
+            const message = error.response?.data?.message || 'Failed to get payment details';
+            throw new Error(message);
         }
     }
 
     /**
-     * Cancel payment
+     * Cancel pending payment
      */
     async cancelPayment(paymentIntentId: string): Promise<void> {
         try {
@@ -85,24 +155,29 @@ class StripeService {
                 paymentIntentId,
             });
         } catch (error: any) {
-            throw new Error(error.response?.data?.message || 'Failed to cancel payment');
+            const message = error.response?.data?.message || 'Failed to cancel payment';
+            throw new Error(message);
         }
     }
 
     /**
-     * Request refund
+     * Request refund for completed payment
      */
-    async requestRefund(bookingId: string, reason?: string): Promise<any> {
+    async requestRefund(bookingId: string, reason?: string): Promise<RefundResponse> {
         try {
             const response = await api.post('/payments/refund', {
                 bookingId,
                 reason,
             });
-            return response.data;
+
+            // Backend returns { success: true, data: {...} }
+            return response.data.data || response.data;
         } catch (error: any) {
-            throw new Error(error.response?.data?.message || 'Failed to request refund');
+            const message = error.response?.data?.message || 'Failed to request refund';
+            throw new Error(message);
         }
     }
 }
 
 export const stripeService = new StripeService();
+

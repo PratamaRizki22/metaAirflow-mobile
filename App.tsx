@@ -6,6 +6,8 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { OnboardingProvider, useOnboarding } from './contexts/OnboardingContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ModeProvider } from './contexts/ModeContext';
+import { StripeProvider } from '@stripe/stripe-react-native';
+import { STRIPE_PUBLISHABLE_KEY } from '@env';
 import { SplashScreen, WelcomeSplash } from './screens/splash';
 import { PreferenceScreen } from './screens/preferences';
 import { OnboardingScreen } from './screens/onboarding';
@@ -98,14 +100,16 @@ export default function App() {
   }
 
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <ModeProvider>
-          <OnboardingProvider>
-            <AppContent />
-          </OnboardingProvider>
-        </ModeProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder'}>
+      <ThemeProvider>
+        <AuthProvider>
+          <ModeProvider>
+            <OnboardingProvider>
+              <AppContent />
+            </OnboardingProvider>
+          </ModeProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </StripeProvider>
   );
 }

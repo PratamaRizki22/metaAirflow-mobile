@@ -3,7 +3,7 @@ import { View, Text, TextInput, ScrollView, Alert, TouchableOpacity, Image } fro
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { propertyService, uploadService } from '../../services';
+import { propertyService, uploadService, propertyTypeService } from '../../services';
 import { useThemeColors } from '../../hooks';
 import { LoadingState } from '../../components/common';
 
@@ -37,8 +37,8 @@ export default function CreatePropertyScreen({ navigation }: any) {
 
     const loadPropertyTypes = async () => {
         try {
-            const response = await propertyService.getPropertyTypes();
-            setPropertyTypes(response.data);
+            const response = await propertyTypeService.getPropertyTypes();
+            setPropertyTypes(response);
         } catch (error: any) {
             Alert.alert('Error', error.message);
         }
@@ -406,8 +406,8 @@ export default function CreatePropertyScreen({ navigation }: any) {
                                 key={type.id}
                                 onPress={() => setFormData({ ...formData, propertyTypeId: type.id })}
                                 className={`p-4 rounded-xl border-2 ${formData.propertyTypeId === type.id
-                                        ? 'border-primary bg-primary/10'
-                                        : `border-gray-300 ${cardBg}`
+                                    ? 'border-primary bg-primary/10'
+                                    : `border-gray-300 ${cardBg}`
                                     }`}
                             >
                                 <Text className={`font-semibold ${formData.propertyTypeId === type.id ? 'text-primary' : textColor
