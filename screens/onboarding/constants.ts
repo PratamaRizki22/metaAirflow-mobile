@@ -3,7 +3,7 @@ import { OnboardingSlide } from './types';
 export const ONBOARDING_SLIDES: OnboardingSlide[] = [
     {
         id: '1',
-        title: 'Welcome to MetaAirflow',
+        title: 'Welcome to Rentverse',
         description: 'Find your dream property with ease and convenience',
         animation: require('../../assets/animations/onboarding-1.json'),
         gradient: ['#667eea', '#764ba2'],

@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, ScrollView, Alert, TouchableOpacity, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { propertyService, uploadService } from '../../services';
+import { useThemeColors } from '../../hooks';
+import { LoadingState } from '../../components/common';
 
 export default function CreatePropertyScreen({ navigation }: any) {
+    const { bgColor, cardBg, textColor, secondaryTextColor, borderColor, isDark } = useThemeColors();
+
     const [formData, setFormData] = useState({
         title: '',
         description: '',
         address: '',
         city: '',
         state: '',
-        country: 'Indonesia',
+        country: 'Malaysia',
         zipCode: '',
         price: '',
         bedrooms: '',
@@ -19,7 +26,10 @@ export default function CreatePropertyScreen({ navigation }: any) {
         propertyTypeId: '',
     });
     const [propertyTypes, setPropertyTypes] = useState<any[]>([]);
+    const [selectedImages, setSelectedImages] = useState<string[]>([]);
+    const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
+    const [uploadingImages, setUploadingImages] = useState(false);
 
     useEffect(() => {
         loadPropertyTypes();
@@ -31,6 +41,64 @@ export default function CreatePropertyScreen({ navigation }: any) {
             setPropertyTypes(response.data);
         } catch (error: any) {
             Alert.alert('Error', error.message);
+        }
+    };
+
+    const pickImages = async () => {
+        try {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission Denied', 'We need camera roll permissions to upload images');
+                return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsMultipleSelection: true,
+                quality: 0.8,
+                aspect: [16, 9],
+            });
+
+            if (!result.canceled && result.assets) {
+                const newImages = result.assets.map(asset => asset.uri);
+                setSelectedImages([...selectedImages, ...newImages]);
+            }
+        } catch (error: any) {
+            Alert.alert('Error', 'Failed to pick images');
+        }
+    };
+
+    const removeImage = (index: number) => {
+        const newImages = selectedImages.filter((_, i) => i !== index);
+        setSelectedImages(newImages);
+    };
+
+    const uploadImages = async () => {
+        if (selectedImages.length === 0) return [];
+
+        setUploadingImages(true);
+
+        try {
+            const files = selectedImages.map((imageUri, index) => ({
+                uri: imageUri,
+                type: 'image/jpeg',
+                name: `property_${Date.now()}_${index}.jpg`,
+            }));
+
+            const response = await uploadService.uploadMultiple(files, true);
+
+            if (response.success && response.data.files) {
+                const uploadedUrls = response.data.files.map(file => file.url);
+                setUploadedImageUrls(uploadedUrls);
+                return uploadedUrls;
+            }
+
+            return [];
+        } catch (error: any) {
+            Alert.alert('Upload Error', error.message || 'Failed to upload images');
+            return [];
+        } finally {
+            setUploadingImages(false);
         }
     };
 
@@ -75,6 +143,27 @@ export default function CreatePropertyScreen({ navigation }: any) {
 
         setLoading(true);
         try {
+            let imageUrls: string[] = [];
+            if (selectedImages.length > 0) {
+                imageUrls = await uploadImages();
+                if (imageUrls.length === 0 && selectedImages.length > 0) {
+                    Alert.alert('Warning', 'Failed to upload some images. Continue anyway?', [
+                        { text: 'Cancel', style: 'cancel', onPress: () => setLoading(false) },
+                        { text: 'Continue', onPress: () => createPropertyWithImages([]) }
+                    ]);
+                    return;
+                }
+            }
+
+            await createPropertyWithImages(imageUrls);
+        } catch (error: any) {
+            Alert.alert('Error', error.message);
+            setLoading(false);
+        }
+    };
+
+    const createPropertyWithImages = async (imageUrls: string[]) => {
+        try {
             await propertyService.createProperty({
                 title: formData.title,
                 description: formData.description,
@@ -84,14 +173,14 @@ export default function CreatePropertyScreen({ navigation }: any) {
                 country: formData.country,
                 zipCode: formData.zipCode,
                 price: parseFloat(formData.price),
-                currencyCode: 'IDR',
+                currencyCode: 'MYR',
                 bedrooms: parseInt(formData.bedrooms),
                 bathrooms: parseInt(formData.bathrooms),
                 areaSqm: parseFloat(formData.areaSqm),
                 furnished: formData.furnished,
                 isAvailable: true,
                 propertyTypeId: formData.propertyTypeId,
-                images: [], // TODO: Add image upload
+                images: imageUrls,
             });
 
             Alert.alert(
@@ -111,249 +200,265 @@ export default function CreatePropertyScreen({ navigation }: any) {
         }
     };
 
+    if (loading) {
+        return <LoadingState message="Creating property..." />;
+    }
+
     return (
-        <ScrollView style={{ flex: 1, padding: 20 }}>
-            <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 20 }}>
-                Add New Property
-            </Text>
+        <ScrollView className={`flex-1 ${bgColor}`}>
+            <View className="p-6">
+                <Text className={`text-3xl font-bold mb-6 ${textColor}`}>
+                    Add New Property
+                </Text>
 
-            {/* Title */}
-            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                Property Title *
-            </Text>
-            <TextInput
-                placeholder="e.g., Modern Apartment in KLCC"
-                value={formData.title}
-                onChangeText={(text) => setFormData({ ...formData, title: text })}
-                style={{
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                    padding: 12,
-                    borderRadius: 8,
-                    marginBottom: 15,
-                }}
-            />
-
-            {/* Description */}
-            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                Description *
-            </Text>
-            <TextInput
-                placeholder="Describe your property..."
-                value={formData.description}
-                onChangeText={(text) => setFormData({ ...formData, description: text })}
-                multiline
-                numberOfLines={4}
-                style={{
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                    padding: 12,
-                    borderRadius: 8,
-                    marginBottom: 15,
-                    textAlignVertical: 'top',
-                }}
-            />
-
-            {/* Address */}
-            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                Address *
-            </Text>
-            <TextInput
-                placeholder="Street address"
-                value={formData.address}
-                onChangeText={(text) => setFormData({ ...formData, address: text })}
-                style={{
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                    padding: 12,
-                    borderRadius: 8,
-                    marginBottom: 15,
-                }}
-            />
-
-            {/* City & State */}
-            <View style={{ flexDirection: 'row', marginBottom: 15 }}>
-                <View style={{ flex: 1, marginRight: 10 }}>
-                    <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                        City *
+                {/* Title */}
+                <View className="mb-4">
+                    <Text className={`text-base font-semibold mb-2 ${textColor}`}>
+                        Property Title <Text className="text-red-500">*</Text>
                     </Text>
                     <TextInput
-                        placeholder="City"
-                        value={formData.city}
-                        onChangeText={(text) => setFormData({ ...formData, city: text })}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: '#ddd',
-                            padding: 12,
-                            borderRadius: 8,
-                        }}
+                        placeholder="e.g., Modern Apartment in KLCC"
+                        placeholderTextColor="#9CA3AF"
+                        value={formData.title}
+                        onChangeText={(text) => setFormData({ ...formData, title: text })}
+                        className={`${cardBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
                     />
                 </View>
-                <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                        State *
+
+                {/* Description */}
+                <View className="mb-4">
+                    <Text className={`text-base font-semibold mb-2 ${textColor}`}>
+                        Description <Text className="text-red-500">*</Text>
                     </Text>
                     <TextInput
-                        placeholder="State"
-                        value={formData.state}
-                        onChangeText={(text) => setFormData({ ...formData, state: text })}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: '#ddd',
-                            padding: 12,
-                            borderRadius: 8,
-                        }}
+                        placeholder="Describe your property..."
+                        placeholderTextColor="#9CA3AF"
+                        value={formData.description}
+                        onChangeText={(text) => setFormData({ ...formData, description: text })}
+                        multiline
+                        numberOfLines={4}
+                        className={`${cardBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
+                        style={{ textAlignVertical: 'top' }}
                     />
                 </View>
-            </View>
 
-            {/* Price */}
-            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                Monthly Price (IDR) *
-            </Text>
-            <TextInput
-                placeholder="e.g., 5000000"
-                value={formData.price}
-                onChangeText={(text) => setFormData({ ...formData, price: text })}
-                keyboardType="numeric"
-                style={{
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                    padding: 12,
-                    borderRadius: 8,
-                    marginBottom: 15,
-                }}
-            />
-
-            {/* Bedrooms, Bathrooms, Area */}
-            <View style={{ flexDirection: 'row', marginBottom: 15 }}>
-                <View style={{ flex: 1, marginRight: 5 }}>
-                    <Text style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 5 }}>
-                        Bedrooms *
+                {/* Address */}
+                <View className="mb-4">
+                    <Text className={`text-base font-semibold mb-2 ${textColor}`}>
+                        Address <Text className="text-red-500">*</Text>
                     </Text>
                     <TextInput
-                        placeholder="3"
-                        value={formData.bedrooms}
-                        onChangeText={(text) => setFormData({ ...formData, bedrooms: text })}
+                        placeholder="Street address"
+                        placeholderTextColor="#9CA3AF"
+                        value={formData.address}
+                        onChangeText={(text) => setFormData({ ...formData, address: text })}
+                        className={`${cardBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
+                    />
+                </View>
+
+                {/* City & State */}
+                <View className="flex-row gap-3 mb-4">
+                    <View className="flex-1">
+                        <Text className={`text-base font-semibold mb-2 ${textColor}`}>
+                            City <Text className="text-red-500">*</Text>
+                        </Text>
+                        <TextInput
+                            placeholder="City"
+                            placeholderTextColor="#9CA3AF"
+                            value={formData.city}
+                            onChangeText={(text) => setFormData({ ...formData, city: text })}
+                            className={`${cardBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
+                        />
+                    </View>
+                    <View className="flex-1">
+                        <Text className={`text-base font-semibold mb-2 ${textColor}`}>
+                            State <Text className="text-red-500">*</Text>
+                        </Text>
+                        <TextInput
+                            placeholder="State"
+                            placeholderTextColor="#9CA3AF"
+                            value={formData.state}
+                            onChangeText={(text) => setFormData({ ...formData, state: text })}
+                            className={`${cardBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
+                        />
+                    </View>
+                </View>
+
+                {/* Price */}
+                <View className="mb-4">
+                    <Text className={`text-base font-semibold mb-2 ${textColor}`}>
+                        Monthly Price (MYR) <Text className="text-red-500">*</Text>
+                    </Text>
+                    <TextInput
+                        placeholder="e.g., 2500"
+                        placeholderTextColor="#9CA3AF"
+                        value={formData.price}
+                        onChangeText={(text) => setFormData({ ...formData, price: text })}
                         keyboardType="numeric"
-                        style={{
-                            borderWidth: 1,
-                            borderColor: '#ddd',
-                            padding: 12,
-                            borderRadius: 8,
-                        }}
+                        className={`${cardBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
                     />
                 </View>
-                <View style={{ flex: 1, marginRight: 5 }}>
-                    <Text style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 5 }}>
-                        Bathrooms *
-                    </Text>
-                    <TextInput
-                        placeholder="2"
-                        value={formData.bathrooms}
-                        onChangeText={(text) => setFormData({ ...formData, bathrooms: text })}
-                        keyboardType="numeric"
-                        style={{
-                            borderWidth: 1,
-                            borderColor: '#ddd',
-                            padding: 12,
-                            borderRadius: 8,
-                        }}
-                    />
-                </View>
-                <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 5 }}>
-                        Area (m²) *
-                    </Text>
-                    <TextInput
-                        placeholder="120"
-                        value={formData.areaSqm}
-                        onChangeText={(text) => setFormData({ ...formData, areaSqm: text })}
-                        keyboardType="numeric"
-                        style={{
-                            borderWidth: 1,
-                            borderColor: '#ddd',
-                            padding: 12,
-                            borderRadius: 8,
-                        }}
-                    />
-                </View>
-            </View>
 
-            {/* Property Type */}
-            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 10 }}>
-                Property Type *
-            </Text>
-            <View style={{ marginBottom: 15 }}>
-                {propertyTypes.map((type) => (
+                {/* Bedrooms, Bathrooms, Area */}
+                <View className="flex-row gap-2 mb-4">
+                    <View className="flex-1">
+                        <Text className={`text-sm font-semibold mb-2 ${textColor}`}>
+                            Beds <Text className="text-red-500">*</Text>
+                        </Text>
+                        <TextInput
+                            placeholder="3"
+                            placeholderTextColor="#9CA3AF"
+                            value={formData.bedrooms}
+                            onChangeText={(text) => setFormData({ ...formData, bedrooms: text })}
+                            keyboardType="numeric"
+                            className={`${cardBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
+                        />
+                    </View>
+                    <View className="flex-1">
+                        <Text className={`text-sm font-semibold mb-2 ${textColor}`}>
+                            Baths <Text className="text-red-500">*</Text>
+                        </Text>
+                        <TextInput
+                            placeholder="2"
+                            placeholderTextColor="#9CA3AF"
+                            value={formData.bathrooms}
+                            onChangeText={(text) => setFormData({ ...formData, bathrooms: text })}
+                            keyboardType="numeric"
+                            className={`${cardBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
+                        />
+                    </View>
+                    <View className="flex-1">
+                        <Text className={`text-sm font-semibold mb-2 ${textColor}`}>
+                            Area (m²) <Text className="text-red-500">*</Text>
+                        </Text>
+                        <TextInput
+                            placeholder="120"
+                            placeholderTextColor="#9CA3AF"
+                            value={formData.areaSqm}
+                            onChangeText={(text) => setFormData({ ...formData, areaSqm: text })}
+                            keyboardType="numeric"
+                            className={`${cardBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
+                        />
+                    </View>
+                </View>
+
+                {/* Property Images */}
+                <View className="mb-4">
+                    <Text className={`text-base font-semibold mb-3 ${textColor}`}>
+                        Property Images
+                    </Text>
                     <TouchableOpacity
-                        key={type.id}
-                        onPress={() => setFormData({ ...formData, propertyTypeId: type.id })}
-                        style={{
-                            padding: 12,
-                            borderWidth: 1,
-                            borderColor: formData.propertyTypeId === type.id ? '#007AFF' : '#ddd',
-                            backgroundColor: formData.propertyTypeId === type.id ? '#E3F2FD' : 'white',
-                            borderRadius: 8,
-                            marginBottom: 8,
-                        }}
+                        onPress={pickImages}
+                        className={`border-2 border-dashed border-primary rounded-xl p-6 items-center ${cardBg}`}
                     >
-                        <Text style={{
-                            fontWeight: formData.propertyTypeId === type.id ? 'bold' : 'normal',
-                            color: formData.propertyTypeId === type.id ? '#007AFF' : '#333',
-                        }}>
-                            {type.name}
+                        <Ionicons name="images-outline" size={40} color="#14B8A6" />
+                        <Text className="text-primary mt-2 font-semibold">
+                            Tap to select images
+                        </Text>
+                        <Text className={`text-xs mt-1 ${secondaryTextColor}`}>
+                            You can select multiple images
                         </Text>
                     </TouchableOpacity>
-                ))}
-            </View>
-
-            {/* Furnished */}
-            <TouchableOpacity
-                onPress={() => setFormData({ ...formData, furnished: !formData.furnished })}
-                style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 12,
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                    borderRadius: 8,
-                    marginBottom: 20,
-                }}
-            >
-                <View style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: 4,
-                    borderWidth: 2,
-                    borderColor: formData.furnished ? '#007AFF' : '#ddd',
-                    backgroundColor: formData.furnished ? '#007AFF' : 'white',
-                    marginRight: 10,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                }}>
-                    {formData.furnished && <Text style={{ color: 'white', fontWeight: 'bold' }}>✓</Text>}
                 </View>
-                <Text style={{ fontSize: 16 }}>Furnished</Text>
-            </TouchableOpacity>
 
-            {/* Submit Button */}
-            <Button
-                title={loading ? 'Creating...' : 'Create Property'}
-                onPress={handleSubmit}
-                disabled={loading}
-                color="#34C759"
-            />
+                {/* Image Previews */}
+                {selectedImages.length > 0 && (
+                    <View className="mb-4">
+                        <Text className={`text-sm font-semibold mb-2 ${textColor}`}>
+                            Selected Images ({selectedImages.length})
+                        </Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                            {selectedImages.map((uri, index) => (
+                                <View key={index} className="mr-3 relative">
+                                    <Image
+                                        source={{ uri }}
+                                        className="w-24 h-24 rounded-xl"
+                                    />
+                                    <TouchableOpacity
+                                        onPress={() => removeImage(index)}
+                                        className="absolute -top-2 -right-2 bg-red-500 rounded-full w-6 h-6 items-center justify-center"
+                                    >
+                                        <Ionicons name="close" size={16} color="white" />
+                                    </TouchableOpacity>
+                                </View>
+                            ))}
+                        </ScrollView>
+                    </View>
+                )}
 
-            <View style={{ height: 20 }} />
+                {uploadingImages && (
+                    <View className="flex-row items-center mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                        <Ionicons name="cloud-upload-outline" size={20} color="#14B8A6" />
+                        <Text className="ml-2 text-primary font-medium">
+                            Uploading images...
+                        </Text>
+                    </View>
+                )}
 
-            <Button
-                title="Cancel"
-                onPress={() => navigation.goBack()}
-                color="#999"
-            />
+                {/* Property Type */}
+                <View className="mb-4">
+                    <Text className={`text-base font-semibold mb-3 ${textColor}`}>
+                        Property Type <Text className="text-red-500">*</Text>
+                    </Text>
+                    <View className="gap-2">
+                        {propertyTypes.map((type) => (
+                            <TouchableOpacity
+                                key={type.id}
+                                onPress={() => setFormData({ ...formData, propertyTypeId: type.id })}
+                                className={`p-4 rounded-xl border-2 ${formData.propertyTypeId === type.id
+                                        ? 'border-primary bg-primary/10'
+                                        : `border-gray-300 ${cardBg}`
+                                    }`}
+                            >
+                                <Text className={`font-semibold ${formData.propertyTypeId === type.id ? 'text-primary' : textColor
+                                    }`}>
+                                    {type.name}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
 
-            <View style={{ height: 40 }} />
+                {/* Furnished */}
+                <TouchableOpacity
+                    onPress={() => setFormData({ ...formData, furnished: !formData.furnished })}
+                    className={`flex-row items-center p-4 rounded-xl border ${borderColor} mb-6 ${cardBg}`}
+                >
+                    <View className={`w-6 h-6 rounded border-2 mr-3 items-center justify-center ${formData.furnished ? 'bg-primary border-primary' : `border-gray-300 ${cardBg}`
+                        }`}>
+                        {formData.furnished && <Ionicons name="checkmark" size={16} color="white" />}
+                    </View>
+                    <Text className={`text-base ${textColor}`}>Furnished</Text>
+                </TouchableOpacity>
+
+                {/* Submit Button */}
+                <TouchableOpacity
+                    onPress={handleSubmit}
+                    disabled={loading}
+                    activeOpacity={0.8}
+                    className="mb-3"
+                >
+                    <LinearGradient
+                        colors={['#14B8A6', '#0D9488']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        className="py-4 rounded-xl items-center"
+                    >
+                        <Text className="text-white text-lg font-bold">
+                            {loading ? 'Creating...' : 'Create Property'}
+                        </Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    onPress={() => navigation.goBack()}
+                    className={`py-4 rounded-xl items-center border ${borderColor}`}
+                >
+                    <Text className={secondaryTextColor}>Cancel</Text>
+                </TouchableOpacity>
+
+                <View className="h-10" />
+            </View>
         </ScrollView>
     );
 }

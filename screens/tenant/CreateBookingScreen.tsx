@@ -1,60 +1,61 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Alert, ScrollView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../contexts/ThemeContext';
+import { DateRangePicker } from '../../components/booking';
 import { bookingService } from '../../services';
 
 export default function CreateBookingScreen({ route, navigation }: any) {
     const { propertyId, propertyTitle, price } = route.params;
+    const { isDark } = useTheme();
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showDatePicker, setShowDatePicker] = useState(false);
 
-    const validateDates = () => {
-        if (!startDate || !endDate) {
-            Alert.alert('Error', 'Please enter both start and end dates');
-            return false;
-        }
+    const bgColor = isDark ? 'bg-background-dark' : 'bg-background-light';
+    const textColor = isDark ? 'text-text-primary-dark' : 'text-text-primary-light';
+    const cardBg = isDark ? 'bg-card-dark' : 'bg-card-light';
+    const inputBg = isDark ? 'bg-surface-dark' : 'bg-surface-light';
+    const borderColor = isDark ? 'border-gray-700' : 'border-gray-300';
 
-        // Simple date format validation (YYYY-MM-DD)
-        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-        if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
-            Alert.alert('Error', 'Please use format: YYYY-MM-DD (e.g., 2025-01-15)');
-            return false;
-        }
-
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        if (start < today) {
-            Alert.alert('Error', 'Start date cannot be in the past');
-            return false;
-        }
-
-        if (end <= start) {
-            Alert.alert('Error', 'End date must be after start date');
-            return false;
-        }
-
-        return true;
-    };
-
-    const calculateDuration = () => {
+    const calculateNights = () => {
         if (!startDate || !endDate) return 0;
         const start = new Date(startDate);
         const end = new Date(endDate);
-        const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-        return days;
+        const nights = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        return nights;
     };
 
     const calculateTotal = () => {
-        const days = calculateDuration();
-        return days * (price / 30); // Assuming monthly price, calculate daily rate
+        const nights = calculateNights();
+        // Assuming price is monthly, calculate daily rate
+        const dailyRate = price / 30;
+        return nights * dailyRate;
+    };
+
+    const formatDate = (dateString: string) => {
+        if (!dateString) return 'Select date';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+        });
+    };
+
+    const handleDateConfirm = (start: string, end: string) => {
+        setStartDate(start);
+        setEndDate(end);
     };
 
     const handleSubmit = async () => {
-        if (!validateDates()) return;
+        if (!startDate || !endDate) {
+            Alert.alert('Error', 'Please select check-in and check-out dates');
+            return;
+        }
 
         setLoading(true);
         try {
@@ -83,101 +84,155 @@ export default function CreateBookingScreen({ route, navigation }: any) {
     };
 
     return (
-        <ScrollView style={{ flex: 1, padding: 20 }}>
-            <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 10 }}>
-                Book Property
-            </Text>
+        <View className={`flex-1 ${bgColor}`}>
+            <ScrollView>
+                {/* Header */}
+                <View className="px-6 pt-16 pb-6">
+                    <TouchableOpacity
+                        onPress={() => navigation.goBack()}
+                        className="mb-4"
+                    >
+                        <Ionicons name="arrow-back" size={28} color={isDark ? '#FFF' : '#000'} />
+                    </TouchableOpacity>
 
-            {/* Property Info */}
-            <View style={{ padding: 15, backgroundColor: '#f9f9f9', borderRadius: 8, marginBottom: 20 }}>
-                <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 5 }}>
-                    {propertyTitle}
-                </Text>
-                <Text style={{ fontSize: 16, color: '#007AFF', fontWeight: 'bold' }}>
-                    Rp {price.toLocaleString()}/month
-                </Text>
-            </View>
-
-            {/* Date Inputs */}
-            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                Start Date
-            </Text>
-            <TextInput
-                placeholder="YYYY-MM-DD (e.g., 2025-01-15)"
-                value={startDate}
-                onChangeText={setStartDate}
-                style={{
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                    padding: 12,
-                    borderRadius: 8,
-                    marginBottom: 15,
-                }}
-            />
-
-            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                End Date
-            </Text>
-            <TextInput
-                placeholder="YYYY-MM-DD (e.g., 2025-02-15)"
-                value={endDate}
-                onChangeText={setEndDate}
-                style={{
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                    padding: 12,
-                    borderRadius: 8,
-                    marginBottom: 15,
-                }}
-            />
-
-            {/* Duration & Total */}
-            {startDate && endDate && calculateDuration() > 0 && (
-                <View style={{ padding: 15, backgroundColor: '#f0f0f0', borderRadius: 8, marginBottom: 15 }}>
-                    <Text style={{ fontSize: 16, marginBottom: 5 }}>
-                        Duration: {calculateDuration()} days
+                    <Text className={`text-3xl font-bold mb-2 ${textColor}`}>
+                        Request to Book
                     </Text>
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#007AFF' }}>
-                        Total: Rp {calculateTotal().toLocaleString()}
+                    <Text className="text-text-secondary-light dark:text-text-secondary-dark">
+                        {propertyTitle}
                     </Text>
                 </View>
-            )}
 
-            {/* Message to Owner */}
-            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                Message to Owner (Optional)
-            </Text>
-            <TextInput
-                placeholder="Tell the owner about yourself..."
-                value={message}
-                onChangeText={setMessage}
-                multiline
-                numberOfLines={4}
-                style={{
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                    padding: 12,
-                    borderRadius: 8,
-                    marginBottom: 20,
-                    textAlignVertical: 'top',
-                }}
-            />
+                {/* Date Selection */}
+                <View className="px-6 mb-6">
+                    <Text className={`text-lg font-bold mb-3 ${textColor}`}>
+                        📅 Your Trip
+                    </Text>
+
+                    <TouchableOpacity
+                        onPress={() => setShowDatePicker(true)}
+                        className={`${cardBg} rounded-2xl p-4`}
+                    >
+                        <View className="flex-row justify-between items-center mb-3">
+                            <View className="flex-1">
+                                <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm mb-1">
+                                    CHECK-IN
+                                </Text>
+                                <Text className={`text-base font-semibold ${textColor}`}>
+                                    {formatDate(startDate)}
+                                </Text>
+                            </View>
+                            <Ionicons name="arrow-forward" size={20} color="#9CA3AF" />
+                            <View className="flex-1 items-end">
+                                <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm mb-1">
+                                    CHECK-OUT
+                                </Text>
+                                <Text className={`text-base font-semibold ${textColor}`}>
+                                    {formatDate(endDate)}
+                                </Text>
+                            </View>
+                        </View>
+
+                        {startDate && endDate && (
+                            <View className="bg-primary/10 px-3 py-2 rounded-lg">
+                                <Text className="text-primary text-center font-medium">
+                                    {calculateNights()} {calculateNights() === 1 ? 'night' : 'nights'}
+                                </Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+                </View>
+
+                {/* Message */}
+                <View className="px-6 mb-6">
+                    <Text className={`text-lg font-bold mb-3 ${textColor}`}>
+                        💬 Message to Owner (Optional)
+                    </Text>
+                    <TextInput
+                        className={`${inputBg} ${borderColor} border rounded-2xl px-4 py-3 ${textColor}`}
+                        placeholder="Tell the owner about your stay..."
+                        placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
+                        value={message}
+                        onChangeText={setMessage}
+                        multiline
+                        numberOfLines={4}
+                        textAlignVertical="top"
+                    />
+                </View>
+
+                {/* Price Breakdown */}
+                {startDate && endDate && (
+                    <View className="px-6 mb-6">
+                        <Text className={`text-lg font-bold mb-3 ${textColor}`}>
+                            💰 Price Details
+                        </Text>
+                        <View className={`${cardBg} rounded-2xl p-4`}>
+                            <View className="flex-row justify-between mb-3">
+                                <Text className="text-text-secondary-light dark:text-text-secondary-dark">
+                                    MYR {(price / 30).toFixed(2)} x {calculateNights()} nights
+                                </Text>
+                                <Text className={textColor}>
+                                    MYR {calculateTotal().toFixed(2)}
+                                </Text>
+                            </View>
+                            <View className="border-t border-gray-300 dark:border-gray-700 my-3" />
+                            <View className="flex-row justify-between">
+                                <Text className={`text-lg font-bold ${textColor}`}>
+                                    Total
+                                </Text>
+                                <Text className={`text-lg font-bold ${textColor}`}>
+                                    MYR {calculateTotal().toFixed(2)}
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
+                )}
+
+                {/* Info */}
+                <View className="px-6 mb-6">
+                    <View className={`${cardBg} rounded-2xl p-4`}>
+                        <View className="flex-row items-start gap-3">
+                            <Ionicons name="information-circle" size={24} color="#14B8A6" />
+                            <View className="flex-1">
+                                <Text className={`font-semibold mb-1 ${textColor}`}>
+                                    Your booking request
+                                </Text>
+                                <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm">
+                                    The owner will review your request and respond within 24 hours. You won't be charged until your request is approved.
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
+                </View>
+            </ScrollView>
 
             {/* Submit Button */}
-            <Button
-                title={loading ? 'Submitting...' : 'Submit Booking Request'}
-                onPress={handleSubmit}
-                disabled={loading}
-                color="#34C759"
-            />
+            <View className={`${cardBg} px-6 py-4`}>
+                <TouchableOpacity
+                    onPress={handleSubmit}
+                    disabled={loading || !startDate || !endDate}
+                    className={`py-4 rounded-xl ${loading || !startDate || !endDate ? 'bg-gray-400' : 'bg-primary'
+                        }`}
+                >
+                    {loading ? (
+                        <ActivityIndicator color="#FFFFFF" />
+                    ) : (
+                        <Text className="text-white text-center font-bold text-base">
+                            Request to Book
+                        </Text>
+                    )}
+                </TouchableOpacity>
+            </View>
 
-            <View style={{ height: 20 }} />
-
-            <Button
-                title="Cancel"
-                onPress={() => navigation.goBack()}
-                color="#999"
+            {/* Date Range Picker Modal */}
+            <DateRangePicker
+                visible={showDatePicker}
+                onClose={() => setShowDatePicker(false)}
+                onConfirm={handleDateConfirm}
+                minDate={new Date().toISOString().split('T')[0]}
+                initialStartDate={startDate}
+                initialEndDate={endDate}
             />
-        </ScrollView>
+        </View>
     );
 }

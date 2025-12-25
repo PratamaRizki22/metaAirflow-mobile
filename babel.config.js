@@ -2,7 +2,7 @@ module.exports = function (api) {
   api.cache(true);
   let plugins = [];
 
-  plugins.push('react-native-worklets/plugin');
+  // Dotenv plugin for environment variables
   plugins.push([
     'module:react-native-dotenv',
     {
@@ -13,9 +13,12 @@ module.exports = function (api) {
     },
   ]);
 
+  // IMPORTANT: react-native-reanimated plugin must be last!
+  // This handles both reanimated and gesture-handler
+  plugins.push('react-native-reanimated/plugin');
+
   return {
     presets: [['babel-preset-expo', { jsxImportSource: 'nativewind' }], 'nativewind/babel'],
-
     plugins,
   };
 };

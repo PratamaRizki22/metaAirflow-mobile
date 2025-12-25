@@ -5,10 +5,11 @@ import { NavigationContainer } from '@react-navigation/native';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { OnboardingProvider, useOnboarding } from './contexts/OnboardingContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { ModeProvider } from './contexts/ModeContext';
 import { SplashScreen, WelcomeSplash } from './screens/splash';
 import { PreferenceScreen } from './screens/preferences';
 import { OnboardingScreen } from './screens/onboarding';
-import { MainTabNavigator } from './navigation/MainTabNavigator';
+import { RootNavigator } from './navigation/RootNavigator';
 
 import './global.css';
 
@@ -81,7 +82,7 @@ function AppContent() {
     <>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <NavigationContainer>
-        <MainTabNavigator />
+        <RootNavigator />
       </NavigationContainer>
     </>
   );
@@ -99,9 +100,11 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <OnboardingProvider>
-          <AppContent />
-        </OnboardingProvider>
+        <ModeProvider>
+          <OnboardingProvider>
+            <AppContent />
+          </OnboardingProvider>
+        </ModeProvider>
       </AuthProvider>
     </ThemeProvider>
   );

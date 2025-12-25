@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { propertyService } from '../../services';
+import { useThemeColors } from '../../hooks';
+import { LoadingState, EmptyState } from '../../components/common';
 
 export default function ManagePropertiesScreen({ navigation }: any) {
+    const { bgColor, cardBg, textColor, secondaryTextColor, borderColor } = useThemeColors();
     const [properties, setProperties] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -45,135 +50,122 @@ export default function ManagePropertiesScreen({ navigation }: any) {
         );
     };
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'ACTIVE': return '#34C759';
-            case 'PENDING_REVIEW': return '#FF9500';
-            case 'INACTIVE': return '#999';
-            case 'REJECTED': return '#FF3B30';
-            default: return '#666';
-        }
+    const getStatusBadge = (status: string) => {
+        const statusConfig: Record<string, { bg: string; text: string }> = {
+            'ACTIVE': { bg: 'bg-green-500', text: 'Active' },
+            'PENDING_REVIEW': { bg: 'bg-yellow-500', text: 'Pending' },
+            'INACTIVE': { bg: 'bg-gray-500', text: 'Inactive' },
+            'REJECTED': { bg: 'bg-red-500', text: 'Rejected' },
+        };
+
+        const config = statusConfig[status] || { bg: 'bg-gray-500', text: status };
+
+        return (
+            <View className={`${config.bg} px-2 py-1 rounded`}>
+                <Text className="text-white text-xs font-bold">{config.text}</Text>
+            </View>
+        );
     };
 
     if (loading) {
-        return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size="large" />
-            </View>
-        );
+        return <LoadingState message="Loading your properties..." />;
     }
 
     return (
-        <View style={{ flex: 1, padding: 20 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
-                <Text style={{ fontSize: 24, fontWeight: 'bold' }}>
+        <View className={`flex-1 ${bgColor}`}>
+            {/* Header */}
+            <View className="flex-row justify-between items-center px-6 py-4">
+                <Text className={`text-3xl font-bold ${textColor}`}>
                     My Properties
                 </Text>
                 <TouchableOpacity
                     onPress={() => navigation.navigate('CreateProperty')}
-                    style={{
-                        backgroundColor: '#007AFF',
-                        paddingHorizontal: 15,
-                        paddingVertical: 8,
-                        borderRadius: 8,
-                    }}
+                    className="bg-primary px-4 py-2 rounded-xl flex-row items-center"
                 >
-                    <Text style={{ color: 'white', fontWeight: 'bold' }}>+ Add</Text>
+                    <Ionicons name="add" size={20} color="white" />
+                    <Text className="text-white font-semibold ml-1">Add</Text>
                 </TouchableOpacity>
             </View>
 
             <FlatList
                 data={properties}
                 keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <View
-                        style={{
-                            padding: 15,
-                            backgroundColor: '#f9f9f9',
-                            marginBottom: 10,
-                            borderRadius: 8,
-                        }}
+                contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 20 }}
+                renderItem={({ item, index }) => (
+                    <Animated.View
+                        entering={FadeInDown.delay(index * 100)}
+                        className={`${cardBg} p-4 rounded-2xl mb-3 border ${borderColor}`}
                     >
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-                            <Text style={{ fontSize: 18, fontWeight: 'bold', flex: 1 }}>
+                        {/* Title & Status */}
+                        <View className="flex-row justify-between items-start mb-2">
+                            <Text className={`text-lg font-bold flex-1 mr-2 ${textColor}`}>
                                 {item.title}
                             </Text>
-                            <View style={{
-                                paddingHorizontal: 8,
-                                paddingVertical: 4,
-                                borderRadius: 4,
-                                backgroundColor: getStatusColor(item.status),
-                            }}>
-                                <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>
-                                    {item.status}
-                                </Text>
+                            {getStatusBadge(item.status)}
+                        </View>
+
+                        {/* Location */}
+                        <View className="flex-row items-center mb-2">
+                            <Ionicons name="location-outline" size={16} color="#9CA3AF" />
+                            <Text className={`ml-1 ${secondaryTextColor}`}>
+                                {item.city}, {item.state}
+                            </Text>
+                        </View>
+
+                        {/* Price */}
+                        <Text className="text-xl font-bold text-primary mb-2">
+                            MYR {item.price.toLocaleString()}/month
+                        </Text>
+
+                        {/* Property Info */}
+                        <View className="flex-row items-center mb-4">
+                            <View className="flex-row items-center mr-4">
+                                <Ionicons name="bed-outline" size={16} color="#9CA3AF" />
+                                <Text className={`ml-1 ${secondaryTextColor}`}>{item.bedrooms}</Text>
+                            </View>
+                            <View className="flex-row items-center mr-4">
+                                <Ionicons name="water-outline" size={16} color="#9CA3AF" />
+                                <Text className={`ml-1 ${secondaryTextColor}`}>{item.bathrooms}</Text>
+                            </View>
+                            <View className="flex-row items-center">
+                                <Ionicons name="resize-outline" size={16} color="#9CA3AF" />
+                                <Text className={`ml-1 ${secondaryTextColor}`}>{item.areaSqm} m²</Text>
                             </View>
                         </View>
 
-                        <Text style={{ color: '#666', marginBottom: 5 }}>
-                            {item.city}, {item.state}
-                        </Text>
-
-                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007AFF', marginBottom: 5 }}>
-                            Rp {item.price.toLocaleString()}/month
-                        </Text>
-
-                        <Text style={{ color: '#666', marginBottom: 10 }}>
-                            {item.bedrooms} beds • {item.bathrooms} baths • {item.areaSqm} m²
-                        </Text>
-
                         {/* Action Buttons */}
-                        <View style={{ flexDirection: 'row' }}>
+                        <View className="flex-row gap-2">
                             <TouchableOpacity
                                 onPress={() => navigation.navigate('PropertyDetail', { propertyId: item.id })}
-                                style={{
-                                    flex: 1,
-                                    padding: 10,
-                                    backgroundColor: '#007AFF',
-                                    borderRadius: 8,
-                                    marginRight: 5,
-                                }}
+                                className="flex-1 bg-blue-500 py-3 rounded-xl"
                             >
-                                <Text style={{ color: 'white', textAlign: 'center', fontWeight: 'bold' }}>
-                                    View
-                                </Text>
+                                <Text className="text-white text-center font-semibold">View</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={() => navigation.navigate('EditProperty', { propertyId: item.id })}
+                                className="flex-1 bg-green-500 py-3 rounded-xl"
+                            >
+                                <Text className="text-white text-center font-semibold">Edit</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
                                 onPress={() => handleDeleteProperty(item.id, item.title)}
-                                style={{
-                                    flex: 1,
-                                    padding: 10,
-                                    backgroundColor: '#FF3B30',
-                                    borderRadius: 8,
-                                }}
+                                className="flex-1 bg-red-500 py-3 rounded-xl"
                             >
-                                <Text style={{ color: 'white', textAlign: 'center', fontWeight: 'bold' }}>
-                                    Delete
-                                </Text>
+                                <Text className="text-white text-center font-semibold">Delete</Text>
                             </TouchableOpacity>
                         </View>
-                    </View>
+                    </Animated.View>
                 )}
                 ListEmptyComponent={
-                    <View style={{ alignItems: 'center', marginTop: 40 }}>
-                        <Text style={{ fontSize: 18, color: '#999', marginBottom: 15 }}>
-                            No properties yet
-                        </Text>
-                        <TouchableOpacity
-                            onPress={() => navigation.navigate('CreateProperty')}
-                            style={{
-                                backgroundColor: '#007AFF',
-                                paddingHorizontal: 20,
-                                paddingVertical: 12,
-                                borderRadius: 8,
-                            }}
-                        >
-                            <Text style={{ color: 'white', fontWeight: 'bold' }}>
-                                Add Your First Property
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
+                    <EmptyState
+                        icon="home-outline"
+                        title="No Properties Yet"
+                        message="Start by adding your first property to rent out"
+                        actionLabel="Add Your First Property"
+                        onAction={() => navigation.navigate('CreateProperty')}
+                    />
                 }
             />
         </View>

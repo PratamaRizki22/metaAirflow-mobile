@@ -259,7 +259,7 @@ class PropertyService {
     async getMyProperties(page: number = 1, limit: number = 10): Promise<PropertiesResponse> {
         try {
             const response = await api.get<PropertiesResponse>(
-                `/v1/m/users/properties?page=${page}&limit=${limit}`
+                `/v1/properties/my-properties?page=${page}&limit=${limit}`
             );
             return response.data;
         } catch (error: any) {

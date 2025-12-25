@@ -104,7 +104,8 @@ export default function MyTripsScreen({ navigation }: any) {
                 data={bookings}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                    <View
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('BookingDetail', { bookingId: item.id })}
                         style={{
                             padding: 15,
                             backgroundColor: '#f9f9f9',
@@ -154,7 +155,7 @@ export default function MyTripsScreen({ navigation }: any) {
                                 </Text>
                             </TouchableOpacity>
                         )}
-                    </View>
+                    </TouchableOpacity>
                 )}
                 ListEmptyComponent={
                     <Text style={{ textAlign: 'center', color: '#999', marginTop: 20 }}>

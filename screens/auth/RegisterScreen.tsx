@@ -15,6 +15,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { GOOGLE_WEB_CLIENT_ID } from '@env';
 import authService from '../../services/authService';
+import { useThemeColors } from '../../hooks';
 
 interface RegisterScreenProps {
     onRegisterSuccess: () => void;
@@ -22,7 +23,6 @@ interface RegisterScreenProps {
 }
 
 export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: RegisterScreenProps) {
-    const { isDark } = useTheme();
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
@@ -129,11 +129,8 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
         }
     };
 
-    const bgColor = isDark ? 'bg-background-dark' : 'bg-background-light';
-    const textColor = isDark ? 'text-text-primary-dark' : 'text-text-primary-light';
-    const secondaryTextColor = isDark ? 'text-text-secondary-dark' : 'text-text-secondary-light';
+    const { bgColor, textColor, secondaryTextColor, borderColor, isDark } = useThemeColors();
     const inputBg = isDark ? 'bg-surface-dark' : 'bg-surface-light';
-    const borderColor = isDark ? 'border-border-dark' : 'border-border-light';
 
     return (
         <KeyboardAvoidingView
@@ -150,7 +147,7 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
                             Create Account
                         </Text>
                         <Text className={`text-base ${secondaryTextColor}`}>
-                            Sign up to get started with MetaAirflow
+                            Sign up to get started with Rentverse
                         </Text>
                     </View>
 

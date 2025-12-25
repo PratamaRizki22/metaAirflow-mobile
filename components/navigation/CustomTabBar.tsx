@@ -7,7 +7,7 @@ import Animated, {
     withSpring,
 } from 'react-native-reanimated';
 import { useTheme } from '../../contexts/ThemeContext';
-import { HomeIcon, SearchIcon, FavoritesIcon, ProfileIcon, AddIcon } from './TabIcons';
+import { HomeIcon, MessagesIcon, FavoritesIcon, ProfileIcon, AddIcon } from './TabIcons';
 
 const { width } = Dimensions.get('window');
 
@@ -47,7 +47,7 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
         }
 
         // Calculate the actual position based on the current tab index
-        // Layout: [Home=0] [Search=1] [Add=2] [Favorites=3] [Profile=4]
+        // Layout: [Home=0] [Messages=1] [Add=2] [Favorites=3] [Profile=4]
         // Each tab occupies actualTabWidth, indicator aligns with the tab
         // Start from the tab position + offset to center it
         const targetPosition = state.index * actualTabWidth + indicatorOffset;
@@ -77,8 +77,8 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
         switch (routeName) {
             case 'Home':
                 return <HomeIcon {...iconProps} />;
-            case 'Search':
-                return <SearchIcon {...iconProps} />;
+            case 'Messages':
+                return <MessagesIcon {...iconProps} />;
             case 'Add':
                 return <AddIcon width={32} height={32} color="#FFFFFF" />;
             case 'Favorites':

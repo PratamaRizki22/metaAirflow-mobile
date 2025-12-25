@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "metaairflow",
-    "slug": "metaairflow",
+    "name": "Rentverse",
+    "slug": "rentverse",
     "version": "1.0.0",
     "web": {
       "favicon": "./assets/favicon.png"
@@ -23,14 +23,14 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.pratamarizki22.metaairflow"
+      "bundleIdentifier": "com.pratamarizki22.rentverse"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.pratamarizki22.metaairflow"
+      "package": "com.pratamarizki22.rentverse"
     },
     "extra": {
       "eas": {

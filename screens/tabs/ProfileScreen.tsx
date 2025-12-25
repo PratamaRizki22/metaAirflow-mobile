@@ -3,8 +3,10 @@ import { View, Text, ScrollView, TouchableOpacity, Modal, ViewStyle } from 'reac
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useMode } from '../../contexts/ModeContext';
 import { RegisterScreen } from '../auth/RegisterScreen';
 import { LoginScreen } from '../auth/LoginScreen';
+import { useThemeColors } from '../../hooks';
 
 type Language = 'id' | 'en';
 type ThemeOption = 'light' | 'dark' | 'system';
@@ -26,8 +28,9 @@ const RadioButton = ({ selected }: { selected: boolean }) => (
 );
 
 export function ProfileScreen({ navigation }: any) {
-    const { isDark, theme, setTheme } = useTheme();
+    const { theme, setTheme } = useTheme();
     const { user, isLoggedIn, logout } = useAuth();
+    const { mode, switchMode, canSwitchMode, isLandlordMode, isTenantMode } = useMode();
     const [selectedLanguage, setSelectedLanguage] = useState<Language>('id');
     const [showLanguageModal, setShowLanguageModal] = useState(false);
     const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -38,14 +41,14 @@ export function ProfileScreen({ navigation }: any) {
         { code: 'en' as Language, name: 'English', flag: '🇬🇧' },
     ];
 
+    const { bgColor, textColor, isDark } = useThemeColors();
+
     const getColor = (lightColor: string, darkColor: string) => {
         if (theme === 'light') return lightColor;
         if (theme === 'dark') return darkColor;
         return isDark ? darkColor : lightColor;
     };
 
-    const bgColor = isDark ? 'bg-background-dark' : 'bg-background-light';
-    const textColor = isDark ? 'text-text-primary-dark' : 'text-text-primary-light';
     const surfaceColor = getColor('#FFFFFF', '#1E293B');
     const textPrimaryColor = getColor('#1F2937', '#F1F5F9');
     const textSecondaryColor = getColor('#6B7280', '#CBD5E1');
@@ -88,9 +91,21 @@ export function ProfileScreen({ navigation }: any) {
                                         </Text>
                                     </View>
                                 </View>
+
+                                {/* Edit Profile Button */}
+                                <TouchableOpacity
+                                    onPress={() => navigation.navigate('EditProfile')}
+                                    className="bg-primary rounded-xl py-3 mb-2"
+                                >
+                                    <Text className="text-white text-center font-semibold">
+                                        Edit Profile
+                                    </Text>
+                                </TouchableOpacity>
+
+                                {/* Logout Button */}
                                 <TouchableOpacity
                                     onPress={logout}
-                                    className="bg-error-light rounded-xl py-3 mt-2"
+                                    className="bg-error-light rounded-xl py-3"
                                 >
                                     <Text className="text-white text-center font-semibold">
                                         Logout
@@ -162,9 +177,20 @@ export function ProfileScreen({ navigation }: any) {
                         <Text className={`text-lg font-semibold mb-3 ${textColor}`}>
                             Hosting
                         </Text>
+
+                        {/* Current Mode Indicator */}
+                        <View className="mb-3 p-3 rounded-xl" style={{ backgroundColor: isDark ? '#1F2937' : '#F3F4F6' }}>
+                            <Text className="text-sm" style={{ color: textSecondaryColor }}>
+                                Mode Saat Ini: <Text className="font-semibold" style={{ color: textPrimaryColor }}>
+                                    {isTenantMode ? '🏠 Tenant' : '🏢 Landlord'}
+                                </Text>
+                            </Text>
+                        </View>
+
+                        {/* Dashboard Link */}
                         <TouchableOpacity
                             onPress={() => (navigation as any).navigate('HostingDashboard')}
-                            className="flex-row items-center justify-between p-4 rounded-2xl"
+                            className="flex-row items-center justify-between p-4 rounded-2xl mb-3"
                             style={{ backgroundColor: surfaceColor, ...CARD_STYLE }}
                         >
                             <View className="flex-row items-center">
@@ -174,6 +200,48 @@ export function ProfileScreen({ navigation }: any) {
                                 </Text>
                             </View>
                             <Ionicons name="chevron-forward" size={20} color={textSecondaryColor} />
+                        </TouchableOpacity>
+
+                        {/* Switch Mode Button */}
+                        <TouchableOpacity
+                            onPress={async () => {
+                                await switchMode();
+                                // Navigate based on new mode
+                                if (isTenantMode) {
+                                    // Switching to landlord mode
+                                    (navigation as any).navigate('HostingDashboard');
+                                } else {
+                                    // Switching to tenant mode
+                                    (navigation as any).navigate('Home');
+                                }
+                            }}
+                            className="p-4 rounded-2xl"
+                            style={{
+                                backgroundColor: isDark ? '#1E40AF' : '#3B82F6',
+                                ...CARD_STYLE
+                            }}
+                        >
+                            <View className="flex-row items-center justify-between">
+                                <View className="flex-1">
+                                    <View className="flex-row items-center mb-1">
+                                        <Ionicons
+                                            name="swap-horizontal"
+                                            size={22}
+                                            color="#FFFFFF"
+                                            style={{ marginRight: 12 }}
+                                        />
+                                        <Text className="text-white text-base font-semibold">
+                                            Beralih ke Mode {isTenantMode ? 'Landlord' : 'Tenant'}
+                                        </Text>
+                                    </View>
+                                    <Text className="text-white/80 text-sm ml-8">
+                                        {isTenantMode
+                                            ? 'Kelola properti yang Anda sewakan'
+                                            : 'Cari properti untuk disewa'}
+                                    </Text>
+                                </View>
+                                <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+                            </View>
                         </TouchableOpacity>
                     </View>
                 )}

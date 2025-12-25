@@ -1,10 +1,9 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from '@env';
 
-// Base URL - sesuaikan dengan backend Anda
-const BASE_URL = __DEV__
-    ? 'http://localhost:3000/api' // Development - Rentverse backend
-    : 'https://your-production-domain.com/api'; // Production
+// Base URL - menggunakan environment variable
+const BASE_URL = API_BASE_URL || 'http://192.168.1.14:3000/api';
 
 // Create axios instance
 const api = axios.create({
