@@ -5,6 +5,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { propertyService, amenityService } from '../../services';
 import { PropertyCard } from '../../components/property';
 import { useThemeColors } from '../../hooks';
+import { DEFAULT_IMAGES } from '../../constants/images';
 
 export function SearchScreen({ navigation }: any) {
     const { isDark } = useTheme();
@@ -94,7 +95,7 @@ export function SearchScreen({ navigation }: any) {
                     bedrooms: item.bedrooms,
                     bathrooms: item.bathrooms,
                     area: item.areaSqm,
-                    image: item.images?.[0] || 'https://via.placeholder.com/400x300',
+                    image: item.images?.[0] || DEFAULT_IMAGES.PROPERTY,
                     type: item.propertyType?.name?.toLowerCase() || 'house',
                 }}
                 onPress={() => handlePropertyPress(item.id)}

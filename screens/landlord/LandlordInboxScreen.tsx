@@ -1,13 +1,10 @@
 import React from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useThemeColors } from '../../hooks';
 
 export function LandlordInboxScreen() {
-    const { isDark } = useTheme();
-
-    const bgColor = isDark ? 'bg-background-dark' : 'bg-background-light';
-    const textColor = isDark ? 'text-text-primary-dark' : 'text-text-primary-light';
+    const { bgColor, textColor, isDark } = useThemeColors();
     const cardBg = isDark ? 'bg-card-dark' : 'bg-card-light';
 
     return (
@@ -32,13 +29,6 @@ export function LandlordInboxScreen() {
                     </Text>
                     <Text className="text-text-secondary-light dark:text-text-secondary-dark mt-2 text-center">
                         Pesan dari tenant akan muncul di sini
-                    </Text>
-                </View>
-
-                {/* Coming Soon Badge */}
-                <View className="mt-6 bg-blue-500/10 p-4 rounded-xl">
-                    <Text className="text-blue-600 dark:text-blue-400 text-center font-medium">
-                        💬 Fitur messaging akan segera hadir
                     </Text>
                 </View>
             </View>

@@ -2,17 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useThemeColors } from '../../hooks';
 import { bookingService } from '../../services';
 
 export function LandlordBookingsScreen({ navigation }: any) {
-    const { isDark } = useTheme();
     const [loading, setLoading] = useState(true);
     const [bookings, setBookings] = useState<any[]>([]);
     const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
 
-    const bgColor = isDark ? 'bg-background-dark' : 'bg-background-light';
-    const textColor = isDark ? 'text-text-primary-dark' : 'text-text-primary-light';
-    const cardBg = isDark ? 'bg-card-dark' : 'bg-card-light';
+    const { bgColor, textColor, cardBg, isDark } = useThemeColors();
 
     useEffect(() => {
         loadBookings();

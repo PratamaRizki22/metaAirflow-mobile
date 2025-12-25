@@ -23,6 +23,7 @@ import {
     BathroomsFilterSheet,
     PropertyTypeFilterSheet,
 } from '../../components/search';
+import { DEFAULT_IMAGES } from '../../constants/images';
 import { PropertyCardSkeleton } from '../../components/common/Skeleton';
 import { useDebounce, useThemeColors } from '../../hooks';
 import { propertyService, propertyTypeService } from '../../services';
@@ -200,7 +201,7 @@ export function HomeScreen({ navigation }: any) {
                     bedrooms: item.bedrooms,
                     bathrooms: item.bathrooms,
                     area: item.areaSqm,
-                    image: item.images?.[0] || 'https://via.placeholder.com/400x300',
+                    image: item.images?.[0] || DEFAULT_IMAGES.PROPERTY,
                     type: item.propertyType?.name?.toLowerCase() || 'house',
                 }}
                 onPress={() => handlePropertyPress(item.id)}
@@ -540,7 +541,7 @@ export function HomeScreen({ navigation }: any) {
                                         bedrooms: property.bedrooms,
                                         bathrooms: property.bathrooms,
                                         area: property.areaSqm,
-                                        image: property.images?.[0] || 'https://via.placeholder.com/400x300',
+                                        image: property.images?.[0] || DEFAULT_IMAGES.PROPERTY,
                                         type: property.propertyType?.name?.toLowerCase() || 'house',
                                         isFeatured: true,
                                     }}

@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { messageService, Message as ServiceMessage } from '../../services';
 import {
     validateMessage,
     canSendMessage,
@@ -66,16 +67,21 @@ export default function ChatDetailScreen({ route, navigation }: any) {
     const loadMessages = async () => {
         try {
             setLoading(true);
-            // TODO: Fetch from API
-            // const response = await messageService.getMessages(conversationId);
-            // setMessages(response.data.messages);
-            // setSentMessagesCount(response.data.sentCount);
-
-            // Mock data
+            const response = await messageService.getMessages(conversationId);
+            // Convert service messages to local format
+            const localMessages: Message[] = response.data.messages.map((msg: ServiceMessage) => ({
+                id: msg.id,
+                senderId: msg.senderId,
+                text: msg.content,
+                timestamp: msg.createdAt,
+            }));
+            setMessages(localMessages);
+            setSentMessagesCount(response.data.sentCount);
+        } catch (error: any) {
+            console.error('Error loading messages:', error);
+            // Fallback to empty state
             setMessages([]);
             setSentMessagesCount(0);
-        } catch (error) {
-            console.error('Error loading messages:', error);
         } finally {
             setLoading(false);
         }
@@ -145,22 +151,12 @@ export default function ChatDetailScreen({ route, navigation }: any) {
     const sendMessage = async (text: string) => {
         try {
             setSending(true);
-
-            // TODO: Send to API
-            // await messageService.sendMessage(conversationId, text);
-
-            // Optimistic update
-            const newMessage: Message = {
-                id: Date.now().toString(),
-                senderId: user!.id,
-                text,
-                timestamp: new Date().toISOString(),
-            };
-
-            setMessages(prev => [...prev, newMessage]);
+            await messageService.sendMessage(conversationId, text);
+            
+            // Reload messages to get the new one
+            await loadMessages();
             setInputText('');
-            setSentMessagesCount(prev => prev + 1);
-
+            
             // Scroll to bottom
             setTimeout(() => {
                 flatListRef.current?.scrollToEnd({ animated: true });

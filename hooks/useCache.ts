@@ -37,15 +37,13 @@ export function useCache<T>(
 
                 // Check if cache is still valid
                 if (now - parsedCache.timestamp < ttl) {
-                    console.log(`[Cache] Hit for key: ${key}`);
                     return parsedCache.data;
                 } else {
-                    console.log(`[Cache] Expired for key: ${key}`);
                     await AsyncStorage.removeItem(`cache_${key}`);
                 }
             }
         } catch (err) {
-            console.error('[Cache] Error reading cache:', err);
+            // Silent fail for cache errors
         }
         return null;
     };
@@ -57,9 +55,8 @@ export function useCache<T>(
                 timestamp: Date.now(),
             };
             await AsyncStorage.setItem(`cache_${key}`, JSON.stringify(cacheData));
-            console.log(`[Cache] Saved for key: ${key}`);
         } catch (err) {
-            console.error('[Cache] Error saving cache:', err);
+            // Silent fail for cache errors
         }
     };
 

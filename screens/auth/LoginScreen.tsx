@@ -16,6 +16,8 @@ import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-si
 import { GOOGLE_WEB_CLIENT_ID } from '@env';
 import authService from '../../services/authService';
 import { useThemeColors } from '../../hooks';
+import { useToast } from '../../hooks/useToast';
+import { Toast } from '../../components/common';
 
 interface LoginScreenProps {
     onLoginSuccess: () => void;
@@ -29,6 +31,7 @@ export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScree
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [fieldErrors, setFieldErrors] = useState<{[key: string]: boolean}>({});
+    const { toast, showToast, hideToast } = useToast();
 
     const handleLogin = async () => {
         setError('');
@@ -46,7 +49,7 @@ export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScree
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-            setError('Please enter a valid email address');
+            showToast('Please enter a valid email address', 'error');
             return;
         }
 
@@ -56,19 +59,13 @@ export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScree
             const response = await authService.login({ email, password });
 
             if (response.success) {
-                Alert.alert(
-                    'Success',
-                    'Login successful!',
-                    [
-                        {
-                            text: 'OK',
-                            onPress: onLoginSuccess,
-                        },
-                    ]
-                );
+                showToast('Login successful!', 'success');
+                setTimeout(() => {
+                    onLoginSuccess();
+                }, 1000);
             }
         } catch (err: any) {
-            setError(err.message || 'Login failed. Please try again.');
+            showToast(err.message || 'Login failed. Please try again.', 'error');
         } finally {
             setIsLoading(false);
         }
@@ -93,13 +90,13 @@ export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScree
             }
         } catch (error: any) {
             if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-                setError('Sign in was cancelled');
+                showToast('Sign in was cancelled', 'info');
             } else if (error.code === statusCodes.IN_PROGRESS) {
-                setError('Sign in is already in progress');
+                showToast('Sign in is already in progress', 'warning');
             } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-                setError('Play services not available');
+                showToast('Play services not available', 'error');
             } else {
-                setError(error.message || 'Google Sign-In failed');
+                showToast(error.message || 'Google Sign-In failed', 'error');
             }
             console.error('Google Sign-In Error:', error);
         } finally {
@@ -233,6 +230,12 @@ export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScree
                     </View>
                 </View>
             </ScrollView>
+            <Toast
+                visible={toast.visible}
+                message={toast.message}
+                type={toast.type}
+                onHide={hideToast}
+            />
         </KeyboardAvoidingView>
     );
 }

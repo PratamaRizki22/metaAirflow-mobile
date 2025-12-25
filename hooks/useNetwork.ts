@@ -12,10 +12,6 @@ export function useNetwork() {
     useEffect(() => {
         // Subscribe to network state updates
         const unsubscribe = NetInfo.addEventListener(state => {
-            console.log('[Network] Connection type:', state.type);
-            console.log('[Network] Is connected?', state.isConnected);
-            console.log('[Network] Is internet reachable?', state.isInternetReachable);
-
             setIsConnected(state.isConnected);
             setIsInternetReachable(state.isInternetReachable);
         });

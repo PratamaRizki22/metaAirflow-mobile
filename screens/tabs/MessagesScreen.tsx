@@ -5,6 +5,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { LoginPrompt } from '../../components/auth';
 import { useThemeColors } from '../../hooks';
+import { messageService, Conversation as ServiceConversation } from '../../services';
 
 interface Conversation {
     id: string;
@@ -38,14 +39,26 @@ export function MessagesScreen({ navigation }: any) {
     const loadConversations = async () => {
         try {
             setLoading(true);
-            // TODO: Fetch from API
-            // const response = await messageService.getConversations();
-            // setConversations(response.data);
-
-            // Mock data for now
-            setConversations([]);
-        } catch (error) {
+            const response = await messageService.getConversations();
+            // Convert service conversations to local format
+            const localConversations: Conversation[] = response.data.map((conv: ServiceConversation) => ({
+                id: conv.id,
+                propertyId: conv.propertyId,
+                propertyTitle: 'Property', // TODO: Get from property service
+                propertyImage: undefined,
+                otherUserId: conv.tenantId,
+                otherUserName: 'User', // TODO: Get from user service
+                lastMessage: conv.lastMessage?.content || '',
+                timestamp: conv.updatedAt,
+                unreadCount: conv.unreadCount,
+                unread: conv.unreadCount > 0,
+                hasActiveBooking: true, // TODO: Check from booking service
+            }));
+            setConversations(localConversations);
+        } catch (error: any) {
             console.error('Error loading conversations:', error);
+            // Fallback to empty state
+            setConversations([]);
         } finally {
             setLoading(false);
         }

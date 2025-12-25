@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, ScrollView, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import MapLibreGL from '@maplibre/maplibre-react-native';
+import { MAPTILER_API_KEY } from '@env';
 import { propertyService } from '../../services';
 
 export default function EditPropertyScreen({ route, navigation }: any) {

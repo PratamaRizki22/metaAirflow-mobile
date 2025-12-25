@@ -3,9 +3,12 @@ import { View, Text, TextInput, ScrollView, Alert, TouchableOpacity, Image } fro
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import MapLibreGL from '@maplibre/maplibre-react-native';
+import { MAPTILER_API_KEY } from '@env';
 import { propertyService, uploadService, propertyTypeService } from '../../services';
 import { useThemeColors } from '../../hooks';
-import { LoadingState } from '../../components/common';
+import { useToast } from '../../hooks/useToast';
+import { LoadingState, Toast } from '../../components/common';
 
 export default function CreatePropertyScreen({ navigation }: any) {
     const { bgColor, cardBg, textColor, secondaryTextColor, borderColor, isDark } = useThemeColors();
@@ -24,12 +27,19 @@ export default function CreatePropertyScreen({ navigation }: any) {
         areaSqm: '',
         furnished: false,
         propertyTypeId: '',
+        latitude: 3.1390,
+        longitude: 101.6869,
     });
     const [propertyTypes, setPropertyTypes] = useState<any[]>([]);
     const [selectedImages, setSelectedImages] = useState<string[]>([]);
     const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
     const [uploadingImages, setUploadingImages] = useState(false);
+    const [showMap, setShowMap] = useState(false);
+    const { toast, showToast, hideToast } = useToast();
+
+    // Configure MapLibre
+    MapLibreGL.setAccessToken(null);
 
     useEffect(() => {
         loadPropertyTypes();
@@ -73,6 +83,19 @@ export default function CreatePropertyScreen({ navigation }: any) {
         setSelectedImages(newImages);
     };
 
+    const handleMapPress = (feature: any) => {
+        const coordinates = feature.geometry.coordinates;
+        setFormData(prev => ({
+            ...prev,
+            longitude: coordinates[0],
+            latitude: coordinates[1],
+        }));
+        showToast(
+            `Location updated: ${coordinates[1].toFixed(4)}, ${coordinates[0].toFixed(4)}`,
+            'success'
+        );
+    };
+
     const uploadImages = async () => {
         if (selectedImages.length === 0) return [];
 
@@ -95,7 +118,7 @@ export default function CreatePropertyScreen({ navigation }: any) {
 
             return [];
         } catch (error: any) {
-            Alert.alert('Upload Error', error.message || 'Failed to upload images');
+            showToast(error.message || 'Failed to upload images', 'error');
             return [];
         } finally {
             setUploadingImages(false);
@@ -104,35 +127,35 @@ export default function CreatePropertyScreen({ navigation }: any) {
 
     const validateForm = () => {
         if (!formData.title.trim()) {
-            Alert.alert('Error', 'Please enter property title');
+            showToast('Please enter property title', 'error');
             return false;
         }
         if (!formData.description.trim()) {
-            Alert.alert('Error', 'Please enter description');
+            showToast('Please enter description', 'error');
             return false;
         }
         if (!formData.address.trim() || !formData.city.trim() || !formData.state.trim()) {
-            Alert.alert('Error', 'Please enter complete address');
+            showToast('Please enter complete address', 'error');
             return false;
         }
         if (!formData.price || parseFloat(formData.price) <= 0) {
-            Alert.alert('Error', 'Please enter valid price');
+            showToast('Please enter valid price', 'error');
             return false;
         }
         if (!formData.bedrooms || parseInt(formData.bedrooms) <= 0) {
-            Alert.alert('Error', 'Please enter number of bedrooms');
+            showToast('Please enter number of bedrooms', 'error');
             return false;
         }
         if (!formData.bathrooms || parseInt(formData.bathrooms) <= 0) {
-            Alert.alert('Error', 'Please enter number of bathrooms');
+            showToast('Please enter number of bathrooms', 'error');
             return false;
         }
         if (!formData.areaSqm || parseFloat(formData.areaSqm) <= 0) {
-            Alert.alert('Error', 'Please enter property area');
+            showToast('Please enter property area', 'error');
             return false;
         }
         if (!formData.propertyTypeId) {
-            Alert.alert('Error', 'Please select property type');
+            showToast('Please select property type', 'error');
             return false;
         }
         return true;
@@ -157,7 +180,7 @@ export default function CreatePropertyScreen({ navigation }: any) {
 
             await createPropertyWithImages(imageUrls);
         } catch (error: any) {
-            Alert.alert('Error', error.message);
+            showToast(error.message || 'Failed to create property', 'error');
             setLoading(false);
         }
     };
@@ -183,16 +206,10 @@ export default function CreatePropertyScreen({ navigation }: any) {
                 images: imageUrls,
             });
 
-            Alert.alert(
-                'Success',
-                'Property created successfully!',
-                [
-                    {
-                        text: 'View Dashboard',
-                        onPress: () => navigation.navigate('HostingDashboard')
-                    }
-                ]
-            );
+            showToast('Property created successfully!', 'success');
+            setTimeout(() => {
+                navigation.navigate('HostingDashboard');
+            }, 1500);
         } catch (error: any) {
             Alert.alert('Error', error.message);
         } finally {
@@ -254,6 +271,66 @@ export default function CreatePropertyScreen({ navigation }: any) {
                         onChangeText={(text) => setFormData({ ...formData, address: text })}
                         className={`${cardBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
                     />
+                </View>
+
+                {/* Map Location */}
+                <View className="mb-4">
+                    <Text className={`text-base font-semibold mb-2 ${textColor}`}>
+                        Location on Map <Text className="text-red-500">*</Text>
+                    </Text>
+                    <TouchableOpacity
+                        onPress={() => setShowMap(!showMap)}
+                        className={`${cardBg} border ${borderColor} rounded-xl p-4 flex-row items-center justify-between`}
+                    >
+                        <View>
+                            <Text className={`${textColor} font-medium`}>
+                                {showMap ? 'Hide Map' : 'Select Location'}
+                            </Text>
+                            <Text className={`${secondaryTextColor} text-sm`}>
+                                Lat: {formData.latitude.toFixed(6)}, Lng: {formData.longitude.toFixed(6)}
+                            </Text>
+                        </View>
+                        <Ionicons 
+                            name={showMap ? 'chevron-up' : 'location'} 
+                            size={24} 
+                            color={isDark ? '#94A3B8' : '#6B7280'} 
+                        />
+                    </TouchableOpacity>
+                    
+                    {showMap && (
+                        <View className="mt-3 h-64 rounded-xl overflow-hidden">
+                            <MapLibreGL.MapView
+                                style={{ flex: 1 }}
+                                onPress={handleMapPress}
+                            >
+                                <MapLibreGL.RasterSource
+                                    id="maptiler-source"
+                                    tileUrlTemplates={[`https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${MAPTILER_API_KEY}`]}
+                                    tileSize={256}
+                                >
+                                    <MapLibreGL.RasterLayer id="maptiler-layer" sourceID="maptiler-source" />
+                                </MapLibreGL.RasterSource>
+                                <MapLibreGL.Camera
+                                    centerCoordinate={[formData.longitude, formData.latitude]}
+                                    zoomLevel={15}
+                                    animationDuration={1000}
+                                />
+                                <MapLibreGL.PointAnnotation
+                                    id="property-location"
+                                    coordinate={[formData.longitude, formData.latitude]}
+                                >
+                                    <View className="bg-red-500 w-6 h-6 rounded-full border-2 border-white items-center justify-center">
+                                        <View className="bg-white w-2 h-2 rounded-full" />
+                                    </View>
+                                </MapLibreGL.PointAnnotation>
+                            </MapLibreGL.MapView>
+                            <View className="absolute bottom-2 left-2 right-2">
+                                <Text className="bg-black/70 text-white text-xs p-2 rounded text-center">
+                                    Tap anywhere on the map to set property location
+                                </Text>
+                            </View>
+                        </View>
+                    )}
                 </View>
 
                 {/* City & State */}
@@ -459,6 +536,12 @@ export default function CreatePropertyScreen({ navigation }: any) {
 
                 <View className="h-10" />
             </View>
+            <Toast
+                visible={toast.visible}
+                message={toast.message}
+                type={toast.type}
+                onHide={hideToast}
+            />
         </ScrollView>
     );
 }

@@ -13,6 +13,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import MapLibreGL from '@maplibre/maplibre-react-native';
+import { MAPTILER_API_KEY } from '@env';
 import { propertyService, favoriteService } from '../../services';
 import { useAuth } from '../../contexts/AuthContext';
 import { useThemeColors } from '../../hooks';
@@ -29,6 +31,9 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
     const [rating, setRating] = useState(5);
     const [review, setReview] = useState('');
     const [submittingRating, setSubmittingRating] = useState(false);
+
+    // Configure MapLibre
+    MapLibreGL.setAccessToken(null);
 
     const {
         bgColor,
@@ -189,6 +194,39 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                             </Text>
                         </View>
                     </View>
+
+                    {/* Map Location */}
+                    {property.latitude && property.longitude && (
+                        <Animated.View
+                            entering={FadeInDown.delay(200)}
+                            className={`${cardBg} p-5 rounded-2xl mb-6 border ${borderColor}`}
+                        >
+                            <Text className={`text-lg font-bold mb-3 ${textColor}`}>Location</Text>
+                            <View className="h-48 rounded-xl overflow-hidden">
+                                <MapLibreGL.MapView
+                                    style={{ flex: 1 }}
+                                >
+                                    <MapLibreGL.RasterSource
+                                        id="maptiler-source"
+                                        tileUrlTemplates={[`https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${MAPTILER_API_KEY}`]}
+                                        tileSize={256}
+                                    >
+                                        <MapLibreGL.RasterLayer id="maptiler-layer" sourceID="maptiler-source" />
+                                    </MapLibreGL.RasterSource>
+                                    <MapLibreGL.Camera
+                                        centerCoordinate={[property.longitude, property.latitude]}
+                                        zoomLevel={15}
+                                    />
+                                    <MapLibreGL.PointAnnotation
+                                        id="property-location"
+                                        coordinate={[property.longitude, property.latitude]}
+                                    >
+                                        <View className="bg-primary w-6 h-6 rounded-full border-2 border-white" />
+                                    </MapLibreGL.PointAnnotation>
+                                </MapLibreGL.MapView>
+                            </View>
+                        </Animated.View>
+                    )}
 
                     {/* Price */}
                     <Animated.View

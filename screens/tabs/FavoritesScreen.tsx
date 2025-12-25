@@ -18,7 +18,6 @@ export function FavoritesScreen({ navigation }: any) {
     const { bgColor, textColor, cardBg } = useThemeColors();
 
     useEffect(() => {
-        console.log('[FavoritesScreen] User:', user ? 'Logged in' : 'Not logged in');
         if (user) {
             loadFavorites();
         } else {
@@ -28,13 +27,10 @@ export function FavoritesScreen({ navigation }: any) {
 
     const loadFavorites = async () => {
         try {
-            console.log('[FavoritesScreen] Loading favorites...');
             setLoading(true);
             const response = await favoriteService.getFavorites(1, 50);
-            console.log('[FavoritesScreen] Favorites loaded:', response.data.favorites.length);
             setFavorites(response.data.favorites);
         } catch (error: any) {
-            console.error('[FavoritesScreen] Error loading favorites:', error);
             // Don't show Alert to prevent infinite loop
             setFavorites([]); // Set empty array on error
         } finally {

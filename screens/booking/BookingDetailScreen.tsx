@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { bookingService } from '../../services';
+import { useToast } from '../../hooks/useToast';
+import { Toast } from '../../components/common';
 
 export default function BookingDetailScreen({ route, navigation }: any) {
     const { bookingId } = route.params;
     const [booking, setBooking] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
+    const { toast, showToast, hideToast } = useToast();
 
     useEffect(() => {
         loadBookingDetail();
@@ -57,10 +60,10 @@ export default function BookingDetailScreen({ route, navigation }: any) {
         try {
             setActionLoading(true);
             await bookingService.approveBooking(bookingId);
-            Alert.alert('Success', 'Booking approved successfully');
+            showToast('Booking approved successfully', 'success');
             loadBookingDetail();
         } catch (error: any) {
-            Alert.alert('Error', error.message);
+            showToast(error.message || 'Failed to approve booking', 'error');
         } finally {
             setActionLoading(false);
         }
@@ -79,10 +82,10 @@ export default function BookingDetailScreen({ route, navigation }: any) {
                         try {
                             setActionLoading(true);
                             await bookingService.rejectBooking(bookingId);
-                            Alert.alert('Success', 'Booking rejected');
+                            showToast('Booking rejected', 'success');
                             loadBookingDetail();
                         } catch (error: any) {
-                            Alert.alert('Error', error.message);
+                            showToast(error.message || 'Failed to reject booking', 'error');
                         } finally {
                             setActionLoading(false);
                         }
@@ -294,6 +297,12 @@ export default function BookingDetailScreen({ route, navigation }: any) {
 
                 <View style={{ height: 40 }} />
             </View>
+            <Toast
+                visible={toast.visible}
+                message={toast.message}
+                type={toast.type}
+                onHide={hideToast}
+            />
         </ScrollView>
     );
 }
