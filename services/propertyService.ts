@@ -147,23 +147,31 @@ class PropertyService {
         limit: number = 10,
         filters?: PropertyFilters
     ): Promise<PropertiesResponse> {
-        try {
-            let url = `/v1/m/properties?page=${page}&limit=${limit}`;
+        let retries = 2;
+        while (retries > 0) {
+            try {
+                let url = `/v1/m/properties?page=${page}&limit=${limit}`;
 
-            if (filters) {
-                Object.entries(filters).forEach(([key, value]) => {
-                    if (value !== undefined && value !== null) {
-                        url += `&${key}=${value}`;
-                    }
-                });
+                if (filters) {
+                    Object.entries(filters).forEach(([key, value]) => {
+                        if (value !== undefined && value !== null) {
+                            url += `&${key}=${value}`;
+                        }
+                    });
+                }
+
+                const response = await api.get<PropertiesResponse>(url);
+                return response.data;
+            } catch (error: any) {
+                retries--;
+                console.error('Get mobile properties error:', error.response?.data || error.message);
+                if (retries === 0) {
+                    throw this.handleError(error);
+                }
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
-
-            const response = await api.get<PropertiesResponse>(url);
-            return response.data;
-        } catch (error: any) {
-            console.error('Get mobile properties error:', error.response?.data || error.message);
-            throw this.handleError(error);
         }
+        throw this.handleError(new Error('Failed to get mobile properties'));
     }
 
     /**

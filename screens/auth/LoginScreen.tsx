@@ -28,12 +28,18 @@ export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScree
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [fieldErrors, setFieldErrors] = useState<{[key: string]: boolean}>({});
 
     const handleLogin = async () => {
         setError('');
 
-        if (!email || !password) {
-            setError('Please fill in all fields');
+        const errors: {[key: string]: boolean} = {};
+        if (!email) errors.email = true;
+        if (!password) errors.password = true;
+        
+        setFieldErrors(errors);
+        
+        if (Object.keys(errors).length > 0) {
             return;
         }
 
@@ -135,11 +141,16 @@ export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScree
                                 Email
                             </Text>
                             <TextInput
-                                className={`${inputBg} ${borderColor} border rounded-lg px-4 py-3 ${textColor}`}
+                                className={`${inputBg} border rounded-lg px-4 py-3 ${textColor} ${
+                                    fieldErrors.email ? 'border-red-500 border-2' : borderColor
+                                }`}
                                 placeholder="Enter your email"
                                 placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
                                 value={email}
-                                onChangeText={setEmail}
+                                onChangeText={(text) => {
+                                    setEmail(text);
+                                    if (text) setFieldErrors(prev => ({ ...prev, email: false }));
+                                }}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
                                 editable={!isLoading}
@@ -152,11 +163,16 @@ export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScree
                             </Text>
                             <View className="relative">
                                 <TextInput
-                                    className={`${inputBg} ${borderColor} border rounded-lg px-4 py-3 pr-12 ${textColor}`}
+                                    className={`${inputBg} border rounded-lg px-4 py-3 pr-12 ${textColor} ${
+                                        fieldErrors.password ? 'border-red-500 border-2' : borderColor
+                                    }`}
                                     placeholder="Enter your password"
                                     placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
                                     value={password}
-                                    onChangeText={setPassword}
+                                    onChangeText={(text) => {
+                                        setPassword(text);
+                                        if (text) setFieldErrors(prev => ({ ...prev, password: false }));
+                                    }}
                                     secureTextEntry={!showPassword}
                                     editable={!isLoading}
                                 />

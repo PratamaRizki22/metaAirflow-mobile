@@ -8,7 +8,7 @@ const BASE_URL = API_BASE_URL || 'http://192.168.1.116:3000/api';
 // Create axios instance
 const api = axios.create({
     baseURL: BASE_URL,
-    timeout: 10000,
+    timeout: 15000, // Increased timeout
     headers: {
         'Content-Type': 'application/json',
     },
@@ -50,6 +50,12 @@ const processQueue = (error: any, token: string | null = null) => {
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
+        // Handle network errors specifically
+        if (!error.response) {
+            console.error('Network Error:', error.message);
+            return Promise.reject(new Error('Network error. Please check your connection.'));
+        }
+
         const originalRequest = error.config;
 
         // If error is 401 and we haven't tried to refresh yet

@@ -19,7 +19,7 @@ class AmenityService {
     async getAmenities(category?: string): Promise<AmenitiesResponse> {
         try {
             const params = category ? `?category=${encodeURIComponent(category)}` : '';
-            const response = await api.get(`/amenities${params}`);
+            const response = await api.get(`/v1/amenities${params}`);
             return response.data.data || response.data;
         } catch (error: any) {
             const message = error.response?.data?.message || 'Failed to get amenities';
@@ -32,7 +32,7 @@ class AmenityService {
      */
     async getCategories(): Promise<string[]> {
         try {
-            const response = await api.get('/amenities/categories');
+            const response = await api.get('/v1/amenities/categories');
             return response.data.data || response.data;
         } catch (error: any) {
             const message = error.response?.data?.message || 'Failed to get amenity categories';

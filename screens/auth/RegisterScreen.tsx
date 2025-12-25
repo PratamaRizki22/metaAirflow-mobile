@@ -34,12 +34,23 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [fieldErrors, setFieldErrors] = useState<{[key: string]: boolean}>({});
 
     const handleRegister = async () => {
         setError('');
 
-        if (!firstName || !lastName || !email || !password || !confirmPassword || !phone || !dateOfBirth) {
-            setError('Please fill in all fields');
+        const errors: {[key: string]: boolean} = {};
+        if (!firstName) errors.firstName = true;
+        if (!lastName) errors.lastName = true;
+        if (!email) errors.email = true;
+        if (!password) errors.password = true;
+        if (!confirmPassword) errors.confirmPassword = true;
+        if (!phone) errors.phone = true;
+        if (!dateOfBirth) errors.dateOfBirth = true;
+        
+        setFieldErrors(errors);
+        
+        if (Object.keys(errors).length > 0) {
             return;
         }
 
@@ -163,11 +174,16 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
                                 First Name
                             </Text>
                             <TextInput
-                                className={`${inputBg} ${borderColor} border rounded-lg px-4 py-3 ${textColor}`}
+                                className={`${inputBg} border rounded-lg px-4 py-3 ${textColor} ${
+                                    fieldErrors.firstName ? 'border-red-500 border-2' : borderColor
+                                }`}
                                 placeholder="Enter your first name"
                                 placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
                                 value={firstName}
-                                onChangeText={setFirstName}
+                                onChangeText={(text) => {
+                                    setFirstName(text);
+                                    if (text) setFieldErrors(prev => ({ ...prev, firstName: false }));
+                                }}
                                 editable={!isLoading}
                             />
                         </View>
@@ -177,11 +193,16 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
                                 Last Name
                             </Text>
                             <TextInput
-                                className={`${inputBg} ${borderColor} border rounded-lg px-4 py-3 ${textColor}`}
+                                className={`${inputBg} border rounded-lg px-4 py-3 ${textColor} ${
+                                    fieldErrors.lastName ? 'border-red-500 border-2' : borderColor
+                                }`}
                                 placeholder="Enter your last name"
                                 placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
                                 value={lastName}
-                                onChangeText={setLastName}
+                                onChangeText={(text) => {
+                                    setLastName(text);
+                                    if (text) setFieldErrors(prev => ({ ...prev, lastName: false }));
+                                }}
                                 editable={!isLoading}
                             />
                         </View>
@@ -191,11 +212,16 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
                                 Email
                             </Text>
                             <TextInput
-                                className={`${inputBg} ${borderColor} border rounded-lg px-4 py-3 ${textColor}`}
+                                className={`${inputBg} border rounded-lg px-4 py-3 ${textColor} ${
+                                    fieldErrors.email ? 'border-red-500 border-2' : borderColor
+                                }`}
                                 placeholder="Enter your email"
                                 placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
                                 value={email}
-                                onChangeText={setEmail}
+                                onChangeText={(text) => {
+                                    setEmail(text);
+                                    if (text) setFieldErrors(prev => ({ ...prev, email: false }));
+                                }}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
                                 editable={!isLoading}
@@ -207,11 +233,16 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
                                 Phone Number
                             </Text>
                             <TextInput
-                                className={`${inputBg} ${borderColor} border rounded-lg px-4 py-3 ${textColor}`}
+                                className={`${inputBg} border rounded-lg px-4 py-3 ${textColor} ${
+                                    fieldErrors.phone ? 'border-red-500 border-2' : borderColor
+                                }`}
                                 placeholder="Enter your phone number"
                                 placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
                                 value={phone}
-                                onChangeText={setPhone}
+                                onChangeText={(text) => {
+                                    setPhone(text);
+                                    if (text) setFieldErrors(prev => ({ ...prev, phone: false }));
+                                }}
                                 keyboardType="phone-pad"
                                 editable={!isLoading}
                             />
@@ -222,11 +253,16 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
                                 Date of Birth
                             </Text>
                             <TextInput
-                                className={`${inputBg} ${borderColor} border rounded-lg px-4 py-3 ${textColor}`}
+                                className={`${inputBg} border rounded-lg px-4 py-3 ${textColor} ${
+                                    fieldErrors.dateOfBirth ? 'border-red-500 border-2' : borderColor
+                                }`}
                                 placeholder="YYYY-MM-DD"
                                 placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
                                 value={dateOfBirth}
-                                onChangeText={setDateOfBirth}
+                                onChangeText={(text) => {
+                                    setDateOfBirth(text);
+                                    if (text) setFieldErrors(prev => ({ ...prev, dateOfBirth: false }));
+                                }}
                                 editable={!isLoading}
                             />
                         </View>
@@ -237,11 +273,16 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
                             </Text>
                             <View className="relative">
                                 <TextInput
-                                    className={`${inputBg} ${borderColor} border rounded-lg px-4 py-3 pr-12 ${textColor}`}
+                                    className={`${inputBg} border rounded-lg px-4 py-3 pr-12 ${textColor} ${
+                                        fieldErrors.password ? 'border-red-500 border-2' : borderColor
+                                    }`}
                                     placeholder="Create a password"
                                     placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
                                     value={password}
-                                    onChangeText={setPassword}
+                                    onChangeText={(text) => {
+                                        setPassword(text);
+                                        if (text) setFieldErrors(prev => ({ ...prev, password: false }));
+                                    }}
                                     secureTextEntry={!showPassword}
                                     editable={!isLoading}
                                 />
@@ -265,11 +306,16 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
                             </Text>
                             <View className="relative">
                                 <TextInput
-                                    className={`${inputBg} ${borderColor} border rounded-lg px-4 py-3 pr-12 ${textColor}`}
+                                    className={`${inputBg} border rounded-lg px-4 py-3 pr-12 ${textColor} ${
+                                        fieldErrors.confirmPassword ? 'border-red-500 border-2' : borderColor
+                                    }`}
                                     placeholder="Confirm your password"
                                     placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
                                     value={confirmPassword}
-                                    onChangeText={setConfirmPassword}
+                                    onChangeText={(text) => {
+                                        setConfirmPassword(text);
+                                        if (text) setFieldErrors(prev => ({ ...prev, confirmPassword: false }));
+                                    }}
                                     secureTextEntry={!showConfirmPassword}
                                     editable={!isLoading}
                                 />

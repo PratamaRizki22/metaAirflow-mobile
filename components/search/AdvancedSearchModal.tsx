@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { propertyService } from '../../services';
+import { propertyService, propertyTypeService } from '../../services';
 
 interface SearchFilters {
     city?: string;
@@ -57,8 +57,8 @@ export function AdvancedSearchModal({
 
     const loadPropertyTypes = async () => {
         try {
-            const response = await propertyService.getPropertyTypes();
-            setPropertyTypes(response.data);
+            const response = await propertyTypeService.getPropertyTypes();
+            setPropertyTypes(response);
         } catch (error) {
             console.error('Error loading property types:', error);
         }
