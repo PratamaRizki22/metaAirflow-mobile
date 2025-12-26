@@ -3,7 +3,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '@env';
 
 // Base URL - menggunakan environment variable
-const BASE_URL = API_BASE_URL || 'http://192.168.1.116:3000/api';
+const BASE_URL = API_BASE_URL || 'http://192.168.1.42:3000/api';
+
+// Debug: Log the actual URL being used
+console.log('=== API Configuration ===');
+console.log('API_BASE_URL from env:', API_BASE_URL);
+console.log('BASE_URL being used:', BASE_URL);
+console.log('========================');
 
 // Create axios instance
 const api = axios.create({
