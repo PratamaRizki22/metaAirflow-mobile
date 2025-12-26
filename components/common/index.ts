@@ -5,4 +5,8 @@ export { OptimizedImage } from './OptimizedImage';
 export { Skeleton, PropertyCardSkeleton, PropertyDetailSkeleton } from './Skeleton';
 export { LoadingState, EmptyState, ErrorState } from './States';
 export { OfflineBanner } from './OfflineBanner';
+export { ErrorBoundary } from './ErrorBoundary';
 export { MapView } from './MapView';
+export { Button } from './Button';
+export { IconButton } from './IconButton';
+export { ChipButton } from './ChipButton';

@@ -6,7 +6,7 @@ import { useMode } from '../contexts/ModeContext';
 // Tenant Mode Screens
 import { HomeScreen } from '../screens/tabs/HomeScreen';
 import { MessagesScreen } from '../screens/tabs/MessagesScreen';
-import { AddPropertyScreen } from '../screens/tabs/AddPropertyScreen';
+import MyTripsScreen from '../screens/tenant/MyTripsScreen';
 import { FavoritesScreen } from '../screens/tabs/FavoritesScreen';
 import { ProfileScreen } from '../screens/tabs/ProfileScreen';
 
@@ -85,24 +85,24 @@ export function MainTabNavigator() {
                 }}
             />
             <Tab.Screen
-                name="Messages"
-                component={MessagesScreen}
-                options={{
-                    tabBarLabel: 'Messages',
-                }}
-            />
-            <Tab.Screen
-                name="Add"
-                component={AddPropertyScreen}
-                options={{
-                    tabBarLabel: 'Add',
-                }}
-            />
-            <Tab.Screen
                 name="Favorites"
                 component={FavoritesScreen}
                 options={{
                     tabBarLabel: 'Favorites',
+                }}
+            />
+            <Tab.Screen
+                name="Trips"
+                component={MyTripsScreen}
+                options={{
+                    tabBarLabel: 'Trips',
+                }}
+            />
+            <Tab.Screen
+                name="Messages"
+                component={MessagesScreen}
+                options={{
+                    tabBarLabel: 'Chat',
                 }}
             />
             <Tab.Screen

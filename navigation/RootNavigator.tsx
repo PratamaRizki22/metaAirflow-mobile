@@ -14,6 +14,8 @@ import EditPropertyScreen from '../screens/landlord/EditPropertyScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import BookingDetailScreen from '../screens/booking/BookingDetailScreen';
 import ChatDetailScreen from '../screens/chat/ChatDetailScreen';
+import WriteReviewScreen from '../screens/review/WriteReviewScreen';
+import ReviewsListScreen from '../screens/review/ReviewsListScreen';
 import { OfflineBanner } from '../components/common';
 import { useNetwork } from '../hooks';
 
@@ -99,6 +101,18 @@ export function RootNavigator() {
                 <Stack.Screen
                     name="ChatDetail"
                     component={ChatDetailScreen}
+                    options={{ headerShown: false }}
+                />
+
+                {/* Review Screens */}
+                <Stack.Screen
+                    name="WriteReview"
+                    component={WriteReviewScreen}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="ReviewsList"
+                    component={ReviewsListScreen}
                     options={{ headerShown: false }}
                 />
 

@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { bookingService } from '../../services';
+import { bookingService, reviewService } from '../../services';
 import { useToast } from '../../hooks/useToast';
 import { Toast } from '../../components/common';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function BookingDetailScreen({ route, navigation }: any) {
     const { bookingId } = route.params;
     const [booking, setBooking] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
+    const [canReview, setCanReview] = useState(false);
     const { toast, showToast, hideToast } = useToast();
 
     useEffect(() => {
@@ -21,6 +23,16 @@ export default function BookingDetailScreen({ route, navigation }: any) {
             setLoading(true);
             const response = await bookingService.getBookingById(bookingId);
             setBooking(response.data);
+
+            // Check if user can review (for completed bookings)
+            if (response.data.status === 'COMPLETED' && response.data.property?.id) {
+                try {
+                    const reviewStatus = await reviewService.canReview(response.data.property.id);
+                    setCanReview(reviewStatus.canReview && reviewStatus.leaseId === bookingId);
+                } catch (error) {
+                    console.log('Cannot check review status:', error);
+                }
+            }
         } catch (error: any) {
             Alert.alert('Error', error.message);
             navigation.goBack();
@@ -292,6 +304,54 @@ export default function BookingDetailScreen({ route, navigation }: any) {
                                 </Text>
                             </TouchableOpacity>
                         )}
+                    </View>
+                )}\n
+                {/* Write Review Button (for completed bookings) */}
+                {booking.status === 'COMPLETED' && canReview && (
+                    <View style={{ marginTop: 16 }}>
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('WriteReview', {
+                                leaseId: bookingId,
+                                propertyId: booking.property.id,
+                                propertyTitle: booking.property.title
+                            })}
+                            activeOpacity={0.8}
+                        >
+                            <LinearGradient
+                                colors={['#14B8A6', '#0D9488']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={{
+                                    padding: 16,
+                                    borderRadius: 12,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
+                            >
+                                <Ionicons name="star" size={20} color="white" />
+                                <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 8, fontSize: 16 }}>
+                                    Write a Review
+                                </Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                {/* Already Reviewed */}
+                {booking.status === 'COMPLETED' && !canReview && (
+                    <View style={{
+                        marginTop: 16,
+                        padding: 16,
+                        backgroundColor: '#E8F5E9',
+                        borderRadius: 12,
+                        flexDirection: 'row',
+                        alignItems: 'center'
+                    }}>
+                        <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                        <Text style={{ color: '#059669', marginLeft: 12, flex: 1, fontWeight: '600' }}>
+                            You've already reviewed this property
+                        </Text>
                     </View>
                 )}
 

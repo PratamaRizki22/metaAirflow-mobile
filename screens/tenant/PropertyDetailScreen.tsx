@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -9,6 +9,9 @@ import {
     TextInput,
     Modal,
     Pressable,
+    Image,
+    FlatList,
+    Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
@@ -31,6 +34,10 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
     const [rating, setRating] = useState(5);
     const [review, setReview] = useState('');
     const [submittingRating, setSubmittingRating] = useState(false);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+    const flatListRef = useRef<FlatList>(null);
+    const { width: screenWidth } = Dimensions.get('window');
 
     // Configure MapLibre
     MapLibreGL.setAccessToken(null);
@@ -166,6 +173,62 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
     return (
         <View className={`flex-1 ${bgColor}`}>
             <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+                {/* Image Gallery */}
+                {property.images && property.images.length > 0 && (
+                    <View className="relative">
+                        <FlatList
+                            ref={flatListRef}
+                            data={property.images}
+                            horizontal
+                            pagingEnabled
+                            showsHorizontalScrollIndicator={false}
+                            onScroll={(event) => {
+                                const index = Math.round(
+                                    event.nativeEvent.contentOffset.x / screenWidth
+                                );
+                                setCurrentImageIndex(index);
+                            }}
+                            scrollEventThrottle={16}
+                            renderItem={({ item }) => (
+                                <Image
+                                    source={{ uri: item }}
+                                    style={{ width: screenWidth, height: 300 }}
+                                    resizeMode="cover"
+                                />
+                            )}
+                            keyExtractor={(item, index) => `image-${index}`}
+                        />
+
+                        {/* Image Counter */}
+                        <View className="absolute top-4 right-4 bg-black/60 px-3 py-1.5 rounded-full">
+                            <Text className="text-white text-sm font-semibold">
+                                {currentImageIndex + 1} / {property.images.length}
+                            </Text>
+                        </View>
+
+                        {/* Back Button */}
+                        <TouchableOpacity
+                            onPress={() => navigation.goBack()}
+                            className="absolute top-4 left-4 w-10 h-10 bg-black/60 rounded-full items-center justify-center"
+                        >
+                            <Ionicons name="arrow-back" size={24} color="#FFF" />
+                        </TouchableOpacity>
+
+                        {/* Pagination Dots */}
+                        <View className="absolute bottom-4 left-0 right-0 flex-row justify-center gap-2">
+                            {property.images.map((_: any, index: number) => (
+                                <View
+                                    key={`dot-${index}`}
+                                    className={`h-2 rounded-full ${index === currentImageIndex
+                                            ? 'w-6 bg-white'
+                                            : 'w-2 bg-white/50'
+                                        }`}
+                                />
+                            ))}
+                        </View>
+                    </View>
+                )}
+
                 <Animated.View entering={FadeIn} className="p-6">
                     {/* Title & Location */}
                     <View className="mb-6">

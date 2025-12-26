@@ -3,8 +3,9 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { bookingService } from '../../services';
+import { bookingService, reviewService, propertyService } from '../../services';
 import { useThemeColors } from '../../hooks';
+import { ReviewCard } from '../../components/review';
 
 export function LandlordTodayScreen({ navigation }: any) {
     const { user } = useAuth();
@@ -15,18 +16,20 @@ export function LandlordTodayScreen({ navigation }: any) {
         approved: 0,
         revenue: 0,
     });
+    const [recentReviews, setRecentReviews] = useState<any[]>([]);
 
     const { bgColor, textColor, cardBg, isDark } = useThemeColors();
 
     useEffect(() => {
         loadTodayData();
+        loadRecentReviews();
     }, []);
 
     const loadTodayData = async () => {
         try {
             setLoading(true);
-            // Get bookings as owner
-            const response = await bookingService.getBookings(1, 10, undefined, 'owner');
+            // Get all bookings as owner (increase limit to get more data)
+            const response = await bookingService.getBookings(1, 100, undefined, 'owner');
 
             // Filter today's bookings
             const today = new Date().toDateString();
@@ -41,11 +44,57 @@ export function LandlordTodayScreen({ navigation }: any) {
             const pending = response.data.bookings.filter((b: any) => b.status === 'PENDING').length;
             const approved = response.data.bookings.filter((b: any) => b.status === 'APPROVED').length;
 
-            setStats({ pending, approved, revenue: 0 });
+            // Calculate monthly revenue from approved and completed bookings
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+
+            const monthlyRevenue = response.data.bookings
+                .filter((b: any) => {
+                    const bookingDate = new Date(b.createdAt);
+                    const isCurrentMonth = bookingDate.getMonth() === currentMonth &&
+                        bookingDate.getFullYear() === currentYear;
+                    const isPaid = b.status === 'APPROVED' || b.status === 'COMPLETED';
+                    return isCurrentMonth && isPaid;
+                })
+                .reduce((sum: number, b: any) => sum + (b.totalPrice || 0), 0);
+
+            setStats({ pending, approved, revenue: monthlyRevenue });
         } catch (error) {
             console.error('Error loading today data:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadRecentReviews = async () => {
+        try {
+            // Get landlord's properties
+            const propertiesResponse = await propertyService.getMyProperties(1, 10);
+            const properties = propertiesResponse.data.properties;
+
+            // Get recent reviews for each property
+            const allReviews: any[] = [];
+            for (const property of properties.slice(0, 3)) {
+                try {
+                    const reviewsResponse = await reviewService.getPropertyReviews(property.id, 1, 2);
+                    const reviewsWithProperty = reviewsResponse.data.reviews.map((review: any) => ({
+                        ...review,
+                        propertyTitle: property.title,
+                    }));
+                    allReviews.push(...reviewsWithProperty);
+                } catch (error) {
+                    // Skip if no reviews for this property
+                    console.log('No reviews for property:', property.id);
+                }
+            }
+
+            // Sort by date and take latest 5
+            const sortedReviews = allReviews.sort((a, b) =>
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+            setRecentReviews(sortedReviews.slice(0, 5));
+        } catch (error) {
+            console.error('Error loading recent reviews:', error);
         }
     };
 
@@ -91,6 +140,21 @@ export function LandlordTodayScreen({ navigation }: any) {
                             {stats.approved}
                         </Text>
                     </View>
+                </View>
+
+                {/* Monthly Revenue Card */}
+                <View className={`${cardBg} p-4 rounded-2xl mb-6`}>
+                    <View className="flex-row items-center justify-between mb-2">
+                        <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm">
+                            💰 Pendapatan Bulan Ini
+                        </Text>
+                    </View>
+                    <Text className={`text-3xl font-bold ${textColor}`}>
+                        MYR {stats.revenue.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </Text>
+                    <Text className="text-text-secondary-light dark:text-text-secondary-dark text-xs mt-1">
+                        Dari booking yang disetujui
+                    </Text>
                 </View>
 
                 {/* Today's Bookings */}
@@ -140,6 +204,35 @@ export function LandlordTodayScreen({ navigation }: any) {
                                     MYR {booking.rentAmount.toLocaleString()}
                                 </Text>
                             </TouchableOpacity>
+                        ))}
+                    </View>
+                )}
+
+                {/* Recent Reviews */}
+                {recentReviews.length > 0 && (
+                    <View className="mt-6">
+                        <View className="flex-row items-center justify-between mb-4">
+                            <Text className={`text-xl font-bold ${textColor}`}>
+                                Recent Reviews
+                            </Text>
+                            <TouchableOpacity onPress={() => navigation.navigate('ManageProperties')}>
+                                <Text className="text-primary-light dark:text-primary-dark font-semibold">
+                                    View All
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                        {recentReviews.map((review) => (
+                            <View key={review.id} className="mb-3">
+                                <Text className={`text-sm font-semibold mb-2 ${textColor}`}>
+                                    {review.propertyTitle}
+                                </Text>
+                                <ReviewCard
+                                    rating={review.rating}
+                                    comment={review.comment}
+                                    userName={`${review.user.firstName} ${review.user.lastName}`}
+                                    date={review.createdAt}
+                                />
+                            </View>
                         ))}
                     </View>
                 )}

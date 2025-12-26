@@ -52,7 +52,7 @@ api.interceptors.response.use(
     async (error) => {
         // Handle network errors specifically
         if (!error.response) {
-            console.error('Network Error:', error.message);
+            // Silent fail - let UI handle error display
             return Promise.reject(new Error('Network error. Please check your connection.'));
         }
 

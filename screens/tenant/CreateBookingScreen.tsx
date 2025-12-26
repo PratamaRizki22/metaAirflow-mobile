@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, ActivityInd
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { DateRangePicker } from '../../components/booking';
-import { bookingService } from '../../services';
+import { bookingService, propertyService } from '../../services';
 
 export default function CreateBookingScreen({ route, navigation }: any) {
     const { propertyId, propertyTitle, price } = route.params;
@@ -13,6 +13,7 @@ export default function CreateBookingScreen({ route, navigation }: any) {
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const [agreedToTerms, setAgreedToTerms] = useState(false);
 
     const bgColor = isDark ? 'bg-background-dark' : 'bg-background-light';
     const textColor = isDark ? 'text-text-primary-dark' : 'text-text-primary-light';
@@ -57,8 +58,31 @@ export default function CreateBookingScreen({ route, navigation }: any) {
             return;
         }
 
+        if (!agreedToTerms) {
+            Alert.alert('Agreement Required', 'Please agree to the rental terms and conditions');
+            return;
+        }
+
         setLoading(true);
         try {
+            // Check availability first
+            const availabilityResult = await propertyService.checkAvailability(
+                propertyId,
+                startDate,
+                endDate
+            );
+
+            if (!availabilityResult.available) {
+                Alert.alert(
+                    'Not Available',
+                    'These dates are already booked. Please choose different dates.',
+                    [{ text: 'OK' }]
+                );
+                setLoading(false);
+                return;
+            }
+
+            // Create booking
             const response = await bookingService.createBooking({
                 propertyId,
                 startDate,
@@ -66,14 +90,20 @@ export default function CreateBookingScreen({ route, navigation }: any) {
                 message: message || undefined,
             });
 
-            // Get booking ID from response
             const bookingId = response.data?.id;
 
             if (!bookingId) {
                 throw new Error('Booking created but ID not found');
             }
 
-            // Navigate to payment screen
+            // Upload simple agreement signature (just "agreed" text)
+            try {
+                await bookingService.uploadSignature(bookingId, 'AGREED_VIA_CHECKBOX');
+            } catch (signError) {
+                console.log('Signature upload failed, continuing...', signError);
+            }
+
+            // Navigate to payment
             navigation.navigate('Payment', {
                 bookingId,
                 amount: calculateTotal(),
@@ -208,14 +238,35 @@ export default function CreateBookingScreen({ route, navigation }: any) {
                         </View>
                     </View>
                 </View>
+
+                {/* Rental Agreement */}
+                <View className="px-6 mb-6">
+                    <View className={`${cardBg} rounded-2xl p-4`}>
+                        <TouchableOpacity
+                            onPress={() => setAgreedToTerms(!agreedToTerms)}
+                            className="flex-row items-start gap-3"
+                        >
+                            <View className={`w-6 h-6 rounded border-2 ${agreedToTerms ? 'bg-primary border-primary' : `${borderColor}`} items-center justify-center mt-0.5`}>
+                                {agreedToTerms && (
+                                    <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                                )}
+                            </View>
+                            <View className="flex-1">
+                                <Text className={`${textColor} leading-5`}>
+                                    I agree to the rental terms and conditions. I understand that this booking is subject to availability and owner approval.
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+                </View>
             </ScrollView>
 
             {/* Submit Button */}
             <View className={`${cardBg} px-6 py-4`}>
                 <TouchableOpacity
                     onPress={handleSubmit}
-                    disabled={loading || !startDate || !endDate}
-                    className={`py-4 rounded-xl ${loading || !startDate || !endDate ? 'bg-gray-400' : 'bg-primary'
+                    disabled={loading || !startDate || !endDate || !agreedToTerms}
+                    className={`py-4 rounded-xl ${loading || !startDate || !endDate || !agreedToTerms ? 'bg-gray-400' : 'bg-primary'
                         }`}
                 >
                     {loading ? (

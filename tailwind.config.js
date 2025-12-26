@@ -5,7 +5,10 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        'inter': ['Inter_400Regular'],
+        sans: ['VisbyRound-Regular'],
+        medium: ['VisbyRound-Medium'],
+        semibold: ['VisbyRound-DemiBold'],
+        bold: ['VisbyRound-Bold'],
       },
       colors: {
         // Primary Brand Colors

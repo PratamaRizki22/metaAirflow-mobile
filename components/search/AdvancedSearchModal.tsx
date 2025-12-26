@@ -75,12 +75,6 @@ export function AdvancedSearchModal({
 
     const bedroomOptions = [1, 2, 3, 4, 5];
     const bathroomOptions = [1, 2, 3, 4];
-    const sortOptions = [
-        { label: 'Price: Low to High', value: 'price_asc' },
-        { label: 'Price: High to Low', value: 'price_desc' },
-        { label: 'Newest First', value: 'date_desc' },
-        { label: 'Oldest First', value: 'date_asc' },
-    ];
 
     const commonAmenities = [
         { id: 'wifi', label: 'WiFi', icon: 'wifi' },
@@ -314,7 +308,8 @@ export function AdvancedSearchModal({
                         </View>
                     </View>
 
-                    {/* Sort By */}
+                    {/* Sort By - Removed (sorting available in main search) */}
+                    {/*
                     <View className="mb-6">
                         <View className="flex-row items-center mb-3">
                             <Ionicons name="swap-vertical" size={20} color={isDark ? '#FFF' : '#000'} style={{ marginRight: 8 }} />
@@ -349,9 +344,10 @@ export function AdvancedSearchModal({
                             ))}
                         </View>
                     </View>
+                    */}
 
                     {/* Bottom Padding */}
-                    <View className="h-24" />
+                    <View className="h-4" />
                 </ScrollView>
 
                 {/* Apply Button */}

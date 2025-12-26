@@ -10,11 +10,13 @@ import {
     ListRenderItem,
     ActivityIndicator,
     Alert,
+    Modal,
 } from 'react-native';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { PropertyCard, Property } from '../../components/property';
 import {
     AdvancedSearchModal,
@@ -22,9 +24,11 @@ import {
     BedroomsFilterSheet,
     BathroomsFilterSheet,
     PropertyTypeFilterSheet,
+    SortDropdown,
 } from '../../components/search';
 import { DEFAULT_IMAGES } from '../../constants/images';
 import { PropertyCardSkeleton } from '../../components/common/Skeleton';
+import { IconButton, ChipButton } from '../../components/common';
 import { useDebounce, useThemeColors } from '../../hooks';
 import { propertyService, propertyTypeService } from '../../services';
 
@@ -38,6 +42,7 @@ const CATEGORIES = [
 
 export function HomeScreen({ navigation }: any) {
     const { isDark } = useTheme();
+    const { unreadCount } = useNotifications();
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -52,6 +57,10 @@ export function HomeScreen({ navigation }: any) {
     const [showBedroomsFilter, setShowBedroomsFilter] = useState(false);
     const [showBathroomsFilter, setShowBathroomsFilter] = useState(false);
     const [showPropertyTypeFilter, setShowPropertyTypeFilter] = useState(false);
+
+    // Sort state
+    const [sortBy, setSortBy] = useState('latest');
+    const [showSortDropdown, setShowSortDropdown] = useState(false);
 
     // Pagination state
     const [page, setPage] = useState(1);
@@ -74,17 +83,18 @@ export function HomeScreen({ navigation }: any) {
             const response = await propertyTypeService.getPropertyTypes();
             setPropertyTypes(response);
         } catch (error) {
-            console.error('Error loading property types:', error);
+            // Silent fail - property types are optional for browsing
+            setPropertyTypes([]);
         }
     };
 
-    // Load properties when debounced search or filters change
+    // Load properties when filters change (NOT search query)
     useEffect(() => {
         setPage(1);
         setProperties([]);
         setHasMore(true);
         loadProperties(1, true);
-    }, [debouncedSearch, searchFilters]);
+    }, [searchFilters]); // Removed debouncedSearch - search only on Enter/manual trigger
 
     const loadProperties = async (pageNum: number = page, reset: boolean = false) => {
         try {
@@ -96,7 +106,7 @@ export function HomeScreen({ navigation }: any) {
             }
 
             const response = await propertyService.getMobileProperties(pageNum, 20, {
-                search: debouncedSearch || undefined,
+                search: searchQuery || undefined, // Use searchQuery directly for manual search
                 ...searchFilters,
             });
 
@@ -112,10 +122,10 @@ export function HomeScreen({ navigation }: any) {
             setHasMore(newProperties.length === 20);
             setError(null); // Clear error on success
         } catch (error: any) {
-            console.error('Get mobile properties error:', error);
-            // Only set error state, don't show Alert to prevent re-renders
+            // Silent fail - only set error state for UI display
+            // No console.error to prevent spam
             if (reset) {
-                setError(error.message || 'Failed to load properties. Please check your connection.');
+                setError(error.message || 'Failed to load properties');
             }
             // Don't retry automatically - user must manually refresh
         } finally {
@@ -142,16 +152,27 @@ export function HomeScreen({ navigation }: any) {
 
     const handleClearSearch = useCallback(() => {
         setSearchQuery('');
+        // Reload properties without search query
+        setPage(1);
+        loadProperties(1, true);
     }, []);
 
     const handleSearch = useCallback(() => {
         setPage(1);
         loadProperties(1, true);
-    }, [debouncedSearch]);
+    }, [searchQuery]); // Depend on searchQuery instead of debouncedSearch
 
     const handlePropertyPress = useCallback((propertyId: string) => {
         navigation.navigate('PropertyDetail', { propertyId });
     }, [navigation]);
+
+    const clearAllFilters = useCallback(() => {
+        setSearchFilters({});
+        setSearchQuery('');
+        setSelectedCategory('all');
+        setPage(1);
+        loadProperties(1, true);
+    }, []);
 
     // Memoized filtered properties
     const filteredProperties = useMemo(() => {
@@ -275,11 +296,17 @@ export function HomeScreen({ navigation }: any) {
                                     size={24}
                                     color="#14B8A6"
                                 />
-                                <View className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
+                                {unreadCount > 0 && (
+                                    <View className="absolute top-2 right-2 w-5 h-5 bg-red-500 rounded-full items-center justify-center">
+                                        <Text className="text-white text-xs font-bold">
+                                            {unreadCount > 9 ? '9+' : unreadCount}
+                                        </Text>
+                                    </View>
+                                )}
                             </TouchableOpacity>
                         </View>
 
-                        {/* Search Bar */}
+                        {/* Search Bar with Sort */}
                         <View className="flex-row gap-3 mb-3">
                             <View
                                 className={`flex-1 flex-row items-center rounded-2xl px-5 py-4 ${isDark ? 'bg-surface-dark' : 'bg-white'
@@ -302,10 +329,34 @@ export function HomeScreen({ navigation }: any) {
                                     className={`flex-1 ml-3 text-lg ${textColor}`}
                                 />
                                 {searchQuery !== '' && (
-                                    <TouchableOpacity onPress={handleClearSearch}>
+                                    <TouchableOpacity onPress={handleClearSearch} className="mr-3">
                                         <Ionicons name="close-circle" size={22} color="#9CA3AF" />
                                     </TouchableOpacity>
                                 )}
+
+                                {/* Sort Dropdown */}
+                                <View className="relative">
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            console.log('Sort button clicked, current state:', showSortDropdown);
+                                            setShowSortDropdown(!showSortDropdown);
+                                        }}
+                                        className={`flex-row items-center px-2 py-2 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-100'
+                                            }`}
+                                    >
+                                        <Ionicons name="swap-vertical" size={20} color="#14B8A6" />
+                                        <Ionicons
+                                            name={showSortDropdown ? "chevron-up" : "chevron-down"}
+                                            size={14}
+                                            color="#9CA3AF"
+                                            style={{ marginLeft: 2 }}
+                                        />
+                                    </TouchableOpacity>
+
+
+                                    {/* Dropdown Modal */}
+
+                                </View>
                             </View>
                         </View>
 
@@ -443,6 +494,26 @@ export function HomeScreen({ navigation }: any) {
                                     </View>
                                 )}
                             </TouchableOpacity>
+
+                            {/* Clear All Filters Button */}
+                            {(Object.keys(searchFilters).length > 0 || searchQuery || selectedCategory !== 'all') && (
+                                <TouchableOpacity
+                                    onPress={clearAllFilters}
+                                    className={`flex-row items-center px-4 py-2.5 rounded-full border-2 ${isDark
+                                        ? 'bg-red-500/10 border-red-500/30'
+                                        : 'bg-red-50 border-red-200'
+                                        }`}
+                                >
+                                    <Ionicons
+                                        name="close-circle"
+                                        size={18}
+                                        color="#EF4444"
+                                    />
+                                    <Text className="ml-1.5 font-semibold text-sm text-red-500">
+                                        Clear All
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
                         </ScrollView>
                     </Animated.View>
                 </LinearGradient>
@@ -574,7 +645,7 @@ export function HomeScreen({ navigation }: any) {
                         onEndReached={handleLoadMore}
                         onEndReachedThreshold={0.5}
                         ListFooterComponent={
-                            loadingMore ? (
+                            loadingMore && !error ? (
                                 <View className="py-4">
                                     <ActivityIndicator size="small" color="#14B8A6" />
                                 </View>
@@ -596,9 +667,27 @@ export function HomeScreen({ navigation }: any) {
                                                 setPage(1);
                                                 loadProperties(1, true);
                                             }}
-                                            className="mt-6 bg-primary px-6 py-3 rounded-xl"
+                                            disabled={loading}
+                                            className="mt-6"
                                         >
-                                            <Text className="text-white font-semibold">Try Again</Text>
+                                            <LinearGradient
+                                                colors={loading ? ['#9CA3AF', '#6B7280'] : ['#14B8A6', '#0D9488']}
+                                                start={{ x: 0, y: 0 }}
+                                                end={{ x: 1, y: 0 }}
+                                                className="px-6 py-3 rounded-xl flex-row items-center justify-center"
+                                            >
+                                                {loading ? (
+                                                    <>
+                                                        <ActivityIndicator size="small" color="#FFF" />
+                                                        <Text className="text-white font-semibold ml-2">Loading...</Text>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Ionicons name="refresh" size={20} color="#FFF" />
+                                                        <Text className="text-white font-semibold ml-2">Try Again</Text>
+                                                    </>
+                                                )}
+                                            </LinearGradient>
                                         </TouchableOpacity>
                                     </View>
                                 ) : (
@@ -683,6 +772,15 @@ export function HomeScreen({ navigation }: any) {
                 }}
                 currentValue={searchFilters.propertyTypeId}
                 propertyTypes={propertyTypes}
+            />
+
+            {/* Sort Dropdown */}
+            <SortDropdown
+                visible={showSortDropdown}
+                onClose={() => setShowSortDropdown(false)}
+                onSelect={(sortBy) => setSortBy(sortBy)}
+                currentValue={sortBy}
+                isDark={isDark}
             />
         </View>
     );
