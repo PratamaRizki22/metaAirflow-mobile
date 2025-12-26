@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-import { GOOGLE_WEB_CLIENT_ID } from '@env';
+import { GOOGLE_WEB_CLIENT_ID, GOOGLE_ANDROID_CLIENT_ID } from '@env';
 import authService from '../../services/authService';
 import { useThemeColors } from '../../hooks';
 import { useToast } from '../../hooks/useToast';
@@ -24,24 +24,27 @@ interface LoginScreenProps {
     onNavigateToRegister: () => void;
 }
 
+import { useAuth } from '../../contexts/AuthContext';
+
 export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScreenProps) {
+    const { refreshProfile } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
-    const [fieldErrors, setFieldErrors] = useState<{[key: string]: boolean}>({});
+    const [fieldErrors, setFieldErrors] = useState<{ [key: string]: boolean }>({});
     const { toast, showToast, hideToast } = useToast();
 
     const handleLogin = async () => {
         setError('');
 
-        const errors: {[key: string]: boolean} = {};
+        const errors: { [key: string]: boolean } = {};
         if (!email) errors.email = true;
         if (!password) errors.password = true;
-        
+
         setFieldErrors(errors);
-        
+
         if (Object.keys(errors).length > 0) {
             return;
         }
@@ -76,19 +79,56 @@ export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScree
             setIsLoading(true);
             setError('');
 
-            // Configure Google Sign-In (should be done once, but safe to call multiple times)
+            console.log('=== GOOGLE SIGN-IN DEBUG START ===');
+            console.log('1. Package name should be: com.pratamarizki22.rentverse');
+            console.log('2. Web Client ID:', GOOGLE_WEB_CLIENT_ID);
+            console.log('3. Android Client ID:', GOOGLE_ANDROID_CLIENT_ID);
+
+            // Configure Google Sign-In
             GoogleSignin.configure({
                 webClientId: GOOGLE_WEB_CLIENT_ID,
                 offlineAccess: true,
             });
+            console.log('4. GoogleSignin.configure() called successfully');
 
-            await GoogleSignin.hasPlayServices();
-            const response = await GoogleSignin.signIn();
+            // Check Play Services
+            console.log('5. Checking Play Services...');
+            const playServicesAvailable = await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+            console.log('6. Play Services available:', playServicesAvailable);
 
-            if (response.type === 'success') {
-                onLoginSuccess();
+            // Try to sign in
+            console.log('7. Calling GoogleSignin.signIn()...');
+            const userInfo = await GoogleSignin.signIn();
+            console.log('8. GoogleSignin.signIn() response:', JSON.stringify(userInfo, null, 2));
+
+            if (userInfo.type === 'success' && userInfo.data) {
+                const idToken = (userInfo.data as any).idToken;
+                console.log('9. Got idToken:', idToken ? 'YES' : 'NO');
+
+                if (!idToken) {
+                    throw new Error('Failed to get ID token from Google');
+                }
+
+                console.log('10. Sending idToken to backend...');
+                const response = await authService.loginWithGoogle(idToken);
+                console.log('11. Backend response:', response);
+
+                if (response.success) {
+                    // Refresh the auth context to update UI
+                    await refreshProfile();
+
+                    showToast('Google Sign-In successful!', 'success');
+                    setTimeout(() => {
+                        onLoginSuccess();
+                    }, 1000);
+                }
             }
         } catch (error: any) {
+            console.error('=== GOOGLE SIGN-IN ERROR ===');
+            console.error('Error code:', error.code);
+            console.error('Error message:', error.message);
+            console.error('Full error:', JSON.stringify(error, null, 2));
+
             if (error.code === statusCodes.SIGN_IN_CANCELLED) {
                 showToast('Sign in was cancelled', 'info');
             } else if (error.code === statusCodes.IN_PROGRESS) {
@@ -98,7 +138,6 @@ export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScree
             } else {
                 showToast(error.message || 'Google Sign-In failed', 'error');
             }
-            console.error('Google Sign-In Error:', error);
         } finally {
             setIsLoading(false);
         }
@@ -138,9 +177,8 @@ export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScree
                                 Email
                             </Text>
                             <TextInput
-                                className={`${inputBg} border rounded-lg px-4 py-3 ${textColor} ${
-                                    fieldErrors.email ? 'border-red-500 border-2' : borderColor
-                                }`}
+                                className={`${inputBg} border rounded-lg px-4 py-3 ${textColor} ${fieldErrors.email ? 'border-red-500 border-2' : borderColor
+                                    }`}
                                 placeholder="Enter your email"
                                 placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
                                 value={email}
@@ -160,9 +198,8 @@ export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScree
                             </Text>
                             <View className="relative">
                                 <TextInput
-                                    className={`${inputBg} border rounded-lg px-4 py-3 pr-12 ${textColor} ${
-                                        fieldErrors.password ? 'border-red-500 border-2' : borderColor
-                                    }`}
+                                    className={`${inputBg} border rounded-lg px-4 py-3 pr-12 ${textColor} ${fieldErrors.password ? 'border-red-500 border-2' : borderColor
+                                        }`}
                                     placeholder="Enter your password"
                                     placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
                                     value={password}

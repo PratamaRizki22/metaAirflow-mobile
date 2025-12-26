@@ -16,6 +16,12 @@
           "merchantIdentifier": "merchant.com.pratamarizki22.rentverse",
           "enableGooglePay": true
         }
+      ],
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.341925688776-1j4fsoo39gsfc71osoke2fqqmpjt5fin"
+        }
       ]
     ],
     "orientation": "portrait",

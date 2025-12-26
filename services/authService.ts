@@ -81,10 +81,13 @@ class AuthService {
      */
     async logout(): Promise<void> {
         try {
-            // Call logout endpoint if available
+            // Try to call logout endpoint (may not exist)
             await api.post('/auth/logout');
-        } catch (error) {
-            console.error('Logout error:', error);
+        } catch (error: any) {
+            // Ignore 404 - backend may not have logout endpoint
+            if (error.response?.status !== 404) {
+                console.error('Logout error:', error);
+            }
         } finally {
             // Always clear local storage
             await this.clearAuthData();

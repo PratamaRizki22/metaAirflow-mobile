@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-import { GOOGLE_WEB_CLIENT_ID } from '@env';
+import { GOOGLE_WEB_CLIENT_ID, GOOGLE_ANDROID_CLIENT_ID } from '@env';
 
 interface GoogleUser {
     idToken: string | null;
@@ -23,6 +23,10 @@ export function GoogleSignIn() {
 
     useEffect(() => {
         // Configure Google Sign-In
+        console.log('Configuring Google Sign-In...');
+        console.log('Web Client ID:', GOOGLE_WEB_CLIENT_ID);
+        console.log('Android Client ID:', GOOGLE_ANDROID_CLIENT_ID);
+
         GoogleSignin.configure({
             webClientId: GOOGLE_WEB_CLIENT_ID,
             offlineAccess: true,
