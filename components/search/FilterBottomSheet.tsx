@@ -139,7 +139,7 @@ export function PriceFilterSheet({
                                 {range.label}
                             </Text>
                             {isSelected && (
-                                <Ionicons name="checkmark-circle" size={24} color="#14B8A6" />
+                                <Ionicons name="checkmark-circle" size={24} color="#00D9A3" />
                             )}
                         </TouchableOpacity>
                     );
@@ -366,14 +366,14 @@ export function PropertyTypeFilterSheet({
                                 <Ionicons
                                     name="home"
                                     size={24}
-                                    color={isSelected ? '#14B8A6' : isDark ? '#9CA3AF' : '#6B7280'}
+                                    color={isSelected ? '#00D9A3' : isDark ? '#9CA3AF' : '#6B7280'}
                                 />
                                 <Text className={`ml-3 font-medium text-base ${isSelected ? 'text-primary' : textColor}`}>
                                     {type.name}
                                 </Text>
                             </View>
                             {isSelected && (
-                                <Ionicons name="checkmark-circle" size={24} color="#14B8A6" />
+                                <Ionicons name="checkmark-circle" size={24} color="#00D9A3" />
                             )}
                         </TouchableOpacity>
                     );

@@ -26,7 +26,7 @@ export function OptimizedImage({
         <View style={[{ width, height, borderRadius, overflow: 'hidden', backgroundColor: '#E5E7EB' }, style]}>
             {loading && (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="small" color="#14B8A6" />
+                    <ActivityIndicator size="small" color="#00D9A3" />
                 </View>
             )}
 

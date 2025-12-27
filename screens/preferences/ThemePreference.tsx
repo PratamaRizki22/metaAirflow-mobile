@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 
 const { width } = Dimensions.get('window');
@@ -34,8 +35,8 @@ export function ThemePreference({ onComplete }: ThemePreferenceProps) {
                     <TouchableOpacity
                         onPress={() => handleSelectTheme('light')}
                         className={`rounded-2xl p-6 border-2 ${!isDark
-                                ? 'bg-primary border-primary'
-                                : 'bg-surface-light border-border-light'
+                            ? 'bg-primary border-primary'
+                            : 'bg-surface-light border-border-light'
                             }`}
                         style={{
                             shadowColor: '#000',
@@ -47,7 +48,7 @@ export function ThemePreference({ onComplete }: ThemePreferenceProps) {
                     >
                         <View className="items-center">
                             <View className="w-16 h-16 rounded-full bg-white items-center justify-center mb-4">
-                                <Text className="text-4xl">☀️</Text>
+                                <Ionicons name="sunny" size={32} color="#F59E0B" />
                             </View>
                             <Text className={`text-xl font-bold mb-2 ${!isDark ? 'text-white' : 'text-text-primary-light'}`}>
                                 Light Mode
@@ -61,8 +62,8 @@ export function ThemePreference({ onComplete }: ThemePreferenceProps) {
                     <TouchableOpacity
                         onPress={() => handleSelectTheme('dark')}
                         className={`rounded-2xl p-6 border-2 ${isDark
-                                ? 'bg-primary border-primary'
-                                : 'bg-surface-dark border-border-dark'
+                            ? 'bg-primary border-primary'
+                            : 'bg-surface-dark border-border-dark'
                             }`}
                         style={{
                             shadowColor: '#000',
@@ -74,7 +75,7 @@ export function ThemePreference({ onComplete }: ThemePreferenceProps) {
                     >
                         <View className="items-center">
                             <View className="w-16 h-16 rounded-full bg-gray-800 items-center justify-center mb-4">
-                                <Text className="text-4xl">🌙</Text>
+                                <Ionicons name="moon" size={32} color="#60A5FA" />
                             </View>
                             <Text className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-text-primary-dark'}`}>
                                 Dark Mode

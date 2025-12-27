@@ -7,7 +7,6 @@ import { bookingService } from '../../services';
 import { useThemeColors } from '../../hooks';
 import { useAuth } from '../../contexts/AuthContext';
 import { LoadingState } from '../../components/common';
-import { LoginPrompt } from '../../components/auth';
 import { DEFAULT_IMAGES } from '../../constants/images';
 
 export default function MyTripsScreen({ navigation }: any) {
@@ -76,7 +75,7 @@ export default function MyTripsScreen({ navigation }: any) {
             case 'APPROVED': return '#34C759';
             case 'REJECTED': return '#FF3B30';
             case 'CANCELLED': return '#9CA3AF';
-            case 'COMPLETED': return '#14B8A6';
+            case 'COMPLETED': return '#00D9A3';
             default: return '#6B7280';
         }
     };
@@ -94,27 +93,6 @@ export default function MyTripsScreen({ navigation }: any) {
 
     if (loading) {
         return <LoadingState message="Loading your trips..." />;
-    }
-
-    // Not logged in state
-    if (!isLoggedIn) {
-        return (
-            <View className={`flex-1 ${bgColor} px-6 pt-16`}>
-                <Text className={`text-3xl font-bold mb-2 ${textColor}`}>
-                    My Trips
-                </Text>
-                <Text className={`${secondaryTextColor} mb-6`}>
-                    View and manage your bookings
-                </Text>
-
-                <LoginPrompt
-                    variant="inline"
-                    title="Login to View Trips"
-                    message="Sign in to view your trips and bookings"
-                    onLoginPress={() => navigation.navigate('Profile')}
-                />
-            </View>
-        );
     }
 
     return (
@@ -193,7 +171,7 @@ export default function MyTripsScreen({ navigation }: any) {
                                 {/* Dates */}
                                 <View className="flex-row items-center mb-3">
                                     <View className="flex-1 flex-row items-center">
-                                        <Ionicons name="calendar-outline" size={16} color="#14B8A6" />
+                                        <Ionicons name="calendar-outline" size={16} color="#00D9A3" />
                                         <Text className={`ml-2 text-sm ${textColor}`}>
                                             {new Date(item.checkInDate || item.startDate).toLocaleDateString('id-ID', {
                                                 day: 'numeric',
@@ -209,7 +187,7 @@ export default function MyTripsScreen({ navigation }: any) {
                                                 month: 'short'
                                             })}
                                         </Text>
-                                        <Ionicons name="calendar-outline" size={16} color="#14B8A6" />
+                                        <Ionicons name="calendar-outline" size={16} color="#00D9A3" />
                                     </View>
                                 </View>
 
@@ -273,7 +251,7 @@ export default function MyTripsScreen({ navigation }: any) {
                                 className="mt-6"
                             >
                                 <LinearGradient
-                                    colors={['#14B8A6', '#0D9488']}
+                                    colors={['#00D9A3', '#00B87C']}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 0 }}
                                     className="px-6 py-3 rounded-xl"

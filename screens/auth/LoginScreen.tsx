@@ -14,20 +14,22 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { GOOGLE_WEB_CLIENT_ID, GOOGLE_ANDROID_CLIENT_ID } from '@env';
-import authService from '../../services/authService';
 import { useThemeColors } from '../../hooks';
 import { useToast } from '../../hooks/useToast';
-import { Toast } from '../../components/common';
+import { Toast, FormInput } from '../../components/common';
 
 interface LoginScreenProps {
     onLoginSuccess: () => void;
     onNavigateToRegister: () => void;
+    navigation?: any;
 }
 
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigation } from '@react-navigation/native';
 
 export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScreenProps) {
-    const { refreshProfile } = useAuth();
+    const navigation = useNavigation();
+    const { login, loginWithGoogle, refreshProfile } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -59,14 +61,11 @@ export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScree
         setIsLoading(true);
 
         try {
-            const response = await authService.login({ email, password });
-
-            if (response.success) {
-                showToast('Login successful!', 'success');
-                setTimeout(() => {
-                    onLoginSuccess();
-                }, 1000);
-            }
+            await login(email, password);
+            showToast('Login successful!', 'success');
+            setTimeout(() => {
+                onLoginSuccess();
+            }, 1000);
         } catch (err: any) {
             showToast(err.message || 'Login failed. Please try again.', 'error');
         } finally {
@@ -110,18 +109,13 @@ export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScree
                 }
 
                 console.log('10. Sending idToken to backend...');
-                const response = await authService.loginWithGoogle(idToken);
-                console.log('11. Backend response:', response);
+                await loginWithGoogle(idToken);
+                console.log('11. Google login successful');
 
-                if (response.success) {
-                    // Refresh the auth context to update UI
-                    await refreshProfile();
-
-                    showToast('Google Sign-In successful!', 'success');
-                    setTimeout(() => {
-                        onLoginSuccess();
-                    }, 1000);
-                }
+                showToast('Google Sign-In successful!', 'success');
+                setTimeout(() => {
+                    onLoginSuccess();
+                }, 1000);
             }
         } catch (error: any) {
             console.error('=== GOOGLE SIGN-IN ERROR ===');
@@ -156,6 +150,27 @@ export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScree
                 keyboardShouldPersistTaps="handled"
             >
                 <View className="flex-1 justify-center px-6 py-12">
+                    {/* Back Button */}
+                    <TouchableOpacity
+                        onPress={() => {
+                            // Reset navigation to Home tab to avoid redirect loop
+                            (navigation as any).reset({
+                                index: 0,
+                                routes: [{ name: 'MainTabs' }],
+                            });
+                        }}
+                        className="absolute top-12 left-6 w-10 h-10 rounded-full bg-surface-light dark:bg-surface-dark items-center justify-center"
+                        style={{
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 4,
+                            elevation: 3,
+                        }}
+                    >
+                        <Ionicons name="arrow-back" size={24} color={isDark ? '#F1F5F9' : '#1F2937'} />
+                    </TouchableOpacity>
+
                     <View className="mb-12">
                         <Text className={`text-4xl font-bold mb-2 ${textColor}`}>
                             Welcome Back
@@ -171,48 +186,35 @@ export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScree
                         </View>
                     ) : null}
 
-                    <View className="space-y-4 mb-6">
-                        <View>
-                            <Text className={`text-sm font-medium mb-2 ${textColor}`}>
-                                Email
-                            </Text>
-                            <TextInput
-                                className={`${inputBg} border rounded-lg px-4 py-3 ${textColor} ${fieldErrors.email ? 'border-red-500 border-2' : borderColor
-                                    }`}
-                                placeholder="Enter your email"
-                                placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                                value={email}
-                                onChangeText={(text) => {
-                                    setEmail(text);
-                                    if (text) setFieldErrors(prev => ({ ...prev, email: false }));
-                                }}
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                editable={!isLoading}
-                            />
-                        </View>
+                    <View className="space-y-0 mb-6">
+                        <FormInput
+                            label="Email"
+                            placeholder="Enter your email"
+                            value={email}
+                            onChangeText={(text) => {
+                                setEmail(text);
+                                if (text) setFieldErrors(prev => ({ ...prev, email: false }));
+                            }}
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                            editable={!isLoading}
+                            error={fieldErrors.email ? "Email is required" : undefined}
+                        />
 
-                        <View>
-                            <Text className={`text-sm font-medium mb-2 ${textColor}`}>
-                                Password
-                            </Text>
-                            <View className="relative">
-                                <TextInput
-                                    className={`${inputBg} border rounded-lg px-4 py-3 pr-12 ${textColor} ${fieldErrors.password ? 'border-red-500 border-2' : borderColor
-                                        }`}
-                                    placeholder="Enter your password"
-                                    placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                                    value={password}
-                                    onChangeText={(text) => {
-                                        setPassword(text);
-                                        if (text) setFieldErrors(prev => ({ ...prev, password: false }));
-                                    }}
-                                    secureTextEntry={!showPassword}
-                                    editable={!isLoading}
-                                />
+                        <FormInput
+                            label="Password"
+                            placeholder="Enter your password"
+                            value={password}
+                            onChangeText={(text) => {
+                                setPassword(text);
+                                if (text) setFieldErrors(prev => ({ ...prev, password: false }));
+                            }}
+                            secureTextEntry={!showPassword}
+                            editable={!isLoading}
+                            error={fieldErrors.password ? "Password is required" : undefined}
+                            rightElement={
                                 <TouchableOpacity
                                     onPress={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-0 bottom-0 justify-center"
                                     disabled={isLoading}
                                 >
                                     <Ionicons
@@ -221,8 +223,8 @@ export function LoginScreen({ onLoginSuccess, onNavigateToRegister }: LoginScree
                                         color={isDark ? '#94A3B8' : '#9CA3AF'}
                                     />
                                 </TouchableOpacity>
-                            </View>
-                        </View>
+                            }
+                        />
                     </View>
 
                     <TouchableOpacity

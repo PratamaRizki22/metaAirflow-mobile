@@ -13,6 +13,7 @@ interface User {
     role?: string;
     avatar?: string;
     isLandlord?: boolean;  // Client-side flag for dual role
+    isHost?: boolean;      // Backend field for hosting status
 }
 
 interface AuthContextType {
@@ -41,18 +42,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const checkAuthStatus = async () => {
         try {
-            const currentUser = await authService.getCurrentUser();
-            if (currentUser) {
-                setUser({
-                    id: currentUser.id,
-                    name: currentUser.name,
-                    email: currentUser.email,
-                    firstName: currentUser.firstName,
-                    lastName: currentUser.lastName,
-                    phone: currentUser.phone,
-                    dateOfBirth: currentUser.dateOfBirth,
-                    role: currentUser.role,
-                });
+            // First check if token exists
+            const token = await authService.getToken();
+            if (!token) {
+                setIsLoading(false);
+                return;
+            }
+
+            // Try to get fresh profile from backend
+            try {
+                const currentUser = await authService.getProfile();
+
+                if (currentUser) {
+                    setUser({
+                        id: currentUser.id,
+                        name: currentUser.name,
+                        email: currentUser.email,
+                        firstName: currentUser.firstName,
+                        lastName: currentUser.lastName,
+                        phone: currentUser.phone,
+                        dateOfBirth: currentUser.dateOfBirth,
+                        role: currentUser.role,
+                        isLandlord: currentUser.isHost || currentUser.isLandlord || false,
+                    });
+                }
+            } catch (profileError) {
+                console.log('Failed to fetch profile (offline?), falling back to local storage', profileError);
+                // Fallback to local storage if offline
+                const cachedUser = await authService.getCurrentUser();
+                if (cachedUser) {
+                    setUser(cachedUser);
+                }
             }
         } catch (error) {
             console.error('Failed to check auth status:', error);
@@ -76,10 +96,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     phone: userData.phone,
                     dateOfBirth: userData.dateOfBirth,
                     role: userData.role,
+                    isLandlord: userData.isHost || userData.isLandlord || false,
                 });
+            } else {
+                throw new Error(response.message || 'Login failed');
             }
         } catch (error) {
-            console.error('Login failed:', error);
+            console.error('Login failed in context:', error);
             throw error;
         }
     };
@@ -99,10 +122,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     phone: userData.phone,
                     dateOfBirth: userData.dateOfBirth,
                     role: userData.role,
+                    isLandlord: userData.isHost || userData.isLandlord || false,
                 });
+            } else {
+                throw new Error(response.message || 'Google login failed');
             }
         } catch (error) {
-            console.error('Google login failed:', error);
+            console.error('Google login failed in context:', error);
             throw error;
         }
     };
@@ -137,9 +163,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     dateOfBirth: userData.dateOfBirth,
                     role: userData.role,
                 });
+            } else {
+                throw new Error(response.message || 'Registration failed');
             }
         } catch (error) {
-            console.error('Registration failed:', error);
+            console.error('Registration failed in context:', error);
             throw error;
         }
     };
@@ -147,10 +175,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const logout = async () => {
         try {
             await authService.logout();
+            // Clear local persistence flag
+            await AsyncStorage.removeItem('hasActivatedHosting');
             setUser(null);
         } catch (error) {
             console.error('Logout failed:', error);
-            throw error;
+            setUser(null);
         }
     };
 
@@ -166,6 +196,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 phone: userData.phone,
                 dateOfBirth: userData.dateOfBirth,
                 role: userData.role,
+                isLandlord: userData.isHost || userData.isLandlord || false, // Sync from backend using isHost
             });
         } catch (error) {
             console.error('Refresh profile failed:', error);
@@ -196,14 +227,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             if (!user) throw new Error('User not logged in');
 
-            // Update user with landlord flag (client-side only)
-            const updatedUser = {
-                ...user,
-                isLandlord: true
-            };
+            // Call backend to activate hosting
+            const updatedUser = await authService.activateHosting();
 
-            setUser(updatedUser);
-            await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
+            setUser({
+                id: updatedUser.id,
+                name: updatedUser.name,
+                email: updatedUser.email,
+                firstName: updatedUser.firstName,
+                lastName: updatedUser.lastName,
+                phone: updatedUser.phone,
+                dateOfBirth: updatedUser.dateOfBirth,
+                role: updatedUser.role,
+                isLandlord: updatedUser.isHost || updatedUser.isLandlord || true, // Force true to reflect new state immediately
+            });
+
+            // Navigate to creating property handled by UI
         } catch (error) {
             console.error('Activate hosting failed:', error);
             throw error;

@@ -53,7 +53,7 @@ export function ChipButton({
                 <Ionicons
                     name={icon}
                     size={16}
-                    color={active ? '#14B8A6' : isDark ? '#9CA3AF' : '#6B7280'}
+                    color={active ? '#00D9A3' : isDark ? '#9CA3AF' : '#6B7280'}
                     style={{ marginRight: 6 }}
                 />
             )}

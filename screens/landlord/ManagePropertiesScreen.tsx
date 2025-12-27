@@ -1,20 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useFocusEffect } from '@react-navigation/native';
 import { propertyService, reviewService } from '../../services';
 import { useThemeColors } from '../../hooks';
-import { LoadingState, EmptyState } from '../../components/common';
+import { LoadingState, EmptyState, useCustomAlert } from '../../components/common';
 import { StarRating } from '../../components/review';
 
 export default function ManagePropertiesScreen({ navigation }: any) {
     const { bgColor, cardBg, textColor, secondaryTextColor, borderColor } = useThemeColors();
     const [properties, setProperties] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const { showAlert, AlertComponent } = useCustomAlert();
 
-    useEffect(() => {
-        loadProperties();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            loadProperties();
+        }, [])
+    );
 
     const loadProperties = async () => {
         try {
@@ -22,14 +27,20 @@ export default function ManagePropertiesScreen({ navigation }: any) {
             const response = await propertyService.getMyProperties(1, 50);
             setProperties(response.data.properties);
         } catch (error: any) {
-            Alert.alert('Error', error.message);
+            showAlert('Error', error.message);
         } finally {
             setLoading(false);
         }
     };
 
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        await loadProperties();
+        setRefreshing(false);
+    };
+
     const handleDeleteProperty = (propertyId: string, title: string) => {
-        Alert.alert(
+        showAlert(
             'Delete Property',
             `Are you sure you want to delete "${title}"?`,
             [
@@ -40,10 +51,10 @@ export default function ManagePropertiesScreen({ navigation }: any) {
                     onPress: async () => {
                         try {
                             await propertyService.deleteProperty(propertyId);
-                            Alert.alert('Success', 'Property deleted');
+                            showAlert('Success', 'Property deleted');
                             loadProperties();
                         } catch (error: any) {
-                            Alert.alert('Error', error.message);
+                            showAlert('Error', error.message);
                         }
                     }
                 }
@@ -173,37 +184,48 @@ export default function ManagePropertiesScreen({ navigation }: any) {
 
     return (
         <View className={`flex-1 ${bgColor}`}>
-            {/* Header */}
-            <View className="flex-row justify-between items-center px-6 py-4">
-                <Text className={`text-3xl font-bold ${textColor}`}>
-                    My Properties
-                </Text>
-                <TouchableOpacity
-                    onPress={() => navigation.navigate('CreateProperty')}
-                    className="bg-primary px-4 py-2 rounded-xl flex-row items-center"
-                >
-                    <Ionicons name="add" size={20} color="white" />
-                    <Text className="text-white font-semibold ml-1">Add</Text>
-                </TouchableOpacity>
-            </View>
-
             <FlatList
                 data={properties}
                 keyExtractor={(item) => item.id}
-                contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 20 }}
+                contentContainerStyle={{ paddingBottom: 20 }}
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                ListHeaderComponent={
+                    <View className="px-6 pt-16 pb-4">
+                        <View className="flex-row justify-between items-center mb-2">
+                            <Text className={`text-3xl font-bold ${textColor}`}>
+                                My Properties
+                            </Text>
+                            <TouchableOpacity
+                                onPress={() => navigation.navigate('CreateProperty')}
+                                className="bg-primary px-4 py-2 rounded-xl flex-row items-center"
+                            >
+                                <Ionicons name="add" size={20} color="white" />
+                                <Text className="text-white font-semibold ml-1">Add</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                }
                 renderItem={({ item, index }) => (
-                    <PropertyCardWithRating item={item} index={index} />
+                    <View className="px-6 mb-3">
+                        <PropertyCardWithRating item={item} index={index} />
+                    </View>
                 )}
                 ListEmptyComponent={
-                    <EmptyState
-                        icon="home-outline"
-                        title="No Properties Yet"
-                        message="Start by adding your first property to rent out"
-                        actionLabel="Add Your First Property"
-                        onAction={() => navigation.navigate('CreateProperty')}
-                    />
+                    <View style={{ height: Dimensions.get('window').height - 200, justifyContent: 'center' }}>
+                        <EmptyState
+                            icon="home-outline"
+                            title="No Properties Yet"
+                            message="Start by adding your first property to rent out"
+                            actionLabel="Add Your First Property"
+                            onAction={() => navigation.navigate('CreateProperty')}
+                        />
+                    </View>
                 }
             />
+
+            {/* Custom Alert */}
+            <AlertComponent />
         </View>
     );
 }

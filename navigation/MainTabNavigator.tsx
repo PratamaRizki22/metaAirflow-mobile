@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { CustomTabBar } from '../components/navigation/CustomTabBar';
 import { useMode } from '../contexts/ModeContext';
+import { useAuth } from '../contexts/AuthContext';
 
 // Tenant Mode Screens
 import { HomeScreen } from '../screens/tabs/HomeScreen';
@@ -20,6 +21,7 @@ const Tab = createBottomTabNavigator();
 
 export function MainTabNavigator() {
     const { isLandlordMode } = useMode();
+    const { user } = useAuth();
 
     if (isLandlordMode) {
         // Landlord Mode Navigation
@@ -38,13 +40,6 @@ export function MainTabNavigator() {
                     }}
                 />
                 <Tab.Screen
-                    name="Inbox"
-                    component={LandlordInboxScreen}
-                    options={{
-                        tabBarLabel: 'Inbox',
-                    }}
-                />
-                <Tab.Screen
                     name="Properties"
                     component={ManagePropertiesScreen}
                     options={{
@@ -56,6 +51,13 @@ export function MainTabNavigator() {
                     component={LandlordBookingsScreen}
                     options={{
                         tabBarLabel: 'Bookings',
+                    }}
+                />
+                <Tab.Screen
+                    name="Inbox"
+                    component={LandlordInboxScreen}
+                    options={{
+                        tabBarLabel: 'Chat',
                     }}
                 />
                 <Tab.Screen
@@ -90,6 +92,16 @@ export function MainTabNavigator() {
                 options={{
                     tabBarLabel: 'Favorites',
                 }}
+                listeners={({ navigation }) => ({
+                    tabPress: (e) => {
+                        if (!user) {
+                            // Prevent default navigation
+                            e.preventDefault();
+                            // Navigate to Login instead
+                            navigation.getParent()?.navigate('Login');
+                        }
+                    },
+                })}
             />
             <Tab.Screen
                 name="Trips"
@@ -97,14 +109,31 @@ export function MainTabNavigator() {
                 options={{
                     tabBarLabel: 'Trips',
                 }}
+                listeners={({ navigation }) => ({
+                    tabPress: (e) => {
+                        if (!user) {
+                            e.preventDefault();
+                            navigation.getParent()?.navigate('Login');
+                        }
+                    },
+                })}
             />
-            <Tab.Screen
+            {/* Messages Tab - Disabled until WebSocket is implemented */}
+            {/* <Tab.Screen
                 name="Messages"
                 component={MessagesScreen}
                 options={{
                     tabBarLabel: 'Chat',
                 }}
-            />
+                listeners={({ navigation }) => ({
+                    tabPress: (e) => {
+                        if (!user) {
+                            e.preventDefault();
+                            navigation.getParent()?.navigate('Login');
+                        }
+                    },
+                })}
+            /> */}
             <Tab.Screen
                 name="Profile"
                 component={ProfileScreen}

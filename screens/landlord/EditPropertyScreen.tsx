@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, ScrollView, Alert, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import MapLibreGL from '@maplibre/maplibre-react-native';
 import { MAPTILER_API_KEY } from '@env';
 import { propertyService, uploadService } from '../../services';
+import { ImagePickerSection, FormInput } from '../../components/common';
 
 export default function EditPropertyScreen({ route, navigation }: any) {
     const { propertyId } = route.params;
@@ -70,35 +70,7 @@ export default function EditPropertyScreen({ route, navigation }: any) {
         }
     };
 
-    const pickImages = async () => {
-        try {
-            const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsMultipleSelection: true,
-                quality: 0.8,
-                aspect: [16, 9],
-            });
 
-            if (!result.canceled && result.assets) {
-                const uris = result.assets.map(asset => asset.uri);
-                setNewImages([...newImages, ...uris]);
-            }
-        } catch (error) {
-            Alert.alert('Error', 'Failed to pick images');
-        }
-    };
-
-    const removeExistingImage = (index: number) => {
-        const updated = [...existingImages];
-        updated.splice(index, 1);
-        setExistingImages(updated);
-    };
-
-    const removeNewImage = (index: number) => {
-        const updated = [...newImages];
-        updated.splice(index, 1);
-        setNewImages(updated);
-    };
 
     const handleMapPress = (feature: any) => {
         const coordinates = feature.geometry.coordinates;
@@ -193,154 +165,51 @@ export default function EditPropertyScreen({ route, navigation }: any) {
             </Text>
 
             {/* Title */}
-            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                Property Title *
-            </Text>
-            <TextInput
+            <FormInput
+                label="Property Title"
+                required
                 placeholder="e.g., Modern Apartment in KLCC"
                 value={formData.title}
                 onChangeText={(text) => setFormData({ ...formData, title: text })}
-                style={{
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                    padding: 12,
-                    borderRadius: 8,
-                    marginBottom: 15,
-                }}
             />
 
             {/* Description */}
-            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                Description *
-            </Text>
-            <TextInput
+            <FormInput
+                label="Description"
+                required
                 placeholder="Describe your property..."
                 value={formData.description}
                 onChangeText={(text) => setFormData({ ...formData, description: text })}
                 multiline
                 numberOfLines={4}
-                style={{
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                    padding: 12,
-                    borderRadius: 8,
-                    marginBottom: 15,
-                    textAlignVertical: 'top',
-                }}
+                style={{ textAlignVertical: 'top' }}
             />
 
             {/* Property Images */}
-            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                Property Images
-            </Text>
-
-            {/* Existing Images */}
-            {existingImages.length > 0 && (
-                <View style={{ marginBottom: 10 }}>
-                    <Text style={{ fontSize: 14, color: '#666', marginBottom: 5 }}>
-                        Current Images ({existingImages.length})
-                    </Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        {existingImages.map((imageUrl, index) => (
-                            <View key={`existing-${index}`} style={{ marginRight: 10, position: 'relative' }}>
-                                <Image
-                                    source={{ uri: imageUrl }}
-                                    style={{ width: 120, height: 120, borderRadius: 8 }}
-                                />
-                                <TouchableOpacity
-                                    onPress={() => removeExistingImage(index)}
-                                    style={{
-                                        position: 'absolute',
-                                        top: 5,
-                                        right: 5,
-                                        backgroundColor: 'rgba(255, 0, 0, 0.8)',
-                                        borderRadius: 12,
-                                        width: 24,
-                                        height: 24,
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                    }}
-                                >
-                                    <Ionicons name="close" size={16} color="white" />
-                                </TouchableOpacity>
-                            </View>
-                        ))}
-                    </ScrollView>
-                </View>
-            )}
-
-            {/* New Images */}
-            {newImages.length > 0 && (
-                <View style={{ marginBottom: 10 }}>
-                    <Text style={{ fontSize: 14, color: '#007AFF', marginBottom: 5 }}>
-                        New Images ({newImages.length})
-                    </Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        {newImages.map((imageUri, index) => (
-                            <View key={`new-${index}`} style={{ marginRight: 10, position: 'relative' }}>
-                                <Image
-                                    source={{ uri: imageUri }}
-                                    style={{ width: 120, height: 120, borderRadius: 8 }}
-                                />
-                                <TouchableOpacity
-                                    onPress={() => removeNewImage(index)}
-                                    style={{
-                                        position: 'absolute',
-                                        top: 5,
-                                        right: 5,
-                                        backgroundColor: 'rgba(255, 0, 0, 0.8)',
-                                        borderRadius: 12,
-                                        width: 24,
-                                        height: 24,
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                    }}
-                                >
-                                    <Ionicons name="close" size={16} color="white" />
-                                </TouchableOpacity>
-                            </View>
-                        ))}
-                    </ScrollView>
-                </View>
-            )}
-
-            {/* Add Images Button */}
-            <TouchableOpacity
-                onPress={pickImages}
-                style={{
-                    borderWidth: 2,
-                    borderColor: '#007AFF',
-                    borderStyle: 'dashed',
-                    borderRadius: 8,
-                    padding: 20,
-                    alignItems: 'center',
-                    marginBottom: 15,
+            <ImagePickerSection
+                label="Property Images"
+                existingImages={existingImages}
+                onRemoveExistingImage={(index) => {
+                    const updated = [...existingImages];
+                    updated.splice(index, 1);
+                    setExistingImages(updated);
                 }}
-            >
-                <Ionicons name="images-outline" size={32} color="#007AFF" />
-                <Text style={{ color: '#007AFF', marginTop: 8, fontWeight: '600' }}>
-                    {existingImages.length + newImages.length > 0 ? 'Add More Images' : 'Add Images'}
-                </Text>
-                <Text style={{ color: '#999', fontSize: 12, marginTop: 4 }}>
-                    Tap to select from gallery
-                </Text>
-            </TouchableOpacity>
+                selectedImages={newImages}
+                onImagesSelected={(uris) => setNewImages([...newImages, ...uris])}
+                onRemoveImage={(index) => {
+                    const updated = [...newImages];
+                    updated.splice(index, 1);
+                    setNewImages(updated);
+                }}
+            />
 
             {/* Address */}
-            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                Address *
-            </Text>
-            <TextInput
+            <FormInput
+                label="Address"
+                required
                 placeholder="Street address"
                 value={formData.address}
                 onChangeText={(text) => setFormData({ ...formData, address: text })}
-                style={{
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                    padding: 12,
-                    borderRadius: 8,
-                    marginBottom: 15,
-                }}
             />
 
             {/* Map Location */}
@@ -430,108 +299,70 @@ export default function EditPropertyScreen({ route, navigation }: any) {
             {/* City & State */}
             <View style={{ flexDirection: 'row', marginBottom: 15 }}>
                 <View style={{ flex: 1, marginRight: 10 }}>
-                    <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                        City *
-                    </Text>
-                    <TextInput
+                    <FormInput
+                        label="City"
+                        required
                         placeholder="City"
                         value={formData.city}
                         onChangeText={(text) => setFormData({ ...formData, city: text })}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: '#ddd',
-                            padding: 12,
-                            borderRadius: 8,
-                        }}
+                        containerStyle={{ marginBottom: 0 }}
                     />
                 </View>
                 <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                        State *
-                    </Text>
-                    <TextInput
+                    <FormInput
+                        label="State"
+                        required
                         placeholder="State"
                         value={formData.state}
                         onChangeText={(text) => setFormData({ ...formData, state: text })}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: '#ddd',
-                            padding: 12,
-                            borderRadius: 8,
-                        }}
+                        containerStyle={{ marginBottom: 0 }}
                     />
                 </View>
             </View>
 
             {/* Price */}
-            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                Monthly Price (IDR) *
-            </Text>
-            <TextInput
+            <FormInput
+                label="Monthly Price (IDR)"
+                required
                 placeholder="e.g., 5000000"
                 value={formData.price}
                 onChangeText={(text) => setFormData({ ...formData, price: text })}
                 keyboardType="numeric"
-                style={{
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                    padding: 12,
-                    borderRadius: 8,
-                    marginBottom: 15,
-                }}
             />
 
             {/* Bedrooms, Bathrooms, Area */}
             <View style={{ flexDirection: 'row', marginBottom: 15 }}>
                 <View style={{ flex: 1, marginRight: 5 }}>
-                    <Text style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 5 }}>
-                        Bedrooms *
-                    </Text>
-                    <TextInput
+                    <FormInput
+                        label="Bedrooms"
+                        required
                         placeholder="3"
                         value={formData.bedrooms}
                         onChangeText={(text) => setFormData({ ...formData, bedrooms: text })}
                         keyboardType="numeric"
-                        style={{
-                            borderWidth: 1,
-                            borderColor: '#ddd',
-                            padding: 12,
-                            borderRadius: 8,
-                        }}
+                        containerStyle={{ marginBottom: 0 }}
                     />
                 </View>
                 <View style={{ flex: 1, marginRight: 5 }}>
-                    <Text style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 5 }}>
-                        Bathrooms *
-                    </Text>
-                    <TextInput
+                    <FormInput
+                        label="Bathrooms"
+                        required
                         placeholder="2"
                         value={formData.bathrooms}
                         onChangeText={(text) => setFormData({ ...formData, bathrooms: text })}
                         keyboardType="numeric"
-                        style={{
-                            borderWidth: 1,
-                            borderColor: '#ddd',
-                            padding: 12,
-                            borderRadius: 8,
-                        }}
+                        containerStyle={{ marginBottom: 0 }}
                     />
                 </View>
                 <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 5 }}>
-                        Area (m²) *
-                    </Text>
-                    <TextInput
+                    <FormInput
+                        label="Area (m²)"
+                        required
                         placeholder="120"
                         value={formData.areaSqm}
                         onChangeText={(text) => setFormData({ ...formData, areaSqm: text })}
                         keyboardType="numeric"
-                        style={{
-                            borderWidth: 1,
-                            borderColor: '#ddd',
-                            padding: 12,
-                            borderRadius: 8,
-                        }}
+                        containerStyle={{ marginBottom: 0 }}
                     />
                 </View>
             </View>

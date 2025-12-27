@@ -24,7 +24,7 @@ export function useThemeColors() {
 
         // Icon colors (hex values for Ionicons)
         iconColor: isDark ? '#9CA3AF' : '#6B7280',
-        iconColorPrimary: '#14B8A6',
+        iconColorPrimary: '#00D9A3',
         iconColorSecondary: isDark ? '#D1D5DB' : '#4B5563',
 
         // Utility

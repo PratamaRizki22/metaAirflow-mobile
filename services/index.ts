@@ -5,10 +5,8 @@ export { default as propertyService } from './propertyService';
 export { default as uploadService } from './uploadService';
 export { default as messageService, Message, Conversation } from './messageService';
 export { default as reviewService } from './reviewService';
-export { stripeService } from './stripeService';
-export { predictionService } from './predictionService';
+export { stripeService, type Payment, type PaymentHistoryParams, type PaymentHistoryResponse } from './stripeService';
+export { predictionService, type PredictionInput, type PredictionResult, type PredictionStatus } from './predictionService';
 export { amenityService } from './amenityService';
 export { propertyTypeService } from './propertyTypeService';
 export { default as api } from './api';
-
-

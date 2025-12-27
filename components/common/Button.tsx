@@ -82,7 +82,7 @@ export function Button({
             }}
         >
             {loading ? (
-                <ActivityIndicator color={variant === 'outline' ? '#14B8A6' : '#FFFFFF'} />
+                <ActivityIndicator color={variant === 'outline' ? '#00D9A3' : '#FFFFFF'} />
             ) : (
                 <Text className={`${textColorStyles[variant]} ${textSizeStyles[size]} font-semibold`}>
                     {children}

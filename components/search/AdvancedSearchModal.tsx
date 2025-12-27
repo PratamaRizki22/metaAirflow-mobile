@@ -308,44 +308,6 @@ export function AdvancedSearchModal({
                         </View>
                     </View>
 
-                    {/* Sort By - Removed (sorting available in main search) */}
-                    {/*
-                    <View className="mb-6">
-                        <View className="flex-row items-center mb-3">
-                            <Ionicons name="swap-vertical" size={20} color={isDark ? '#FFF' : '#000'} style={{ marginRight: 8 }} />
-                            <Text className={`text-lg font-bold ${textColor}`}>Sort By</Text>
-                        </View>
-                        <View className="gap-2">
-                            {sortOptions.map((option) => (
-                                <TouchableOpacity
-                                    key={option.value}
-                                    onPress={() => setFilters({ ...filters, sortBy: option.value as any })}
-                                    className={`p-4 rounded-xl flex-row items-center justify-between ${filters.sortBy === option.value
-                                        ? 'bg-primary'
-                                        : isDark
-                                            ? 'bg-gray-700'
-                                            : 'bg-gray-200'
-                                        }`}
-                                >
-                                    <Text
-                                        className={`font-medium ${filters.sortBy === option.value
-                                            ? 'text-white'
-                                            : isDark
-                                                ? 'text-gray-300'
-                                                : 'text-gray-700'
-                                            }`}
-                                    >
-                                        {option.label}
-                                    </Text>
-                                    {filters.sortBy === option.value && (
-                                        <Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
-                                    )}
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </View>
-                    */}
-
                     {/* Bottom Padding */}
                     <View className="h-4" />
                 </ScrollView>

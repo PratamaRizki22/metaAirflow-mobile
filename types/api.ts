@@ -8,6 +8,8 @@ export interface User {
     dateOfBirth: string;
     phone: string;
     role: string;
+    isLandlord?: boolean; // Computed field from backend
+    isHost?: boolean;     // Actual field from backend
 }
 
 // Registration request

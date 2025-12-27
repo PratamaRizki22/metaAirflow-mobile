@@ -139,9 +139,12 @@ export default function CreateBookingScreen({ route, navigation }: any) {
 
                 {/* Date Selection */}
                 <View className="px-6 mb-6">
-                    <Text className={`text-lg font-bold mb-3 ${textColor}`}>
-                        📅 Your Trip
-                    </Text>
+                    <View className="flex-row items-center mb-3">
+                        <Ionicons name="calendar-outline" size={20} color="#00D9A3" />
+                        <Text className={`text-lg font-bold ml-2 ${textColor}`}>
+                            Your Trip
+                        </Text>
+                    </View>
 
                     <TouchableOpacity
                         onPress={() => setShowDatePicker(true)}
@@ -179,9 +182,12 @@ export default function CreateBookingScreen({ route, navigation }: any) {
 
                 {/* Message */}
                 <View className="px-6 mb-6">
-                    <Text className={`text-lg font-bold mb-3 ${textColor}`}>
-                        💬 Message to Owner (Optional)
-                    </Text>
+                    <View className="flex-row items-center mb-3">
+                        <Ionicons name="chatbubble-outline" size={20} color="#00D9A3" />
+                        <Text className={`text-lg font-bold ml-2 ${textColor}`}>
+                            Message to Owner (Optional)
+                        </Text>
+                    </View>
                     <TextInput
                         className={`${inputBg} ${borderColor} border rounded-2xl px-4 py-3 ${textColor}`}
                         placeholder="Tell the owner about your stay..."
@@ -197,9 +203,12 @@ export default function CreateBookingScreen({ route, navigation }: any) {
                 {/* Price Breakdown */}
                 {startDate && endDate && (
                     <View className="px-6 mb-6">
-                        <Text className={`text-lg font-bold mb-3 ${textColor}`}>
-                            💰 Price Details
-                        </Text>
+                        <View className="flex-row items-center mb-3">
+                            <Ionicons name="cash-outline" size={20} color="#00D9A3" />
+                            <Text className={`text-lg font-bold ml-2 ${textColor}`}>
+                                Price Details
+                            </Text>
+                        </View>
                         <View className={`${cardBg} rounded-2xl p-4`}>
                             <View className="flex-row justify-between mb-3">
                                 <Text className="text-text-secondary-light dark:text-text-secondary-dark">
@@ -226,7 +235,7 @@ export default function CreateBookingScreen({ route, navigation }: any) {
                 <View className="px-6 mb-6">
                     <View className={`${cardBg} rounded-2xl p-4`}>
                         <View className="flex-row items-start gap-3">
-                            <Ionicons name="information-circle" size={24} color="#14B8A6" />
+                            <Ionicons name="information-circle" size={24} color="#00D9A3" />
                             <View className="flex-1">
                                 <Text className={`font-semibold mb-1 ${textColor}`}>
                                     Your booking request

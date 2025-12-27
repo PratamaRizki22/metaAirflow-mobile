@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../../hooks';
 import { StarRating, ReviewCard } from '../../components/review';
 import { reviewService } from '../../services';
-import { EmptyState } from '../../components/common';
+import { EmptyState, LoadingState } from '../../components/common';
 
 export default function ReviewsListScreen({ route, navigation }: any) {
     const { propertyId, propertyTitle } = route.params;
@@ -59,11 +59,7 @@ export default function ReviewsListScreen({ route, navigation }: any) {
     };
 
     if (loading) {
-        return (
-            <View className={`flex-1 ${bgColor} justify-center items-center`}>
-                <ActivityIndicator size="large" color="#14B8A6" />
-            </View>
-        );
+        return <LoadingState />;
     }
 
     return (
@@ -115,7 +111,7 @@ export default function ReviewsListScreen({ route, navigation }: any) {
                                                 <View
                                                     style={{
                                                         width: `${getRatingPercentage(ratingDistribution[star as keyof typeof ratingDistribution])}%`,
-                                                        backgroundColor: '#14B8A6',
+                                                        backgroundColor: '#00D9A3',
                                                         height: '100%',
                                                     }}
                                                 />

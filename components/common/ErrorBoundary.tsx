@@ -97,7 +97,7 @@ export class ErrorBoundary extends Component<Props, State> {
                                 className="mt-8 w-full"
                             >
                                 <LinearGradient
-                                    colors={['#14B8A6', '#0D9488']}
+                                    colors={['#00D9A3', '#00B87C']}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 0 }}
                                     className="py-4 rounded-xl flex-row items-center justify-center"

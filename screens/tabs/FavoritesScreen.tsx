@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { favoriteService } from '../../services';
-import { LoginPrompt } from '../../components/auth';
 import { useThemeColors } from '../../hooks';
 import { LoadingState, EmptyState } from '../../components/common';
 
@@ -70,30 +69,6 @@ export function FavoritesScreen({ navigation }: any) {
     const handlePropertyPress = (propertyId: string) => {
         navigation.navigate('PropertyDetail', { propertyId });
     };
-
-    // Show login prompt if user is not authenticated
-    if (!user) {
-        return (
-            <View className={`flex-1 ${bgColor}`}>
-                <View className="px-6 pt-16 pb-4">
-                    <Text className={`text-3xl font-bold mb-2 ${textColor}`}>
-                        Favorites
-                    </Text>
-                    <Text className="text-text-secondary-light dark:text-text-secondary-dark mb-6">
-                        Save your favorite properties
-                    </Text>
-                </View>
-                <View className="px-6">
-                    <LoginPrompt
-                        variant="inline"
-                        title="Login to View Favorites"
-                        message="Sign in to save and view your favorite properties"
-                        onLoginPress={() => navigation.navigate('Profile')}
-                    />
-                </View>
-            </View>
-        );
-    }
 
     if (loading) {
         return <LoadingState message="Loading favorites..." />;

@@ -5,17 +5,14 @@ import Animated, {
     useAnimatedScrollHandler,
 } from 'react-native-reanimated';
 import { useTheme } from '../../contexts/ThemeContext';
-import {
-    EnhancedSlide,
-    AnimatedBackground,
-    FloatingElements,
-    AnimatedCurvedBackground,
-    PaginationDot,
-    AnimatedButton,
-    ONBOARDING_SLIDES,
-    OnboardingScreenProps,
-    OnboardingSlide,
-} from './';
+import { EnhancedSlide } from './components/EnhancedSlide';
+import { AnimatedBackground } from './components/AnimatedBackground';
+import { FloatingElements } from './components/FloatingElements';
+import { AnimatedCurvedBackground } from './components/AnimatedCurvedBackground';
+import { PaginationDot } from './components/PaginationDot';
+import { AnimatedButton } from './components/AnimatedButton';
+import { ONBOARDING_SLIDES } from './constants';
+import { OnboardingScreenProps, OnboardingSlide } from './types';
 
 const { width } = Dimensions.get('window');
 

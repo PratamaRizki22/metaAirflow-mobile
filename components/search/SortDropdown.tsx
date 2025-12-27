@@ -59,7 +59,7 @@ export function SortDropdown({ visible, onClose, onSelect, currentValue, isDark 
                                     <Ionicons
                                         name={option.icon as any}
                                         size={18}
-                                        color={currentValue === option.id ? '#14B8A6' : '#9CA3AF'}
+                                        color={currentValue === option.id ? '#00D9A3' : '#9CA3AF'}
                                     />
                                     <Text className={`ml-3 flex-1 ${currentValue === option.id
                                         ? 'text-primary font-semibold'
@@ -68,7 +68,7 @@ export function SortDropdown({ visible, onClose, onSelect, currentValue, isDark 
                                         {option.label}
                                     </Text>
                                     {currentValue === option.id && (
-                                        <Ionicons name="checkmark" size={20} color="#14B8A6" />
+                                        <Ionicons name="checkmark" size={20} color="#00D9A3" />
                                     )}
                                 </TouchableOpacity>
                             ))}

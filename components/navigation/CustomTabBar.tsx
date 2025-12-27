@@ -69,8 +69,8 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
         const color = isFocused
             ? '#FFFFFF'
             : isDark
-                ? '#14B8A6'
-                : '#0D9488';
+                ? '#00D9A3'
+                : '#00B87C';
 
         const iconProps = { width: 22, height: 22, color };
 
@@ -107,9 +107,9 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
     };
 
     const bgColor = isDark ? '#1E293B' : '#FFFFFF';
-    const indicatorColor = isDark ? '#14B8A6' : '#0D9488';
+    const indicatorColor = isDark ? '#00D9A3' : '#00B87C';
     const textColorActive = '#FFFFFF';
-    const textColorInactive = isDark ? '#14B8A6' : '#0D9488';
+    const textColorInactive = isDark ? '#00D9A3' : '#00B87C';
 
     return (
         <View

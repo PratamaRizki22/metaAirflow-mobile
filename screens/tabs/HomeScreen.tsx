@@ -25,6 +25,7 @@ import {
     BathroomsFilterSheet,
     PropertyTypeFilterSheet,
     SortDropdown,
+    FilterBar,
 } from '../../components/search';
 import { DEFAULT_IMAGES } from '../../constants/images';
 import { PropertyCardSkeleton } from '../../components/common/Skeleton';
@@ -294,7 +295,7 @@ export function HomeScreen({ navigation }: any) {
                                 <Ionicons
                                     name="notifications-outline"
                                     size={24}
-                                    color="#14B8A6"
+                                    color="#00D9A3"
                                 />
                                 {unreadCount > 0 && (
                                     <View className="absolute top-2 right-2 w-5 h-5 bg-red-500 rounded-full items-center justify-center">
@@ -344,7 +345,7 @@ export function HomeScreen({ navigation }: any) {
                                         className={`flex-row items-center px-2 py-2 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-100'
                                             }`}
                                     >
-                                        <Ionicons name="swap-vertical" size={20} color="#14B8A6" />
+                                        <Ionicons name="swap-vertical" size={20} color="#00D9A3" />
                                         <Ionicons
                                             name={showSortDropdown ? "chevron-up" : "chevron-down"}
                                             size={14}
@@ -359,163 +360,19 @@ export function HomeScreen({ navigation }: any) {
                                 </View>
                             </View>
                         </View>
-
-                        {/* Filter Chips - Google Style */}
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            className="flex-row gap-2"
-                            contentContainerStyle={{ paddingRight: 24 }}
-                        >
-                            {/* Price Filter Chip */}
-                            <TouchableOpacity
-                                onPress={() => setShowPriceFilter(true)}
-                                className={`flex-row items-center px-4 py-2.5 rounded-full border ${searchFilters.minPrice || searchFilters.maxPrice
-                                    ? 'bg-primary/10 border-primary'
-                                    : isDark
-                                        ? 'bg-surface-dark border-gray-700'
-                                        : 'bg-white border-gray-300'
-                                    }`}
-                            >
-                                <Ionicons
-                                    name="cash-outline"
-                                    size={18}
-                                    color={searchFilters.minPrice || searchFilters.maxPrice ? '#14B8A6' : isDark ? '#9CA3AF' : '#6B7280'}
-                                />
-                                <Text className={`ml-1.5 font-medium text-sm ${searchFilters.minPrice || searchFilters.maxPrice
-                                    ? 'text-primary'
-                                    : isDark ? 'text-gray-300' : 'text-gray-700'
-                                    }`}>
-                                    Price
-                                </Text>
-                                {(searchFilters.minPrice || searchFilters.maxPrice) && (
-                                    <View className="ml-1 w-1.5 h-1.5 bg-primary rounded-full" />
-                                )}
-                            </TouchableOpacity>
-
-                            {/* Bedrooms Filter Chip */}
-                            <TouchableOpacity
-                                onPress={() => setShowBedroomsFilter(true)}
-                                className={`flex-row items-center px-4 py-2.5 rounded-full border ${searchFilters.bedrooms
-                                    ? 'bg-primary/10 border-primary'
-                                    : isDark
-                                        ? 'bg-surface-dark border-gray-700'
-                                        : 'bg-white border-gray-300'
-                                    }`}
-                            >
-                                <Ionicons
-                                    name="bed-outline"
-                                    size={18}
-                                    color={searchFilters.bedrooms ? '#14B8A6' : isDark ? '#9CA3AF' : '#6B7280'}
-                                />
-                                <Text className={`ml-1.5 font-medium text-sm ${searchFilters.bedrooms
-                                    ? 'text-primary'
-                                    : isDark ? 'text-gray-300' : 'text-gray-700'
-                                    }`}>
-                                    {searchFilters.bedrooms ? `${searchFilters.bedrooms}+ Beds` : 'Bedrooms'}
-                                </Text>
-                            </TouchableOpacity>
-
-                            {/* Bathrooms Filter Chip */}
-                            <TouchableOpacity
-                                onPress={() => setShowBathroomsFilter(true)}
-                                className={`flex-row items-center px-4 py-2.5 rounded-full border ${searchFilters.bathrooms
-                                    ? 'bg-primary/10 border-primary'
-                                    : isDark
-                                        ? 'bg-surface-dark border-gray-700'
-                                        : 'bg-white border-gray-300'
-                                    }`}
-                            >
-                                <Ionicons
-                                    name="water-outline"
-                                    size={18}
-                                    color={searchFilters.bathrooms ? '#14B8A6' : isDark ? '#9CA3AF' : '#6B7280'}
-                                />
-                                <Text className={`ml-1.5 font-medium text-sm ${searchFilters.bathrooms
-                                    ? 'text-primary'
-                                    : isDark ? 'text-gray-300' : 'text-gray-700'
-                                    }`}>
-                                    {searchFilters.bathrooms ? `${searchFilters.bathrooms}+ Baths` : 'Bathrooms'}
-                                </Text>
-                            </TouchableOpacity>
-
-                            {/* Property Type Filter Chip */}
-                            <TouchableOpacity
-                                onPress={() => setShowPropertyTypeFilter(true)}
-                                className={`flex-row items-center px-4 py-2.5 rounded-full border ${searchFilters.propertyTypeId
-                                    ? 'bg-primary/10 border-primary'
-                                    : isDark
-                                        ? 'bg-surface-dark border-gray-700'
-                                        : 'bg-white border-gray-300'
-                                    }`}
-                            >
-                                <Ionicons
-                                    name="home-outline"
-                                    size={18}
-                                    color={searchFilters.propertyTypeId ? '#14B8A6' : isDark ? '#9CA3AF' : '#6B7280'}
-                                />
-                                <Text className={`ml-1.5 font-medium text-sm ${searchFilters.propertyTypeId
-                                    ? 'text-primary'
-                                    : isDark ? 'text-gray-300' : 'text-gray-700'
-                                    }`}>
-                                    Type
-                                </Text>
-                                {searchFilters.propertyTypeId && (
-                                    <View className="ml-1 w-1.5 h-1.5 bg-primary rounded-full" />
-                                )}
-                            </TouchableOpacity>
-
-                            {/* More Filters Chip */}
-                            <TouchableOpacity
-                                onPress={() => setShowAdvancedSearch(true)}
-                                className={`flex-row items-center px-4 py-2.5 rounded-full border ${Object.keys(searchFilters).length > 0
-                                    ? 'bg-primary/10 border-primary'
-                                    : isDark
-                                        ? 'bg-surface-dark border-gray-700'
-                                        : 'bg-white border-gray-300'
-                                    }`}
-                            >
-                                <Ionicons
-                                    name="options-outline"
-                                    size={18}
-                                    color={Object.keys(searchFilters).length > 0 ? '#14B8A6' : isDark ? '#9CA3AF' : '#6B7280'}
-                                />
-                                <Text className={`ml-1.5 font-medium text-sm ${Object.keys(searchFilters).length > 0
-                                    ? 'text-primary'
-                                    : isDark ? 'text-gray-300' : 'text-gray-700'
-                                    }`}>
-                                    More Filters
-                                </Text>
-                                {Object.keys(searchFilters).length > 0 && (
-                                    <View className="ml-1.5 px-1.5 py-0.5 bg-primary rounded-full">
-                                        <Text className="text-white text-xs font-bold">
-                                            {Object.keys(searchFilters).length}
-                                        </Text>
-                                    </View>
-                                )}
-                            </TouchableOpacity>
-
-                            {/* Clear All Filters Button */}
-                            {(Object.keys(searchFilters).length > 0 || searchQuery || selectedCategory !== 'all') && (
-                                <TouchableOpacity
-                                    onPress={clearAllFilters}
-                                    className={`flex-row items-center px-4 py-2.5 rounded-full border-2 ${isDark
-                                        ? 'bg-red-500/10 border-red-500/30'
-                                        : 'bg-red-50 border-red-200'
-                                        }`}
-                                >
-                                    <Ionicons
-                                        name="close-circle"
-                                        size={18}
-                                        color="#EF4444"
-                                    />
-                                    <Text className="ml-1.5 font-semibold text-sm text-red-500">
-                                        Clear All
-                                    </Text>
-                                </TouchableOpacity>
-                            )}
-                        </ScrollView>
                     </Animated.View>
+
+                    {/* Filter Bar */}
+                    <FilterBar
+                        searchFilters={searchFilters}
+                        onShowPrice={() => setShowPriceFilter(true)}
+                        onShowBedrooms={() => setShowBedroomsFilter(true)}
+                        onShowBathrooms={() => setShowBathroomsFilter(true)}
+                        onShowPropertyType={() => setShowPropertyTypeFilter(true)}
+                        onShowAdvanced={() => setShowAdvancedSearch(true)}
+                        onClearAll={clearAllFilters}
+                        hasActiveFilters={Object.keys(searchFilters).length > 0 || !!searchQuery || selectedCategory !== 'all'}
+                    />
                 </LinearGradient>
 
                 {/* Categories */}
@@ -539,7 +396,7 @@ export function HomeScreen({ navigation }: any) {
                                     <LinearGradient
                                         colors={
                                             isSelected
-                                                ? ['#14B8A6', '#0D9488']
+                                                ? ['#00D9A3', '#00B87C']
                                                 : isDark
                                                     ? ['#1E293B', '#1E293B']
                                                     : ['#FFFFFF', '#FFFFFF']
@@ -647,7 +504,7 @@ export function HomeScreen({ navigation }: any) {
                         ListFooterComponent={
                             loadingMore && !error ? (
                                 <View className="py-4">
-                                    <ActivityIndicator size="small" color="#14B8A6" />
+                                    <ActivityIndicator size="small" color="#00D9A3" />
                                 </View>
                             ) : null
                         }
@@ -671,7 +528,7 @@ export function HomeScreen({ navigation }: any) {
                                             className="mt-6"
                                         >
                                             <LinearGradient
-                                                colors={loading ? ['#9CA3AF', '#6B7280'] : ['#14B8A6', '#0D9488']}
+                                                colors={loading ? ['#9CA3AF', '#6B7280'] : ['#00D9A3', '#00B87C']}
                                                 start={{ x: 0, y: 0 }}
                                                 end={{ x: 1, y: 0 }}
                                                 className="px-6 py-3 rounded-xl flex-row items-center justify-center"

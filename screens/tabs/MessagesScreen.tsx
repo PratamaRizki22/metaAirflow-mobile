@@ -3,7 +3,6 @@ import { View, Text, ScrollView, TouchableOpacity, Image, Alert } from 'react-na
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { LoginPrompt } from '../../components/auth';
 import { useThemeColors } from '../../hooks';
 import { messageService, Conversation as ServiceConversation } from '../../services';
 
@@ -92,30 +91,6 @@ export function MessagesScreen({ navigation }: any) {
             hasActiveBooking: conversation.hasActiveBooking,
         });
     };
-
-    // Show login prompt if user is not authenticated
-    if (!user) {
-        return (
-            <View className={`flex-1 ${bgColor}`}>
-                <View className="px-6 pt-16 pb-4">
-                    <Text className={`text-3xl font-bold mb-2 ${textColor}`}>
-                        Messages
-                    </Text>
-                    <Text className="text-text-secondary-light dark:text-text-secondary-dark mb-6">
-                        Chat with property owners and tenants
-                    </Text>
-                </View>
-                <View className="px-6">
-                    <LoginPrompt
-                        variant="inline"
-                        title="Login to View Messages"
-                        message="Sign in to chat with property owners and tenants"
-                        onLoginPress={() => navigation.navigate('Profile')}
-                    />
-                </View>
-            </View>
-        );
-    }
 
     return (
         <ScrollView className={`flex-1 ${bgColor}`}>

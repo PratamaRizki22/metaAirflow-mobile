@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { useThemeColors } from '../../hooks';
 import { messageService, Conversation } from '../../services';
+import { LoadingState } from '../../components/common';
 
 export function LandlordInboxScreen({ navigation }: any) {
     const { bgColor, textColor, cardBg, isDark } = useThemeColors();
@@ -10,9 +12,11 @@ export function LandlordInboxScreen({ navigation }: any) {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
-    useEffect(() => {
-        loadConversations();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            loadConversations();
+        }, [])
+    );
 
     const loadConversations = async () => {
         try {
@@ -58,19 +62,18 @@ export function LandlordInboxScreen({ navigation }: any) {
     };
 
     if (loading) {
-        return (
-            <View className={`flex-1 ${bgColor} justify-center items-center`}>
-                <ActivityIndicator size="large" color="#14B8A6" />
-                <Text className={`mt-4 ${textColor}`}>Loading conversations...</Text>
-            </View>
-        );
+        return <LoadingState message="Loading conversations..." />;
     }
 
     return (
         <ScrollView
             className={`flex-1 ${bgColor}`}
             refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+                <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={handleRefresh}
+                    progressViewOffset={100}
+                />
             }
         >
             <View className="px-6 pt-16 pb-6">

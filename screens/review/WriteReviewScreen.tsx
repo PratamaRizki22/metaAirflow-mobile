@@ -128,13 +128,13 @@ export default function WriteReviewScreen({ route, navigation }: any) {
                     {/* Guidelines */}
                     <View className={`${cardBg} p-4 rounded-2xl mb-6`}>
                         <View className="flex-row items-start mb-2">
-                            <Ionicons name="information-circle-outline" size={20} color="#14B8A6" />
+                            <Ionicons name="information-circle-outline" size={20} color="#00D9A3" />
                             <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm ml-2 flex-1">
                                 Please be honest and respectful in your review
                             </Text>
                         </View>
                         <View className="flex-row items-start">
-                            <Ionicons name="shield-checkmark-outline" size={20} color="#14B8A6" />
+                            <Ionicons name="shield-checkmark-outline" size={20} color="#00D9A3" />
                             <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm ml-2 flex-1">
                                 Your review helps other tenants make informed decisions
                             </Text>
@@ -149,7 +149,7 @@ export default function WriteReviewScreen({ route, navigation }: any) {
                         className="mb-3"
                     >
                         <LinearGradient
-                            colors={rating === 0 ? ['#9CA3AF', '#9CA3AF'] : ['#14B8A6', '#0D9488']}
+                            colors={rating === 0 ? ['#9CA3AF', '#9CA3AF'] : ['#00D9A3', '#00B87C']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 0 }}
                             className="py-4 rounded-xl items-center"

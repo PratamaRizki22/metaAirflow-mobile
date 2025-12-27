@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { bookingService, reviewService } from '../../services';
+import { bookingService, reviewService, stripeService } from '../../services';
 import { useToast } from '../../hooks/useToast';
 import { Toast } from '../../components/common';
 import { LinearGradient } from 'expo-linear-gradient';
+import { RefundModal } from '../../components/booking/RefundModal';
 
 export default function BookingDetailScreen({ route, navigation }: any) {
     const { bookingId } = route.params;
@@ -12,6 +13,8 @@ export default function BookingDetailScreen({ route, navigation }: any) {
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     const [canReview, setCanReview] = useState(false);
+    const [showRefundModal, setShowRefundModal] = useState(false);
+    const [refundEligibility, setRefundEligibility] = useState<{ eligible: boolean; daysRemaining: number }>({ eligible: false, daysRemaining: 0 });
     const { toast, showToast, hideToast } = useToast();
 
     useEffect(() => {
@@ -33,11 +36,44 @@ export default function BookingDetailScreen({ route, navigation }: any) {
                     console.log('Cannot check review status:', error);
                 }
             }
+
+            // Check refund eligibility for confirmed bookings
+            if (response.data.status === 'APPROVED' && response.data.paymentStatus === 'paid') {
+                checkRefundEligibility(response.data);
+            }
         } catch (error: any) {
             Alert.alert('Error', error.message);
             navigation.goBack();
         } finally {
             setLoading(false);
+        }
+    };
+
+    const checkRefundEligibility = (bookingData: any) => {
+        // Check if payment was completed within 7 days
+        if (bookingData.createdAt) {
+            const paymentDate = new Date(bookingData.createdAt);
+            const now = new Date();
+            const daysSincePayment = Math.floor((now.getTime() - paymentDate.getTime()) / (1000 * 60 * 60 * 24));
+            const daysRemaining = 7 - daysSincePayment;
+
+            setRefundEligibility({
+                eligible: daysRemaining > 0,
+                daysRemaining: Math.max(0, daysRemaining)
+            });
+        }
+    };
+
+    const handleRequestRefund = async (reason: string) => {
+        try {
+            await stripeService.requestRefund(bookingId, reason);
+            showToast('Refund request submitted successfully', 'success');
+            setTimeout(() => {
+                loadBookingDetail();
+            }, 1500);
+        } catch (error: any) {
+            showToast(error.message || 'Failed to request refund', 'error');
+            throw error;
         }
     };
 
@@ -318,7 +354,7 @@ export default function BookingDetailScreen({ route, navigation }: any) {
                             activeOpacity={0.8}
                         >
                             <LinearGradient
-                                colors={['#14B8A6', '#0D9488']}
+                                colors={['#00D9A3', '#00B87C']}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 0 }}
                                 style={{
@@ -355,6 +391,63 @@ export default function BookingDetailScreen({ route, navigation }: any) {
                     </View>
                 )}
 
+                {/* Refund Button (for confirmed bookings within 7 days) */}
+                {booking.status === 'APPROVED' && booking.paymentStatus === 'paid' && refundEligibility.eligible && !booking.isOwner && (
+                    <View style={{ marginTop: 16 }}>
+                        <TouchableOpacity
+                            onPress={() => setShowRefundModal(true)}
+                            activeOpacity={0.8}
+                            style={{
+                                backgroundColor: '#EF4444',
+                                padding: 16,
+                                borderRadius: 12,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                        >
+                            <Ionicons name="arrow-undo" size={20} color="white" />
+                            <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 8, fontSize: 16 }}>
+                                Request Refund ({refundEligibility.daysRemaining} days left)
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                {/* Refund Expired Notice */}
+                {booking.status === 'APPROVED' && booking.paymentStatus === 'paid' && !refundEligibility.eligible && !booking.isOwner && (
+                    <View style={{
+                        marginTop: 16,
+                        padding: 16,
+                        backgroundColor: '#FEE2E2',
+                        borderRadius: 12,
+                        flexDirection: 'row',
+                        alignItems: 'center'
+                    }}>
+                        <Ionicons name="time-outline" size={24} color="#EF4444" />
+                        <Text style={{ color: '#DC2626', marginLeft: 12, flex: 1, fontWeight: '600' }}>
+                            Refund window expired (7 days from payment)
+                        </Text>
+                    </View>
+                )}
+
+                {/* Refunded Status */}
+                {booking.paymentStatus === 'refunded' && (
+                    <View style={{
+                        marginTop: 16,
+                        padding: 16,
+                        backgroundColor: '#E0E7FF',
+                        borderRadius: 12,
+                        flexDirection: 'row',
+                        alignItems: 'center'
+                    }}>
+                        <Ionicons name="checkmark-circle" size={24} color="#6366F1" />
+                        <Text style={{ color: '#4F46E5', marginLeft: 12, flex: 1, fontWeight: '600' }}>
+                            Payment refunded successfully
+                        </Text>
+                    </View>
+                )}
+
                 <View style={{ height: 40 }} />
             </View>
             <Toast
@@ -362,6 +455,17 @@ export default function BookingDetailScreen({ route, navigation }: any) {
                 message={toast.message}
                 type={toast.type}
                 onHide={hideToast}
+            />
+            <RefundModal
+                visible={showRefundModal}
+                onClose={() => setShowRefundModal(false)}
+                onConfirm={handleRequestRefund}
+                bookingDetails={{
+                    propertyTitle: booking?.property?.title || '',
+                    amount: booking?.totalPrice || 0,
+                    completedDate: booking?.createdAt
+                }}
+                daysRemaining={refundEligibility.daysRemaining}
             />
         </ScrollView>
     );

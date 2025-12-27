@@ -47,7 +47,7 @@ export function IconButton({
     const iconColor = {
         primary: '#FFFFFF',
         secondary: isDark ? '#FFFFFF' : '#1F2937',
-        ghost: '#14B8A6',
+        ghost: '#00D9A3',
         danger: '#FFFFFF',
     };
 
