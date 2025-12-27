@@ -22,7 +22,8 @@
         {
           "iosUrlScheme": "com.googleusercontent.apps.341925688776-1j4fsoo39gsfc71osoke2fqqmpjt5fin"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",

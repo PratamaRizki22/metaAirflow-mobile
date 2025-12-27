@@ -55,6 +55,27 @@ class AuthService {
     }
 
     /**
+     * Check if email exists in the system
+     */
+    async checkEmail(email: string): Promise<{ exists: boolean }> {
+        try {
+            const response = await api.post<{ success: boolean; data: { exists: boolean } }>(
+                '/v1/m/auth/check-email',
+                { email }
+            );
+
+            if (response.data.success) {
+                return response.data.data;
+            }
+
+            throw new Error('Failed to check email');
+        } catch (error: any) {
+            logError('Check Email', error);
+            throw this.handleError(error);
+        }
+    }
+
+    /**
      * Login with Google
      */
     async loginWithGoogle(idToken: string): Promise<AuthResponse> {

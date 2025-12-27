@@ -9,53 +9,45 @@ import {
     ScrollView,
     ActivityIndicator,
     Alert,
+    StatusBar,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../contexts/ThemeContext';
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-import { GOOGLE_WEB_CLIENT_ID } from '@env';
 import authService from '../../services/authService';
-import { useThemeColors } from '../../hooks';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface RegisterScreenProps {
+    email: string;
     onRegisterSuccess: () => void;
-    onNavigateToLogin: () => void;
+    onBack: () => void;
 }
 
-export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: RegisterScreenProps) {
+export function RegisterScreen({ email, onRegisterSuccess, onBack }: RegisterScreenProps) {
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
-    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
     const [phone, setPhone] = useState('');
     const [dateOfBirth, setDateOfBirth] = useState('');
+    const [date, setDate] = useState(new Date());
+    const [showDatePicker, setShowDatePicker] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
-    const [fieldErrors, setFieldErrors] = useState<{[key: string]: boolean}>({});
+    const [fieldErrors, setFieldErrors] = useState<{ [key: string]: boolean }>({});
 
     const handleRegister = async () => {
         setError('');
 
-        const errors: {[key: string]: boolean} = {};
+        const errors: { [key: string]: boolean } = {};
         if (!firstName) errors.firstName = true;
         if (!lastName) errors.lastName = true;
-        if (!email) errors.email = true;
         if (!password) errors.password = true;
-        if (!confirmPassword) errors.confirmPassword = true;
         if (!phone) errors.phone = true;
         if (!dateOfBirth) errors.dateOfBirth = true;
-        
-        setFieldErrors(errors);
-        
-        if (Object.keys(errors).length > 0) {
-            return;
-        }
 
-        if (password !== confirmPassword) {
-            setError('Passwords do not match');
+        setFieldErrors(errors);
+
+        if (Object.keys(errors).length > 0) {
             return;
         }
 
@@ -64,29 +56,26 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
             return;
         }
 
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            setError('Please enter a valid email address');
-            return;
-        }
-
-        // Validate date format (YYYY-MM-DD)
-        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        // Validate date format (MM/DD/YYYY)
+        const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
         if (!dateRegex.test(dateOfBirth)) {
-            setError('Date of birth must be in YYYY-MM-DD format');
+            setError('Date of birth must be in MM/DD/YYYY format');
             return;
         }
 
         setIsLoading(true);
 
         try {
+            // Convert date format from MM/DD/YYYY to YYYY-MM-DD for backend
+            const [month, day, year] = dateOfBirth.split('/');
+            const formattedDate = `${year}-${month}-${day}`;
+
             const response = await authService.register({
                 email,
                 password,
                 firstName,
                 lastName,
-                dateOfBirth,
+                dateOfBirth: formattedDate,
                 phone,
             });
 
@@ -109,273 +98,219 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
         }
     };
 
-    const handleGoogleSignIn = async () => {
-        try {
-            setIsLoading(true);
-            setError('');
-
-            GoogleSignin.configure({
-                webClientId: GOOGLE_WEB_CLIENT_ID,
-                offlineAccess: true,
-            });
-
-            await GoogleSignin.hasPlayServices();
-            const response = await GoogleSignin.signIn();
-
-            if (response.type === 'success') {
-                onRegisterSuccess();
-            }
-        } catch (error: any) {
-            if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-                setError('Sign in was cancelled');
-            } else if (error.code === statusCodes.IN_PROGRESS) {
-                setError('Sign in is already in progress');
-            } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-                setError('Play services not available');
-            } else {
-                setError(error.message || 'Google Sign-In failed');
-            }
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const { bgColor, textColor, secondaryTextColor, borderColor, isDark } = useThemeColors();
-    const inputBg = isDark ? 'bg-surface-dark' : 'bg-surface-light';
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className={`flex-1 ${bgColor}`}
-        >
-            <ScrollView
-                contentContainerStyle={{ flexGrow: 1 }}
-                keyboardShouldPersistTaps="handled"
+        <View className="flex-1">
+            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <LinearGradient
+                colors={['#FFFFFF', '#DAF3FF']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                className="flex-1"
             >
-                <View className="flex-1 justify-center px-6 py-12">
-                    <View className="mb-8">
-                        <Text className={`text-4xl font-bold mb-2 ${textColor}`}>
-                            Create Account
-                        </Text>
-                        <Text className={`text-base ${secondaryTextColor}`}>
-                            Sign up to get started with Rentverse
-                        </Text>
-                    </View>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    className="flex-1"
+                >
+                    <ScrollView
+                        contentContainerStyle={{ flexGrow: 1 }}
+                        keyboardShouldPersistTaps="handled"
+                        showsVerticalScrollIndicator={false}
+                    >
+                        <View className="flex-1 px-6 pt-16 pb-8">
+                            {/* Back Button */}
+                            <TouchableOpacity
+                                onPress={onBack}
+                                className="mb-6 w-6 h-6 items-center justify-center"
+                            >
+                                <Ionicons name="chevron-back" size={24} color="#334155" />
+                            </TouchableOpacity>
 
-                    {error ? (
-                        <View className="bg-error-light/10 border border-error-light rounded-lg p-4 mb-6">
-                            <Text className="text-error-light">{error}</Text>
-                        </View>
-                    ) : null}
+                            {/* Title */}
+                            <View className="items-center mb-8">
+                                <Text className="text-lg font-semibold text-[#0f172a] mb-2">
+                                    Sign Up
+                                </Text>
+                                <Text className="text-sm text-[#475569] text-center px-8">
+                                    Join anBacke journey in property search.
+                                </Text>
+                            </View>
 
-                    <View className="space-y-4 mb-6">
-                        <View>
-                            <Text className={`text-sm font-medium mb-2 ${textColor}`}>
-                                First Name
-                            </Text>
-                            <TextInput
-                                className={`${inputBg} border rounded-lg px-4 py-3 ${textColor} ${
-                                    fieldErrors.firstName ? 'border-red-500 border-2' : borderColor
-                                }`}
-                                placeholder="Enter your first name"
-                                placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                                value={firstName}
-                                onChangeText={(text) => {
-                                    setFirstName(text);
-                                    if (text) setFieldErrors(prev => ({ ...prev, firstName: false }));
-                                }}
-                                editable={!isLoading}
-                            />
-                        </View>
+                            {error ? (
+                                <View className="bg-red-50 border border-red-300 rounded-lg p-4 mb-6">
+                                    <Text className="text-red-600">{error}</Text>
+                                </View>
+                            ) : null}
 
-                        <View>
-                            <Text className={`text-sm font-medium mb-2 ${textColor}`}>
-                                Last Name
-                            </Text>
-                            <TextInput
-                                className={`${inputBg} border rounded-lg px-4 py-3 ${textColor} ${
-                                    fieldErrors.lastName ? 'border-red-500 border-2' : borderColor
-                                }`}
-                                placeholder="Enter your last name"
-                                placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                                value={lastName}
-                                onChangeText={(text) => {
-                                    setLastName(text);
-                                    if (text) setFieldErrors(prev => ({ ...prev, lastName: false }));
-                                }}
-                                editable={!isLoading}
-                            />
-                        </View>
-
-                        <View>
-                            <Text className={`text-sm font-medium mb-2 ${textColor}`}>
-                                Email
-                            </Text>
-                            <TextInput
-                                className={`${inputBg} border rounded-lg px-4 py-3 ${textColor} ${
-                                    fieldErrors.email ? 'border-red-500 border-2' : borderColor
-                                }`}
-                                placeholder="Enter your email"
-                                placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                                value={email}
-                                onChangeText={(text) => {
-                                    setEmail(text);
-                                    if (text) setFieldErrors(prev => ({ ...prev, email: false }));
-                                }}
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                editable={!isLoading}
-                            />
-                        </View>
-
-                        <View>
-                            <Text className={`text-sm font-medium mb-2 ${textColor}`}>
-                                Phone Number
-                            </Text>
-                            <TextInput
-                                className={`${inputBg} border rounded-lg px-4 py-3 ${textColor} ${
-                                    fieldErrors.phone ? 'border-red-500 border-2' : borderColor
-                                }`}
-                                placeholder="Enter your phone number"
-                                placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                                value={phone}
-                                onChangeText={(text) => {
-                                    setPhone(text);
-                                    if (text) setFieldErrors(prev => ({ ...prev, phone: false }));
-                                }}
-                                keyboardType="phone-pad"
-                                editable={!isLoading}
-                            />
-                        </View>
-
-                        <View>
-                            <Text className={`text-sm font-medium mb-2 ${textColor}`}>
-                                Date of Birth
-                            </Text>
-                            <TextInput
-                                className={`${inputBg} border rounded-lg px-4 py-3 ${textColor} ${
-                                    fieldErrors.dateOfBirth ? 'border-red-500 border-2' : borderColor
-                                }`}
-                                placeholder="YYYY-MM-DD"
-                                placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                                value={dateOfBirth}
-                                onChangeText={(text) => {
-                                    setDateOfBirth(text);
-                                    if (text) setFieldErrors(prev => ({ ...prev, dateOfBirth: false }));
-                                }}
-                                editable={!isLoading}
-                            />
-                        </View>
-
-                        <View>
-                            <Text className={`text-sm font-medium mb-2 ${textColor}`}>
-                                Password
-                            </Text>
-                            <View className="relative">
-                                <TextInput
-                                    className={`${inputBg} border rounded-lg px-4 py-3 pr-12 ${textColor} ${
-                                        fieldErrors.password ? 'border-red-500 border-2' : borderColor
-                                    }`}
-                                    placeholder="Create a password"
-                                    placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                                    value={password}
-                                    onChangeText={(text) => {
-                                        setPassword(text);
-                                        if (text) setFieldErrors(prev => ({ ...prev, password: false }));
-                                    }}
-                                    secureTextEntry={!showPassword}
-                                    editable={!isLoading}
-                                />
-                                <TouchableOpacity
-                                    onPress={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-0 bottom-0 justify-center"
-                                    disabled={isLoading}
-                                >
-                                    <Ionicons
-                                        name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                                        size={24}
-                                        color={isDark ? '#94A3B8' : '#9CA3AF'}
+                            {/* Form Fields */}
+                            <View className="space-y-4">
+                                {/* First Name */}
+                                <View className="mb-4">
+                                    <Text className="text-sm text-[#475569] mb-2">First Name</Text>
+                                    <TextInput
+                                        className={`bg-white border ${fieldErrors.firstName ? 'border-red-500' : 'border-[#10A0F7]'
+                                            } rounded-md px-4 py-3 text-[#64748b]`}
+                                        placeholder="Someone"
+                                        placeholderTextColor="#64748b"
+                                        value={firstName}
+                                        onChangeText={(text) => {
+                                            setFirstName(text);
+                                            if (text) setFieldErrors((prev) => ({ ...prev, firstName: false }));
+                                        }}
+                                        editable={!isLoading}
                                     />
+                                </View>
+
+                                {/* Last Name */}
+                                <View className="mb-4">
+                                    <Text className="text-sm text-[#475569] mb-2">Last Name</Text>
+                                    <TextInput
+                                        className={`bg-white border ${fieldErrors.lastName ? 'border-red-500' : 'border-[#94a3b8]'
+                                            } rounded-md px-4 py-3 text-[#64748b]`}
+                                        placeholder="Handsome"
+                                        placeholderTextColor="#64748b"
+                                        value={lastName}
+                                        onChangeText={(text) => {
+                                            setLastName(text);
+                                            if (text) setFieldErrors((prev) => ({ ...prev, lastName: false }));
+                                        }}
+                                        editable={!isLoading}
+                                    />
+                                </View>
+
+                                {/* Birthday */}
+                                <View className="mb-4">
+                                    <Text className="text-sm text-[#475569] mb-2">Birthday</Text>
+                                    <TouchableOpacity
+                                        onPress={() => !isLoading && setShowDatePicker(true)}
+                                        disabled={isLoading}
+                                    >
+                                        <View
+                                            className={`bg-white border ${fieldErrors.dateOfBirth ? 'border-red-500' : 'border-[#94a3b8]'
+                                                } rounded-md px-4 py-3 flex-row items-center justify-between`}
+                                        >
+                                            <Text className={dateOfBirth ? 'text-[#0f172a]' : 'text-[#64748b]'}>
+                                                {dateOfBirth || '12/12/2012'}
+                                            </Text>
+                                            <Ionicons name="calendar-outline" size={16} color="#475569" />
+                                        </View>
+                                    </TouchableOpacity>
+                                    {showDatePicker && (
+                                        <DateTimePicker
+                                            value={date}
+                                            mode="date"
+                                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                            onChange={(event, selectedDate) => {
+                                                setShowDatePicker(Platform.OS === 'ios');
+                                                if (selectedDate) {
+                                                    setDate(selectedDate);
+                                                    // Format as MM/DD/YYYY
+                                                    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                                                    const day = String(selectedDate.getDate()).padStart(2, '0');
+                                                    const year = selectedDate.getFullYear();
+                                                    const formatted = `${month}/${day}/${year}`;
+                                                    setDateOfBirth(formatted);
+                                                    setFieldErrors((prev) => ({ ...prev, dateOfBirth: false }));
+                                                }
+                                            }}
+                                            maximumDate={new Date()}
+                                        />
+                                    )}
+                                </View>
+
+                                {/* Phone Number */}
+                                <View className="mb-4">
+                                    <Text className="text-sm text-[#475569] mb-2">Phone Number</Text>
+                                    <View className="relative">
+                                        <TextInput
+                                            className={`bg-white border ${fieldErrors.phone ? 'border-red-500' : 'border-[#94a3b8]'
+                                                } rounded-md pl-16 pr-4 py-3 text-[#64748b]`}
+                                            placeholder="812-2182-1821"
+                                            placeholderTextColor="#64748b"
+                                            value={phone}
+                                            onChangeText={(text) => {
+                                                setPhone(text);
+                                                if (text) setFieldErrors((prev) => ({ ...prev, phone: false }));
+                                            }}
+                                            keyboardType="phone-pad"
+                                            editable={!isLoading}
+                                        />
+                                        <View className="absolute left-0 top-0 bottom-0 w-10 bg-[#cbd5e199] items-center justify-center rounded-l-md">
+                                            <Text className="text-sm text-[#64748b]">+60</Text>
+                                        </View>
+                                    </View>
+                                </View>
+
+                                {/* Password */}
+                                <View className="mb-4">
+                                    <Text className="text-sm text-[#475569] mb-2">Password</Text>
+                                    <View className="relative">
+                                        <TextInput
+                                            className={`bg-white border ${fieldErrors.password ? 'border-red-500' : 'border-[#94a3b8]'
+                                                } rounded-md px-4 py-3 pr-12 text-[#64748b]`}
+                                            placeholder="********"
+                                            placeholderTextColor="#64748b"
+                                            value={password}
+                                            onChangeText={(text) => {
+                                                setPassword(text);
+                                                if (text) setFieldErrors((prev) => ({ ...prev, password: false }));
+                                            }}
+                                            secureTextEntry={!showPassword}
+                                            editable={!isLoading}
+                                        />
+                                        <TouchableOpacity
+                                            onPress={() => setShowPassword(!showPassword)}
+                                            className="absolute right-4 top-0 bottom-0 justify-center"
+                                            disabled={isLoading}
+                                        >
+                                            <Ionicons
+                                                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                                                size={16}
+                                                color="#475569"
+                                            />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            </View>
+
+                            {/* Next Button */}
+                            <View className="mt-auto pt-8">
+                                <TouchableOpacity
+                                    onPress={handleRegister}
+                                    disabled={isLoading}
+                                    className={isLoading ? 'opacity-50' : ''}
+                                    style={{
+                                        borderRadius: 8,
+                                        overflow: 'hidden',
+                                    }}
+                                >
+                                    <LinearGradient
+                                        colors={['#10A0F7', '#01E8AD']}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 0.65 }}
+                                        className="py-3 px-4"
+                                        style={{
+                                            shadowColor: '#10A0F7',
+                                            shadowOffset: { width: 4, height: 4 },
+                                            shadowOpacity: 0.4,
+                                            shadowRadius: 12,
+                                            elevation: 8,
+                                        }}
+                                    >
+                                        {isLoading ? (
+                                            <ActivityIndicator color="white" />
+                                        ) : (
+                                            <Text className="text-[#f1f5f9] text-center font-semibold text-sm">
+                                                Next
+                                            </Text>
+                                        )}
+                                    </LinearGradient>
                                 </TouchableOpacity>
                             </View>
                         </View>
-
-                        <View>
-                            <Text className={`text-sm font-medium mb-2 ${textColor}`}>
-                                Confirm Password
-                            </Text>
-                            <View className="relative">
-                                <TextInput
-                                    className={`${inputBg} border rounded-lg px-4 py-3 pr-12 ${textColor} ${
-                                        fieldErrors.confirmPassword ? 'border-red-500 border-2' : borderColor
-                                    }`}
-                                    placeholder="Confirm your password"
-                                    placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                                    value={confirmPassword}
-                                    onChangeText={(text) => {
-                                        setConfirmPassword(text);
-                                        if (text) setFieldErrors(prev => ({ ...prev, confirmPassword: false }));
-                                    }}
-                                    secureTextEntry={!showConfirmPassword}
-                                    editable={!isLoading}
-                                />
-                                <TouchableOpacity
-                                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    className="absolute right-4 top-0 bottom-0 justify-center"
-                                    disabled={isLoading}
-                                >
-                                    <Ionicons
-                                        name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
-                                        size={24}
-                                        color={isDark ? '#94A3B8' : '#9CA3AF'}
-                                    />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </View>
-
-                    <TouchableOpacity
-                        onPress={handleRegister}
-                        disabled={isLoading}
-                        className={`bg-primary rounded-lg py-4 mb-6 ${isLoading ? 'opacity-50' : ''}`}
-                    >
-                        {isLoading ? (
-                            <ActivityIndicator color="white" />
-                        ) : (
-                            <Text className="text-white text-center font-semibold text-base">
-                                Create Account
-                            </Text>
-                        )}
-                    </TouchableOpacity>
-
-                    <View className="flex-row items-center mb-6">
-                        <View className={`flex-1 h-px ${isDark ? 'bg-border-dark' : 'bg-border-light'}`} />
-                        <Text className={`mx-4 ${secondaryTextColor}`}>or</Text>
-                        <View className={`flex-1 h-px ${isDark ? 'bg-border-dark' : 'bg-border-light'}`} />
-                    </View>
-
-                    <TouchableOpacity
-                        onPress={handleGoogleSignIn}
-                        disabled={isLoading}
-                        className={`${inputBg} ${borderColor} border rounded-lg py-4 mb-6 ${isLoading ? 'opacity-50' : ''}`}
-                    >
-                        <Text className={`text-center font-semibold text-base ${textColor}`}>
-                            Continue with Google
-                        </Text>
-                    </TouchableOpacity>
-
-                    <View className="flex-row justify-center items-center">
-                        <Text className={secondaryTextColor}>
-                            Already have an account?{' '}
-                        </Text>
-                        <TouchableOpacity onPress={onNavigateToLogin} disabled={isLoading}>
-                            <Text className="text-primary font-semibold">
-                                Sign In
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </ScrollView>
-        </KeyboardAvoidingView>
+                    </ScrollView>
+                </KeyboardAvoidingView>
+            </LinearGradient>
+        </View>
     );
 }
