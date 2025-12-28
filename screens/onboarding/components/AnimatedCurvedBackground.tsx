@@ -22,8 +22,8 @@ export function AnimatedCurvedBackground({ currentIndex }: AnimatedCurvedBackgro
         >
             <Defs>
                 <RadialGradient id="grad" cx="50%" cy="50%">
-                    <Stop offset="0%" stopColor="#14B8A6" stopOpacity="1" />
-                    <Stop offset="100%" stopColor="#0D9488" stopOpacity="1" />
+                    <Stop offset="0%" stopColor="#00D9A3" stopOpacity="1" />
+                    <Stop offset="100%" stopColor="#00B87C" stopOpacity="1" />
                 </RadialGradient>
             </Defs>
             <Path

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, ScrollView, Alert, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TextInput, ScrollView, Alert, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { authService, uploadService } from '../../services';
+import { useThemeColors } from '../../hooks';
 
 export default function EditProfileScreen({ navigation }: any) {
     const { user, refreshProfile } = useAuth();
+    const { bgColor, textColor, cardBg, isDark } = useThemeColors();
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -16,6 +18,9 @@ export default function EditProfileScreen({ navigation }: any) {
     const [profilePicture, setProfilePicture] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [uploadingPicture, setUploadingPicture] = useState(false);
+
+    const inputBg = isDark ? 'bg-surface-dark' : 'bg-surface-light';
+    const borderColor = isDark ? 'border-border-dark' : 'border-border-light';
 
     useEffect(() => {
         if (user) {
@@ -126,156 +131,149 @@ export default function EditProfileScreen({ navigation }: any) {
     };
 
     return (
-        <ScrollView style={{ flex: 1, padding: 20 }}>
-            <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 20 }}>
-                Edit Profile
-            </Text>
+        <ScrollView className={`flex-1 ${bgColor}`}>
+            <View className="px-6 py-8">
+                <Text className={`text-3xl font-bold mb-2 ${textColor}`}>
+                    Edit Profile
+                </Text>
+                <Text className="text-text-secondary-light dark:text-text-secondary-dark mb-8">
+                    Update your personal information
+                </Text>
 
-            {/* Profile Picture */}
-            <View style={{ alignItems: 'center', marginBottom: 20 }}>
-                <TouchableOpacity onPress={pickProfilePicture} style={{ position: 'relative' }}>
-                    {profilePicture ? (
-                        <Image
-                            source={{ uri: profilePicture }}
-                            style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: '#E5E5E5' }}
-                        />
-                    ) : (
-                        <View style={{
-                            width: 120,
-                            height: 120,
-                            borderRadius: 60,
-                            backgroundColor: '#007AFF',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                        }}>
-                            <Text style={{ color: 'white', fontSize: 48, fontWeight: 'bold' }}>
-                                {user?.firstName?.[0] || 'U'}
-                            </Text>
+                {/* Profile Picture */}
+                <View className="items-center mb-8">
+                    <TouchableOpacity onPress={pickProfilePicture} className="relative">
+                        {profilePicture ? (
+                            <Image
+                                source={{ uri: profilePicture }}
+                                className="w-32 h-32 rounded-full"
+                                style={{ backgroundColor: isDark ? '#374151' : '#E5E5E5' }}
+                            />
+                        ) : (
+                            <View className="w-32 h-32 rounded-full bg-primary items-center justify-center">
+                                <Text className="text-white text-5xl font-bold">
+                                    {user?.firstName?.[0] || 'U'}
+                                </Text>
+                            </View>
+                        )}
+                        <View className="absolute bottom-0 right-0 bg-primary w-10 h-10 rounded-full items-center justify-center border-4"
+                            style={{ borderColor: isDark ? '#0F172A' : '#FFFFFF' }}>
+                            <Ionicons name="camera" size={20} color="white" />
                         </View>
+                    </TouchableOpacity>
+                    <Text className="mt-2 text-text-secondary-light dark:text-text-secondary-dark">
+                        Tap to change photo
+                    </Text>
+                    {uploadingPicture && (
+                        <ActivityIndicator size="small" color="#00D9A3" className="mt-2" />
                     )}
-                    <View style={{
-                        position: 'absolute',
-                        bottom: 0,
-                        right: 0,
-                        backgroundColor: '#007AFF',
-                        width: 36,
-                        height: 36,
-                        borderRadius: 18,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        borderWidth: 3,
-                        borderColor: 'white',
-                    }}>
-                        <Ionicons name="camera" size={18} color="white" />
+                </View>
+
+                {/* Email (Read-only) */}
+                <View className="mb-4">
+                    <Text className={`text-sm font-semibold mb-2 ${textColor}`}>
+                        Email
+                    </Text>
+                    <View className={`${inputBg} border ${borderColor} rounded-xl px-4 py-3`}
+                        style={{ opacity: 0.6 }}>
+                        <Text className="text-text-secondary-light dark:text-text-secondary-dark">
+                            {user?.email}
+                        </Text>
                     </View>
+                </View>
+
+                {/* First Name */}
+                <View className="mb-4">
+                    <Text className={`text-sm font-semibold mb-2 ${textColor}`}>
+                        First Name *
+                    </Text>
+                    <TextInput
+                        placeholder="John"
+                        placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
+                        value={formData.firstName}
+                        onChangeText={(text) => setFormData({ ...formData, firstName: text })}
+                        className={`${inputBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
+                    />
+                </View>
+
+                {/* Last Name */}
+                <View className="mb-4">
+                    <Text className={`text-sm font-semibold mb-2 ${textColor}`}>
+                        Last Name *
+                    </Text>
+                    <TextInput
+                        placeholder="Doe"
+                        placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
+                        value={formData.lastName}
+                        onChangeText={(text) => setFormData({ ...formData, lastName: text })}
+                        className={`${inputBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
+                    />
+                </View>
+
+                {/* Phone */}
+                <View className="mb-4">
+                    <Text className={`text-sm font-semibold mb-2 ${textColor}`}>
+                        Phone Number
+                    </Text>
+                    <TextInput
+                        placeholder="+62 812 3456 7890"
+                        placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
+                        value={formData.phone}
+                        onChangeText={(text) => setFormData({ ...formData, phone: text })}
+                        keyboardType="phone-pad"
+                        className={`${inputBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
+                    />
+                </View>
+
+                {/* Date of Birth */}
+                <View className="mb-6">
+                    <Text className={`text-sm font-semibold mb-2 ${textColor}`}>
+                        Date of Birth
+                    </Text>
+                    <TextInput
+                        placeholder="YYYY-MM-DD (e.g., 1990-01-15)"
+                        placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
+                        value={formData.dateOfBirth}
+                        onChangeText={(text) => setFormData({ ...formData, dateOfBirth: text })}
+                        className={`${inputBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
+                    />
+                </View>
+
+                {/* Submit Button */}
+                <TouchableOpacity
+                    onPress={handleSubmit}
+                    disabled={loading}
+                    className={`bg-primary rounded-xl py-4 mb-3 ${loading ? 'opacity-50' : ''}`}
+                    style={{
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 4,
+                        elevation: 3,
+                    }}
+                >
+                    {loading ? (
+                        <ActivityIndicator color="white" />
+                    ) : (
+                        <Text className="text-white text-center font-semibold text-base">
+                            UPDATE PROFILE
+                        </Text>
+                    )}
                 </TouchableOpacity>
-                <Text style={{ marginTop: 8, color: '#666' }}>Tap to change photo</Text>
-                {uploadingPicture && (
-                    <ActivityIndicator size="small" color="#007AFF" style={{ marginTop: 8 }} />
-                )}
+
+                {/* Cancel Button */}
+                <TouchableOpacity
+                    onPress={() => navigation.goBack()}
+                    className={`${isDark ? 'bg-gray-800' : 'bg-gray-200'} rounded-xl py-4`}
+                >
+                    <Text className={`text-center font-semibold text-base ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                        CANCEL
+                    </Text>
+                </TouchableOpacity>
+
+                {/* Bottom Spacing */}
+                <View className="h-8" />
             </View>
-
-            {/* Email (Read-only) */}
-            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                Email
-            </Text>
-            <View style={{
-                borderWidth: 1,
-                borderColor: '#ddd',
-                padding: 12,
-                borderRadius: 8,
-                marginBottom: 15,
-                backgroundColor: '#f5f5f5',
-            }}>
-                <Text style={{ color: '#666' }}>{user?.email}</Text>
-            </View>
-
-            {/* First Name */}
-            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                First Name *
-            </Text>
-            <TextInput
-                placeholder="John"
-                value={formData.firstName}
-                onChangeText={(text) => setFormData({ ...formData, firstName: text })}
-                style={{
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                    padding: 12,
-                    borderRadius: 8,
-                    marginBottom: 15,
-                }}
-            />
-
-            {/* Last Name */}
-            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                Last Name *
-            </Text>
-            <TextInput
-                placeholder="Doe"
-                value={formData.lastName}
-                onChangeText={(text) => setFormData({ ...formData, lastName: text })}
-                style={{
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                    padding: 12,
-                    borderRadius: 8,
-                    marginBottom: 15,
-                }}
-            />
-
-            {/* Phone */}
-            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                Phone Number
-            </Text>
-            <TextInput
-                placeholder="+62 812 3456 7890"
-                value={formData.phone}
-                onChangeText={(text) => setFormData({ ...formData, phone: text })}
-                keyboardType="phone-pad"
-                style={{
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                    padding: 12,
-                    borderRadius: 8,
-                    marginBottom: 15,
-                }}
-            />
-
-            {/* Date of Birth */}
-            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                Date of Birth
-            </Text>
-            <TextInput
-                placeholder="YYYY-MM-DD (e.g., 1990-01-15)"
-                value={formData.dateOfBirth}
-                onChangeText={(text) => setFormData({ ...formData, dateOfBirth: text })}
-                style={{
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                    padding: 12,
-                    borderRadius: 8,
-                    marginBottom: 20,
-                }}
-            />
-
-            {/* Submit Button */}
-            <Button
-                title={loading ? 'Updating...' : 'Update Profile'}
-                onPress={handleSubmit}
-                disabled={loading}
-                color="#34C759"
-            />
-
-            <View style={{ height: 20 }} />
-
-            <Button
-                title="Cancel"
-                onPress={() => navigation.goBack()}
-                color="#999"
-            />
-
-            <View style={{ height: 40 }} />
         </ScrollView>
     );
 }

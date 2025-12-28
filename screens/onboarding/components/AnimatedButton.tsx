@@ -29,7 +29,7 @@ export function AnimatedButton({ currentIndex, totalSlides, onPress }: AnimatedB
                     Get Started
                 </Text>
             ) : (
-                <Ionicons name="arrow-forward" size={24} color="#14B8A6" />
+                <Ionicons name="arrow-forward" size={24} color="#00D9A3" />
             )}
         </TouchableOpacity>
     );

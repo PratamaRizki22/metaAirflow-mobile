@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '@env';
 
 // Base URL - menggunakan environment variable
-const BASE_URL = API_BASE_URL || 'http://192.168.1.42:3000/api';
+const BASE_URL = API_BASE_URL;
 
 // Debug: Log the actual URL being used
 console.log('=== API Configuration ===');
@@ -14,7 +14,7 @@ console.log('========================');
 // Create axios instance
 const api = axios.create({
     baseURL: BASE_URL,
-    timeout: 15000, // Increased timeout
+    timeout: 12000, // Increased timeout
     headers: {
         'Content-Type': 'application/json',
     },
@@ -58,7 +58,7 @@ api.interceptors.response.use(
     async (error) => {
         // Handle network errors specifically
         if (!error.response) {
-            console.error('Network Error:', error.message);
+            // Silent fail - let UI handle error display
             return Promise.reject(new Error('Network error. Please check your connection.'));
         }
 

@@ -17,7 +17,7 @@ export function LoadingState({ message, size = 'large', color }: LoadingStatePro
 
     return (
         <View className={`flex-1 ${bgColor} items-center justify-center`}>
-            <ActivityIndicator size={size} color={color || '#14B8A6'} />
+            <ActivityIndicator size={size} color={color || '#00D9A3'} />
             {message && (
                 <Text className={`mt-4 ${secondaryTextColor}`}>{message}</Text>
             )}

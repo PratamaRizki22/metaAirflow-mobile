@@ -20,7 +20,7 @@ export default function HostingDashboardScreen({ navigation }: any) {
             setProperties(propsResponse.data.properties);
 
             // Load pending booking requests
-            const bookingsResponse = await bookingService.getOwnerBookings(1, 10, 'PENDING');
+            const bookingsResponse = await bookingService.getBookings(1, 10, 'PENDING', 'owner');
             setBookingRequests(bookingsResponse.data.bookings);
         } catch (error: any) {
             Alert.alert('Error', error.message);

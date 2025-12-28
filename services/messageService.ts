@@ -28,7 +28,7 @@ class MessageService {
      */
     async getConversations(): Promise<{ success: boolean; data: Conversation[] }> {
         try {
-            const response = await api.get('/v1/conversations');
+            const response = await api.get('/v1/m/conversations');
             return response.data;
         } catch (error: any) {
             throw new Error(error.response?.data?.message || 'Failed to get conversations');
@@ -40,7 +40,7 @@ class MessageService {
      */
     async getMessages(conversationId: string, page: number = 1, limit: number = 50): Promise<{ success: boolean; data: { messages: Message[]; sentCount: number } }> {
         try {
-            const response = await api.get(`/v1/conversations/${conversationId}/messages?page=${page}&limit=${limit}`);
+            const response = await api.get(`/v1/m/conversations/${conversationId}/messages?page=${page}&limit=${limit}`);
             return response.data;
         } catch (error: any) {
             throw new Error(error.response?.data?.message || 'Failed to get messages');
@@ -52,7 +52,7 @@ class MessageService {
      */
     async sendMessage(conversationId: string, content: string, type: 'text' | 'image' = 'text'): Promise<{ success: boolean; data: Message }> {
         try {
-            const response = await api.post(`/v1/conversations/${conversationId}/messages`, {
+            const response = await api.post(`/v1/m/conversations/${conversationId}/messages`, {
                 content,
                 type
             });
@@ -67,7 +67,7 @@ class MessageService {
      */
     async createConversation(propertyId: string): Promise<{ success: boolean; data: Conversation }> {
         try {
-            const response = await api.post('/v1/conversations', { propertyId });
+            const response = await api.post('/v1/m/conversations', { propertyId });
             return response.data;
         } catch (error: any) {
             throw new Error(error.response?.data?.message || 'Failed to create conversation');
@@ -79,7 +79,7 @@ class MessageService {
      */
     async markAsRead(conversationId: string): Promise<{ success: boolean }> {
         try {
-            const response = await api.patch(`/v1/conversations/${conversationId}/read`);
+            const response = await api.patch(`/v1/m/conversations/${conversationId}/read`);
             return response.data;
         } catch (error: any) {
             throw new Error(error.response?.data?.message || 'Failed to mark as read');

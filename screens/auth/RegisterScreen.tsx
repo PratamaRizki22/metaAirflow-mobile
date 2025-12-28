@@ -14,8 +14,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { GOOGLE_WEB_CLIENT_ID } from '@env';
-import authService from '../../services/authService';
 import { useThemeColors } from '../../hooks';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNavigation } from '@react-navigation/native';
+import { FormInput } from '../../components/common';
 
 interface RegisterScreenProps {
     onRegisterSuccess: () => void;
@@ -23,6 +25,8 @@ interface RegisterScreenProps {
 }
 
 export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: RegisterScreenProps) {
+    const navigation = useNavigation();
+    const { register, loginWithGoogle } = useAuth();
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
@@ -34,12 +38,12 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
-    const [fieldErrors, setFieldErrors] = useState<{[key: string]: boolean}>({});
+    const [fieldErrors, setFieldErrors] = useState<{ [key: string]: boolean }>({});
 
     const handleRegister = async () => {
         setError('');
 
-        const errors: {[key: string]: boolean} = {};
+        const errors: { [key: string]: boolean } = {};
         if (!firstName) errors.firstName = true;
         if (!lastName) errors.lastName = true;
         if (!email) errors.email = true;
@@ -47,9 +51,9 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
         if (!confirmPassword) errors.confirmPassword = true;
         if (!phone) errors.phone = true;
         if (!dateOfBirth) errors.dateOfBirth = true;
-        
+
         setFieldErrors(errors);
-        
+
         if (Object.keys(errors).length > 0) {
             return;
         }
@@ -81,27 +85,25 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
         setIsLoading(true);
 
         try {
-            const response = await authService.register({
-                email,
-                password,
+            await register(
                 firstName,
                 lastName,
-                dateOfBirth,
+                email,
+                password,
                 phone,
-            });
+                dateOfBirth
+            );
 
-            if (response.success) {
-                Alert.alert(
-                    'Success',
-                    response.message || 'Registration successful!',
-                    [
-                        {
-                            text: 'OK',
-                            onPress: onRegisterSuccess,
-                        },
-                    ]
-                );
-            }
+            Alert.alert(
+                'Success',
+                'Registration successful!',
+                [
+                    {
+                        text: 'OK',
+                        onPress: onRegisterSuccess,
+                    },
+                ]
+            );
         } catch (err: any) {
             setError(err.message || 'Registration failed. Please try again.');
         } finally {
@@ -120,9 +122,16 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
             });
 
             await GoogleSignin.hasPlayServices();
-            const response = await GoogleSignin.signIn();
+            const userInfo = await GoogleSignin.signIn();
 
-            if (response.type === 'success') {
+            if (userInfo.type === 'success' && userInfo.data) {
+                const idToken = (userInfo.data as any).idToken;
+
+                if (!idToken) {
+                    throw new Error('Failed to get ID token from Google');
+                }
+
+                await loginWithGoogle(idToken);
                 onRegisterSuccess();
             }
         } catch (error: any) {
@@ -153,6 +162,27 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
                 keyboardShouldPersistTaps="handled"
             >
                 <View className="flex-1 justify-center px-6 py-12">
+                    {/* Back Button */}
+                    <TouchableOpacity
+                        onPress={() => {
+                            // Reset navigation to Home tab to avoid redirect loop
+                            (navigation as any).reset({
+                                index: 0,
+                                routes: [{ name: 'MainTabs' }],
+                            });
+                        }}
+                        className="absolute top-12 left-6 w-10 h-10 rounded-full bg-surface-light dark:bg-surface-dark items-center justify-center"
+                        style={{
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 4,
+                            elevation: 3,
+                        }}
+                    >
+                        <Ionicons name="arrow-back" size={24} color={isDark ? '#F1F5F9' : '#1F2937'} />
+                    </TouchableOpacity>
+
                     <View className="mb-8">
                         <Text className={`text-4xl font-bold mb-2 ${textColor}`}>
                             Create Account
@@ -168,127 +198,84 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
                         </View>
                     ) : null}
 
-                    <View className="space-y-4 mb-6">
-                        <View>
-                            <Text className={`text-sm font-medium mb-2 ${textColor}`}>
-                                First Name
-                            </Text>
-                            <TextInput
-                                className={`${inputBg} border rounded-lg px-4 py-3 ${textColor} ${
-                                    fieldErrors.firstName ? 'border-red-500 border-2' : borderColor
-                                }`}
-                                placeholder="Enter your first name"
-                                placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                                value={firstName}
-                                onChangeText={(text) => {
-                                    setFirstName(text);
-                                    if (text) setFieldErrors(prev => ({ ...prev, firstName: false }));
-                                }}
-                                editable={!isLoading}
-                            />
-                        </View>
+                    <View className="space-y-0 mb-6">
+                        <FormInput
+                            label="First Name"
+                            placeholder="Enter your first name"
+                            value={firstName}
+                            onChangeText={(text) => {
+                                setFirstName(text);
+                                if (text) setFieldErrors(prev => ({ ...prev, firstName: false }));
+                            }}
+                            editable={!isLoading}
+                            error={fieldErrors.firstName ? "First name is required" : undefined}
+                        />
 
-                        <View>
-                            <Text className={`text-sm font-medium mb-2 ${textColor}`}>
-                                Last Name
-                            </Text>
-                            <TextInput
-                                className={`${inputBg} border rounded-lg px-4 py-3 ${textColor} ${
-                                    fieldErrors.lastName ? 'border-red-500 border-2' : borderColor
-                                }`}
-                                placeholder="Enter your last name"
-                                placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                                value={lastName}
-                                onChangeText={(text) => {
-                                    setLastName(text);
-                                    if (text) setFieldErrors(prev => ({ ...prev, lastName: false }));
-                                }}
-                                editable={!isLoading}
-                            />
-                        </View>
+                        <FormInput
+                            label="Last Name"
+                            placeholder="Enter your last name"
+                            value={lastName}
+                            onChangeText={(text) => {
+                                setLastName(text);
+                                if (text) setFieldErrors(prev => ({ ...prev, lastName: false }));
+                            }}
+                            editable={!isLoading}
+                            error={fieldErrors.lastName ? "Last name is required" : undefined}
+                        />
 
-                        <View>
-                            <Text className={`text-sm font-medium mb-2 ${textColor}`}>
-                                Email
-                            </Text>
-                            <TextInput
-                                className={`${inputBg} border rounded-lg px-4 py-3 ${textColor} ${
-                                    fieldErrors.email ? 'border-red-500 border-2' : borderColor
-                                }`}
-                                placeholder="Enter your email"
-                                placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                                value={email}
-                                onChangeText={(text) => {
-                                    setEmail(text);
-                                    if (text) setFieldErrors(prev => ({ ...prev, email: false }));
-                                }}
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                editable={!isLoading}
-                            />
-                        </View>
+                        <FormInput
+                            label="Email"
+                            placeholder="Enter your email"
+                            value={email}
+                            onChangeText={(text) => {
+                                setEmail(text);
+                                if (text) setFieldErrors(prev => ({ ...prev, email: false }));
+                            }}
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                            editable={!isLoading}
+                            error={fieldErrors.email ? "Email is required" : undefined}
+                        />
 
-                        <View>
-                            <Text className={`text-sm font-medium mb-2 ${textColor}`}>
-                                Phone Number
-                            </Text>
-                            <TextInput
-                                className={`${inputBg} border rounded-lg px-4 py-3 ${textColor} ${
-                                    fieldErrors.phone ? 'border-red-500 border-2' : borderColor
-                                }`}
-                                placeholder="Enter your phone number"
-                                placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                                value={phone}
-                                onChangeText={(text) => {
-                                    setPhone(text);
-                                    if (text) setFieldErrors(prev => ({ ...prev, phone: false }));
-                                }}
-                                keyboardType="phone-pad"
-                                editable={!isLoading}
-                            />
-                        </View>
+                        <FormInput
+                            label="Phone Number"
+                            placeholder="Enter your phone number"
+                            value={phone}
+                            onChangeText={(text) => {
+                                setPhone(text);
+                                if (text) setFieldErrors(prev => ({ ...prev, phone: false }));
+                            }}
+                            keyboardType="phone-pad"
+                            editable={!isLoading}
+                            error={fieldErrors.phone ? "Phone number is required" : undefined}
+                        />
 
-                        <View>
-                            <Text className={`text-sm font-medium mb-2 ${textColor}`}>
-                                Date of Birth
-                            </Text>
-                            <TextInput
-                                className={`${inputBg} border rounded-lg px-4 py-3 ${textColor} ${
-                                    fieldErrors.dateOfBirth ? 'border-red-500 border-2' : borderColor
-                                }`}
-                                placeholder="YYYY-MM-DD"
-                                placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                                value={dateOfBirth}
-                                onChangeText={(text) => {
-                                    setDateOfBirth(text);
-                                    if (text) setFieldErrors(prev => ({ ...prev, dateOfBirth: false }));
-                                }}
-                                editable={!isLoading}
-                            />
-                        </View>
+                        <FormInput
+                            label="Date of Birth"
+                            placeholder="YYYY-MM-DD"
+                            value={dateOfBirth}
+                            onChangeText={(text) => {
+                                setDateOfBirth(text);
+                                if (text) setFieldErrors(prev => ({ ...prev, dateOfBirth: false }));
+                            }}
+                            editable={!isLoading}
+                            error={fieldErrors.dateOfBirth ? "Date of birth is required" : undefined}
+                        />
 
-                        <View>
-                            <Text className={`text-sm font-medium mb-2 ${textColor}`}>
-                                Password
-                            </Text>
-                            <View className="relative">
-                                <TextInput
-                                    className={`${inputBg} border rounded-lg px-4 py-3 pr-12 ${textColor} ${
-                                        fieldErrors.password ? 'border-red-500 border-2' : borderColor
-                                    }`}
-                                    placeholder="Create a password"
-                                    placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                                    value={password}
-                                    onChangeText={(text) => {
-                                        setPassword(text);
-                                        if (text) setFieldErrors(prev => ({ ...prev, password: false }));
-                                    }}
-                                    secureTextEntry={!showPassword}
-                                    editable={!isLoading}
-                                />
+                        <FormInput
+                            label="Password"
+                            placeholder="Create a password"
+                            value={password}
+                            onChangeText={(text) => {
+                                setPassword(text);
+                                if (text) setFieldErrors(prev => ({ ...prev, password: false }));
+                            }}
+                            secureTextEntry={!showPassword}
+                            editable={!isLoading}
+                            error={fieldErrors.password ? "Password is required" : undefined}
+                            rightElement={
                                 <TouchableOpacity
                                     onPress={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-0 bottom-0 justify-center"
                                     disabled={isLoading}
                                 >
                                     <Ionicons
@@ -297,31 +284,23 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
                                         color={isDark ? '#94A3B8' : '#9CA3AF'}
                                     />
                                 </TouchableOpacity>
-                            </View>
-                        </View>
+                            }
+                        />
 
-                        <View>
-                            <Text className={`text-sm font-medium mb-2 ${textColor}`}>
-                                Confirm Password
-                            </Text>
-                            <View className="relative">
-                                <TextInput
-                                    className={`${inputBg} border rounded-lg px-4 py-3 pr-12 ${textColor} ${
-                                        fieldErrors.confirmPassword ? 'border-red-500 border-2' : borderColor
-                                    }`}
-                                    placeholder="Confirm your password"
-                                    placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                                    value={confirmPassword}
-                                    onChangeText={(text) => {
-                                        setConfirmPassword(text);
-                                        if (text) setFieldErrors(prev => ({ ...prev, confirmPassword: false }));
-                                    }}
-                                    secureTextEntry={!showConfirmPassword}
-                                    editable={!isLoading}
-                                />
+                        <FormInput
+                            label="Confirm Password"
+                            placeholder="Confirm your password"
+                            value={confirmPassword}
+                            onChangeText={(text) => {
+                                setConfirmPassword(text);
+                                if (text) setFieldErrors(prev => ({ ...prev, confirmPassword: false }));
+                            }}
+                            secureTextEntry={!showConfirmPassword}
+                            editable={!isLoading}
+                            error={fieldErrors.confirmPassword ? "Please confirm your password" : undefined}
+                            rightElement={
                                 <TouchableOpacity
                                     onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    className="absolute right-4 top-0 bottom-0 justify-center"
                                     disabled={isLoading}
                                 >
                                     <Ionicons
@@ -330,8 +309,8 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
                                         color={isDark ? '#94A3B8' : '#9CA3AF'}
                                     />
                                 </TouchableOpacity>
-                            </View>
-                        </View>
+                            }
+                        />
                     </View>
 
                     <TouchableOpacity
@@ -379,3 +358,4 @@ export function RegisterScreen({ onRegisterSuccess, onNavigateToLogin }: Registe
         </KeyboardAvoidingView>
     );
 }
+

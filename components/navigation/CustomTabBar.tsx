@@ -7,7 +7,7 @@ import Animated, {
     withSpring,
 } from 'react-native-reanimated';
 import { useTheme } from '../../contexts/ThemeContext';
-import { HomeIcon, MessagesIcon, FavoritesIcon, ProfileIcon, AddIcon } from './TabIcons';
+import { HomeIcon, MessagesIcon, TripsIcon, FavoritesIcon, ProfileIcon, AddIcon } from './TabIcons';
 
 const { width } = Dimensions.get('window');
 
@@ -69,31 +69,47 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
         const color = isFocused
             ? '#FFFFFF'
             : isDark
-                ? '#14B8A6'
-                : '#0D9488';
+                ? '#00D9A3'
+                : '#00B87C';
 
         const iconProps = { width: 22, height: 22, color };
 
         switch (routeName) {
+            // Tenant Mode Tabs
             case 'Home':
                 return <HomeIcon {...iconProps} />;
             case 'Messages':
                 return <MessagesIcon {...iconProps} />;
-            case 'Add':
-                return <AddIcon width={32} height={32} color="#FFFFFF" />;
+            case 'Trips':
+                return <TripsIcon {...iconProps} />;
             case 'Favorites':
                 return <FavoritesIcon {...iconProps} />;
             case 'Profile':
                 return <ProfileIcon {...iconProps} />;
+
+            // Landlord Mode Tabs
+            case 'Today':
+                return <HomeIcon {...iconProps} />;
+            case 'Inbox':
+                return <MessagesIcon {...iconProps} />;
+            case 'Properties':
+                return <HomeIcon {...iconProps} />;
+            case 'Bookings':
+                return <TripsIcon {...iconProps} />;
+
+            // Legacy Add button
+            case 'Add':
+                return <AddIcon width={32} height={32} color="#FFFFFF" />;
+
             default:
                 return null;
         }
     };
 
     const bgColor = isDark ? '#1E293B' : '#FFFFFF';
-    const indicatorColor = isDark ? '#14B8A6' : '#0D9488';
+    const indicatorColor = isDark ? '#00D9A3' : '#00B87C';
     const textColorActive = '#FFFFFF';
-    const textColorInactive = isDark ? '#14B8A6' : '#0D9488';
+    const textColorInactive = isDark ? '#00D9A3' : '#00B87C';
 
     return (
         <View

@@ -196,6 +196,22 @@ class BookingService {
     }
 
     /**
+     * Upload tenant signature
+     */
+    async uploadSignature(bookingId: string, signatureUrl: string): Promise<any> {
+        try {
+            const response = await api.post(
+                `/v1/m/bookings/${bookingId}/upload-signature`,
+                { signatureUrl }
+            );
+            return response.data;
+        } catch (error: any) {
+            console.error('Upload signature error:', error.response?.data || error.message);
+            throw this.handleError(error);
+        }
+    }
+
+    /**
      * Handle API errors
      */
     private handleError(error: any): Error {
