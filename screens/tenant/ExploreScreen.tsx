@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, TextInput, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { propertyService } from '../../services';
+import { useUserLocation } from '../../hooks';
 
 export default function ExploreScreen({ navigation }: any) {
     const [properties, setProperties] = useState<any[]>([]);
@@ -10,19 +12,30 @@ export default function ExploreScreen({ navigation }: any) {
         city: '',
         minPrice: 0,
         maxPrice: 100000000,
+        latitude: undefined as number | undefined,
+        longitude: undefined as number | undefined,
     });
+
+    const { requestLocation, loading: loadingLocation } = useUserLocation();
 
     useEffect(() => {
         loadProperties();
     }, []);
 
-    const loadProperties = async () => {
+    const loadProperties = async (lat?: number, lng?: number) => {
         try {
             setLoading(true);
-            const response = await propertyService.getMobileProperties(1, 20, {
+            const queryFilters = {
                 ...filters,
                 search: searchQuery || undefined,
-            });
+            };
+
+            // Inject coordinates if provided
+            if (lat && lng) {
+                Object.assign(queryFilters, { latitude: lat, longitude: lng });
+            }
+
+            const response = await propertyService.getMobileProperties(1, 20, queryFilters);
             setProperties(response.data.properties);
         } catch (error: any) {
             console.error('ExploreScreen - Get mobile properties error:', error);
@@ -30,6 +43,19 @@ export default function ExploreScreen({ navigation }: any) {
             setProperties([]); // Set empty array on error
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleNearbySearch = async () => {
+        const userLoc = await requestLocation();
+        if (userLoc) {
+            setFilters(prev => ({
+                ...prev,
+                latitude: userLoc.latitude,
+                longitude: userLoc.longitude
+            }));
+            // Immediately reload with new coordinates
+            loadProperties(userLoc.latitude, userLoc.longitude);
         }
     };
 
@@ -71,14 +97,37 @@ export default function ExploreScreen({ navigation }: any) {
                         marginBottom: 10,
                     }}
                 />
-                <TouchableOpacity
-                    onPress={handleSearch}
-                    style={{ backgroundColor: '#007AFF', padding: 12, borderRadius: 8 }}
-                >
-                    <Text style={{ color: 'white', textAlign: 'center', fontWeight: 'bold' }}>
-                        Search
-                    </Text>
-                </TouchableOpacity>
+
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <TouchableOpacity
+                        onPress={handleSearch}
+                        style={{ flex: 1, backgroundColor: '#007AFF', padding: 12, borderRadius: 8 }}
+                    >
+                        <Text style={{ color: 'white', textAlign: 'center', fontWeight: 'bold' }}>
+                            Search
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={handleNearbySearch}
+                        disabled={loadingLocation}
+                        style={{
+                            flex: 1,
+                            backgroundColor: '#34C759',
+                            padding: 12,
+                            borderRadius: 8,
+                            flexDirection: 'row',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            gap: 5
+                        }}
+                    >
+                        <Ionicons name="location" size={18} color="white" />
+                        <Text style={{ color: 'white', textAlign: 'center', fontWeight: 'bold' }}>
+                            {loadingLocation ? 'Locating...' : 'Nearby'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
             {/* Property List */}

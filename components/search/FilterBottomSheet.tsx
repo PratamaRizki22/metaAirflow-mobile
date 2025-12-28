@@ -7,7 +7,11 @@ import {
     Pressable,
     ScrollView,
 } from 'react-native';
-import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
+import Animated, {
+    FadeIn,
+    SlideInDown,
+    SlideOutDown,
+} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -37,50 +41,41 @@ export function FilterBottomSheet({
             onRequestClose={onClose}
         >
             <Pressable
-                className="flex-1 bg-black/50"
+                className="flex-1 bg-black/50 justify-end"
                 onPress={onClose}
             >
-                <Pressable
-                    className="flex-1 justify-end"
-                    onPress={(e) => e.stopPropagation()}
+                <Animated.View
+                    entering={SlideInDown.springify()}
+                    exiting={SlideOutDown.springify()}
+                    className={`${cardBg} rounded-t-3xl max-h-[70%]`}
+                    onStartShouldSetResponder={() => true}
+                    onTouchEnd={(e) => e.stopPropagation()}
                 >
-                    <Animated.View
-                        entering={SlideInDown.springify()}
-                        className={`${cardBg} rounded-t-3xl max-h-[70%]`}
-                        style={{
-                            shadowColor: '#000',
-                            shadowOffset: { width: 0, height: -4 },
-                            shadowOpacity: 0.2,
-                            shadowRadius: 8,
-                            elevation: 10,
-                        }}
-                    >
-                        {/* Handle Bar */}
-                        <View className="items-center pt-3 pb-2">
-                            <View className={`w-12 h-1 rounded-full ${isDark ? 'bg-gray-600' : 'bg-gray-300'}`} />
-                        </View>
+                    {/* Handle Bar - Visual only */}
+                    <View className="items-center pt-3 pb-2">
+                        <View className={`w-12 h-1 rounded-full ${isDark ? 'bg-gray-600' : 'bg-gray-300'}`} />
+                    </View>
 
-                        {/* Header */}
-                        <View className="flex-row items-center justify-between px-6 pb-4 border-b border-gray-200 dark:border-gray-700">
-                            <Text className={`text-xl font-bold ${textColor}`}>{title}</Text>
-                            <TouchableOpacity
-                                onPress={onClose}
-                                className="w-8 h-8 items-center justify-center"
-                            >
-                                <Ionicons name="close" size={24} color={isDark ? '#FFF' : '#000'} />
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* Content */}
-                        <ScrollView
-                            className="px-6 py-4"
-                            showsVerticalScrollIndicator={false}
-                            contentContainerStyle={{ paddingBottom: 40 }}
+                    {/* Header */}
+                    <View className="flex-row items-center justify-between px-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                        <Text className={`text-xl font-bold ${textColor}`}>{title}</Text>
+                        <TouchableOpacity
+                            onPress={onClose}
+                            className="w-8 h-8 items-center justify-center"
                         >
-                            {children}
-                        </ScrollView>
-                    </Animated.View>
-                </Pressable>
+                            <Ionicons name="close" size={24} color={isDark ? '#FFF' : '#000'} />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Content */}
+                    <ScrollView
+                        className="px-6 py-4"
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={{ paddingBottom: 40 }}
+                    >
+                        {children}
+                    </ScrollView>
+                </Animated.View>
             </Pressable>
         </Modal>
     );
@@ -144,7 +139,7 @@ export function PriceFilterSheet({
                                 {range.label}
                             </Text>
                             {isSelected && (
-                                <Ionicons name="checkmark-circle" size={24} color="#14B8A6" />
+                                <Ionicons name="checkmark-circle" size={24} color="#00D9A3" />
                             )}
                         </TouchableOpacity>
                     );
@@ -371,14 +366,14 @@ export function PropertyTypeFilterSheet({
                                 <Ionicons
                                     name="home"
                                     size={24}
-                                    color={isSelected ? '#14B8A6' : isDark ? '#9CA3AF' : '#6B7280'}
+                                    color={isSelected ? '#00D9A3' : isDark ? '#9CA3AF' : '#6B7280'}
                                 />
                                 <Text className={`ml-3 font-medium text-base ${isSelected ? 'text-primary' : textColor}`}>
                                     {type.name}
                                 </Text>
                             </View>
                             {isSelected && (
-                                <Ionicons name="checkmark-circle" size={24} color="#14B8A6" />
+                                <Ionicons name="checkmark-circle" size={24} color="#00D9A3" />
                             )}
                         </TouchableOpacity>
                     );

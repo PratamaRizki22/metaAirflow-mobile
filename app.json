@@ -23,7 +23,17 @@
           "iosUrlScheme": "com.googleusercontent.apps.341925688776-1j4fsoo39gsfc71osoke2fqqmpjt5fin"
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Rentverse to access your location to find nearby properties.",
+          "locationAlwaysPermission": "Allow Rentverse to access your location to find nearby properties.",
+          "locationWhenInUsePermission": "Allow Rentverse to access your location to find nearby properties.",
+          "isAndroidBackgroundLocationEnabled": false,
+          "isAndroidForegroundServiceEnabled": false
+        }
+      ]
     ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -38,14 +48,21 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.pratamarizki22.rentverse"
+      "bundleIdentifier": "com.pratamarizki22.rentverse",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Allow Rentverse to access your location to find nearby properties."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.pratamarizki22.rentverse"
+      "package": "com.pratamarizki22.rentverse",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
     },
     "extra": {
       "eas": {

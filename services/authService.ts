@@ -140,17 +140,40 @@ class AuthService {
      */
     async updateProfile(data: UpdateProfileRequest): Promise<User> {
         try {
-            const response = await api.put<{ success: boolean; message: string; data: User }>('/v1/m/users/profile', data);
+            // Backend returns: { success: true, data: { user: User } }
+            const response = await api.patch<{ success: boolean; message: string; data: { user: User } }>('/v1/users/profile', data);
 
             if (response.data.success && response.data.data) {
                 // Update local storage with updated user data
-                await AsyncStorage.setItem('userData', JSON.stringify(response.data.data));
-                return response.data.data;
+                const userData = response.data.data.user;
+                await AsyncStorage.setItem('userData', JSON.stringify(userData));
+                return userData;
             }
 
             throw new Error('Failed to update profile');
         } catch (error: any) {
             console.error('Update profile error:', error.response?.data || error.message);
+            throw this.handleError(error);
+        }
+    }
+
+    /**
+     * Activate hosting mode
+     */
+    async activateHosting(): Promise<User> {
+        try {
+            const response = await api.post<{ success: boolean; message: string; data: { user: User } }>('/v1/users/activate-hosting');
+
+            if (response.data.success && response.data.data) {
+                // Update local storage with updated user data
+                const userData = response.data.data.user;
+                await AsyncStorage.setItem('userData', JSON.stringify(userData));
+                return userData;
+            }
+
+            throw new Error('Failed to activate hosting');
+        } catch (error: any) {
+            console.error('Activate hosting error:', error.response?.data || error.message);
             throw this.handleError(error);
         }
     }

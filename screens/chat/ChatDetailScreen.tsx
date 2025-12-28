@@ -152,11 +152,11 @@ export default function ChatDetailScreen({ route, navigation }: any) {
         try {
             setSending(true);
             await messageService.sendMessage(conversationId, text);
-            
+
             // Reload messages to get the new one
             await loadMessages();
             setInputText('');
-            
+
             // Scroll to bottom
             setTimeout(() => {
                 flatListRef.current?.scrollToEnd({ animated: true });
@@ -183,7 +183,7 @@ export default function ChatDetailScreen({ route, navigation }: any) {
                 <View
                     style={{
                         maxWidth: '75%',
-                        backgroundColor: isMe ? '#14B8A6' : (isDark ? '#334155' : '#F1F5F9'),
+                        backgroundColor: isMe ? '#00D9A3' : (isDark ? '#334155' : '#F1F5F9'),
                         borderRadius: 16,
                         padding: 12,
                     }}
@@ -197,9 +197,12 @@ export default function ChatDetailScreen({ route, navigation }: any) {
                         {item.text}
                     </Text>
                     {item.censored && (
-                        <Text style={{ color: isMe ? '#FFFFFF' : '#9CA3AF', fontSize: 11, marginTop: 4 }}>
-                            ⚠️ Message was modified for safety
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                            <Ionicons name="warning" size={11} color={isMe ? '#FFFFFF' : '#9CA3AF'} />
+                            <Text style={{ color: isMe ? '#FFFFFF' : '#9CA3AF', fontSize: 11, marginLeft: 4 }}>
+                                Message was modified for safety
+                            </Text>
+                        </View>
                     )}
                     <Text
                         style={{
@@ -267,7 +270,7 @@ export default function ChatDetailScreen({ route, navigation }: any) {
             {/* Messages List */}
             {loading ? (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <ActivityIndicator size="large" color="#14B8A6" />
+                    <ActivityIndicator size="large" color="#00D9A3" />
                 </View>
             ) : (
                 <FlatList
@@ -326,7 +329,7 @@ export default function ChatDetailScreen({ route, navigation }: any) {
                         width: 48,
                         height: 48,
                         borderRadius: 24,
-                        backgroundColor: inputText.trim() ? '#14B8A6' : '#9CA3AF',
+                        backgroundColor: inputText.trim() ? '#00D9A3' : '#9CA3AF',
                         justifyContent: 'center',
                         alignItems: 'center',
                     }}

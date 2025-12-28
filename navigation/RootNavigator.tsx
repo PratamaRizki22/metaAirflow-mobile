@@ -2,25 +2,32 @@ import React from 'react';
 import { View } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { MainTabNavigator } from './MainTabNavigator';
+import { AuthFlowScreen } from '../screens/auth/AuthFlowScreen';
 import PropertyDetailScreen from '../screens/tenant/PropertyDetailScreen';
 import CreateBookingScreen from '../screens/tenant/CreateBookingScreen';
 import ExploreScreen from '../screens/tenant/ExploreScreen';
 import MyTripsScreen from '../screens/tenant/MyTripsScreen';
 import BecomeHostScreen from '../screens/hosting/BecomeHostScreen';
-import HostingDashboardScreen from '../screens/hosting/HostingDashboardScreen';
+import AnalyticsScreen from '../screens/hosting/AnalyticsScreen';
 import ManagePropertiesScreen from '../screens/landlord/ManagePropertiesScreen';
 import CreatePropertyScreen from '../screens/landlord/CreatePropertyScreen';
 import EditPropertyScreen from '../screens/landlord/EditPropertyScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
+import PaymentHistoryScreen from '../screens/profile/PaymentHistoryScreen';
+import PaymentDetailScreen from '../screens/payment/PaymentDetailScreen';
 import BookingDetailScreen from '../screens/booking/BookingDetailScreen';
 import ChatDetailScreen from '../screens/chat/ChatDetailScreen';
+import WriteReviewScreen from '../screens/review/WriteReviewScreen';
+import ReviewsListScreen from '../screens/review/ReviewsListScreen';
 import { OfflineBanner } from '../components/common';
 import { useNetwork } from '../hooks';
+import { useTheme } from '../contexts/ThemeContext';
 
 const Stack = createStackNavigator();
 
 export function RootNavigator() {
     const { isOffline } = useNetwork();
+    const { isDark } = useTheme();
 
     return (
         <View style={{ flex: 1 }}>
@@ -28,6 +35,13 @@ export function RootNavigator() {
                 screenOptions={{
                     headerShown: true,
                     headerBackTitle: '',
+                    headerStyle: {
+                        backgroundColor: isDark ? '#0F172A' : '#FFFFFF',
+                    },
+                    headerTintColor: isDark ? '#F1F5F9' : '#1F2937',
+                    headerTitleStyle: {
+                        fontWeight: 'bold',
+                    },
                 }}
             >
                 {/* Main Tab Navigator */}
@@ -36,6 +50,19 @@ export function RootNavigator() {
                     component={MainTabNavigator}
                     options={{ headerShown: false }}
                 />
+
+                {/* Auth Screens */}
+                <Stack.Screen
+                    name="Auth"
+                    options={{ title: 'Authentication', headerShown: false }}
+                >
+                    {({ navigation }) => (
+                        <AuthFlowScreen
+                            onAuthSuccess={() => navigation.goBack()}
+                            onClose={() => navigation.goBack()}
+                        />
+                    )}
+                </Stack.Screen>
 
                 {/* Tenant Screens */}
                 <Stack.Screen
@@ -66,9 +93,9 @@ export function RootNavigator() {
                     options={{ title: 'Become a Host' }}
                 />
                 <Stack.Screen
-                    name="HostingDashboard"
-                    component={HostingDashboardScreen}
-                    options={{ title: 'Hosting Dashboard' }}
+                    name="Analytics"
+                    component={AnalyticsScreen}
+                    options={{ title: 'Analytics' }}
                 />
 
                 {/* Landlord Screens */}
@@ -102,11 +129,33 @@ export function RootNavigator() {
                     options={{ headerShown: false }}
                 />
 
+                {/* Review Screens */}
+                <Stack.Screen
+                    name="WriteReview"
+                    component={WriteReviewScreen}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="ReviewsList"
+                    component={ReviewsListScreen}
+                    options={{ headerShown: false }}
+                />
+
                 {/* Profile Screens */}
                 <Stack.Screen
                     name="EditProfile"
                     component={EditProfileScreen}
                     options={{ title: 'Edit Profile' }}
+                />
+                <Stack.Screen
+                    name="PaymentHistory"
+                    component={PaymentHistoryScreen}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="PaymentDetail"
+                    component={PaymentDetailScreen}
+                    options={{ headerShown: false }}
                 />
             </Stack.Navigator>
 

@@ -82,7 +82,7 @@ export function PreferenceScreen({ onComplete }: PreferenceScreenProps) {
     const surfaceColor = getColor('#FFFFFF', '#1E293B');
     const textPrimaryColor = getColor('#1F2937', '#F1F5F9');
     const textSecondaryColor = getColor('#6B7280', '#CBD5E1');
-    const iconColor = isDark ? '#14B8A6' : '#0D9488';
+    const iconColor = isDark ? '#00D9A3' : '#00B87C';
     const houseImage = isDark ? require('../../assets/darkmode.webp') : require('../../assets/lightmode.webp');
 
     // Get status bar height for safe area

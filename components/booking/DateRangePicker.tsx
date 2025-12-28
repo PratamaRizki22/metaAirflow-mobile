@@ -95,11 +95,11 @@ export function DateRangePicker({
             marked[startDate] = {
                 ...marked[startDate],
                 startingDay: true,
-                color: '#14B8A6',
+                color: '#00D9A3',
                 textColor: '#FFFFFF',
                 customStyles: {
                     container: {
-                        backgroundColor: '#14B8A6',
+                        backgroundColor: '#00D9A3',
                         borderTopLeftRadius: 8,
                         borderBottomLeftRadius: 8,
                     },
@@ -116,11 +116,11 @@ export function DateRangePicker({
             marked[endDate] = {
                 ...marked[endDate],
                 endingDay: true,
-                color: '#14B8A6',
+                color: '#00D9A3',
                 textColor: '#FFFFFF',
                 customStyles: {
                     container: {
-                        backgroundColor: '#14B8A6',
+                        backgroundColor: '#00D9A3',
                         borderTopRightRadius: 8,
                         borderBottomRightRadius: 8,
                     },
@@ -143,11 +143,11 @@ export function DateRangePicker({
 
                 if (dateString !== endDate && !blockedDates.includes(dateString)) {
                     marked[dateString] = {
-                        color: '#14B8A6',
+                        color: '#00D9A3',
                         textColor: '#FFFFFF',
                         customStyles: {
                             container: {
-                                backgroundColor: isDark ? '#0D9488' : '#5EEAD4',
+                                backgroundColor: isDark ? '#00B87C' : '#5EEAD4',
                             },
                             text: {
                                 color: isDark ? '#FFFFFF' : '#0F766E',
@@ -207,7 +207,7 @@ export function DateRangePicker({
                             Select Dates
                         </Text>
                         <TouchableOpacity onPress={handleClear}>
-                            <Text style={{ color: '#14B8A6', fontWeight: '600' }}>Clear</Text>
+                            <Text style={{ color: '#00D9A3', fontWeight: '600' }}>Clear</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -247,7 +247,7 @@ export function DateRangePicker({
                         {startDate && endDate && (
                             <View
                                 style={{
-                                    backgroundColor: '#14B8A6',
+                                    backgroundColor: '#00D9A3',
                                     padding: 12,
                                     borderRadius: 8,
                                     alignItems: 'center',
@@ -270,9 +270,9 @@ export function DateRangePicker({
                                 backgroundColor: bgColor,
                                 calendarBackground: bgColor,
                                 textSectionTitleColor: textColor,
-                                selectedDayBackgroundColor: '#14B8A6',
+                                selectedDayBackgroundColor: '#00D9A3',
                                 selectedDayTextColor: '#FFFFFF',
-                                todayTextColor: '#14B8A6',
+                                todayTextColor: '#00D9A3',
                                 dayTextColor: textColor,
                                 textDisabledColor: '#9CA3AF',
                                 monthTextColor: textColor,
@@ -294,7 +294,7 @@ export function DateRangePicker({
                                     style={{
                                         width: 16,
                                         height: 16,
-                                        backgroundColor: '#14B8A6',
+                                        backgroundColor: '#00D9A3',
                                         borderRadius: 4,
                                     }}
                                 />
@@ -321,7 +321,7 @@ export function DateRangePicker({
                         onPress={handleConfirm}
                         disabled={!startDate || !endDate}
                         style={{
-                            backgroundColor: startDate && endDate ? '#14B8A6' : '#9CA3AF',
+                            backgroundColor: startDate && endDate ? '#00D9A3' : '#9CA3AF',
                             paddingVertical: 16,
                             borderRadius: 12,
                             alignItems: 'center',

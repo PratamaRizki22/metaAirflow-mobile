@@ -1,20 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useThemeColors } from '../../hooks';
 import { bookingService } from '../../services';
+import { LoadingState } from '../../components/common';
+import { BookingCard } from '../../components/booking';
 
 export function LandlordBookingsScreen({ navigation }: any) {
     const [loading, setLoading] = useState(true);
     const [bookings, setBookings] = useState<any[]>([]);
     const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+    const [refreshing, setRefreshing] = useState(false);
 
     const { bgColor, textColor, cardBg, isDark } = useThemeColors();
 
-    useEffect(() => {
-        loadBookings();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            loadBookings();
+        }, [])
+    );
 
     const loadBookings = async () => {
         try {
@@ -29,22 +35,32 @@ export function LandlordBookingsScreen({ navigation }: any) {
         }
     };
 
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        await loadBookings();
+        setRefreshing(false);
+    };
+
     const filteredBookings = bookings.filter(booking => {
         if (filter === 'all') return true;
         return booking.status.toLowerCase() === filter;
     });
 
     if (loading) {
-        return (
-            <View className={`flex-1 ${bgColor} justify-center items-center`}>
-                <ActivityIndicator size="large" color="#007AFF" />
-            </View>
-        );
+        return <LoadingState />;
     }
 
     return (
         <View className={`flex-1 ${bgColor}`}>
-            <ScrollView>
+            <ScrollView
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={handleRefresh}
+                        progressViewOffset={100}
+                    />
+                }
+            >
                 <View className="px-6 pt-16 pb-6">
                     <Text className={`text-3xl font-bold mb-2 ${textColor}`}>
                         Bookings
@@ -95,58 +111,12 @@ export function LandlordBookingsScreen({ navigation }: any) {
                     ) : (
                         <View className="gap-3">
                             {filteredBookings.map((booking) => (
-                                <TouchableOpacity
+                                <BookingCard
                                     key={booking.id}
+                                    booking={booking}
                                     onPress={() => navigation.navigate('BookingDetail', { bookingId: booking.id })}
-                                    className={`${cardBg} p-4 rounded-2xl`}
-                                >
-                                    <View className="flex-row justify-between items-start mb-3">
-                                        <View className="flex-1">
-                                            <Text className={`text-base font-semibold ${textColor} mb-1`}>
-                                                {booking.property.title}
-                                            </Text>
-                                            <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm">
-                                                Tenant: {booking.tenant.firstName} {booking.tenant.lastName}
-                                            </Text>
-                                        </View>
-                                        <View className={`px-3 py-1 rounded-full ${booking.status === 'PENDING' ? 'bg-yellow-500/20' :
-                                            booking.status === 'APPROVED' ? 'bg-green-500/20' :
-                                                booking.status === 'REJECTED' ? 'bg-red-500/20' :
-                                                    'bg-gray-500/20'
-                                            }`}>
-                                            <Text className={`text-xs font-medium ${booking.status === 'PENDING' ? 'text-yellow-600' :
-                                                booking.status === 'APPROVED' ? 'text-green-600' :
-                                                    booking.status === 'REJECTED' ? 'text-red-600' :
-                                                        'text-gray-600'
-                                                }`}>
-                                                {booking.status}
-                                            </Text>
-                                        </View>
-                                    </View>
-
-                                    <View className="flex-row items-center gap-4">
-                                        <View className="flex-row items-center">
-                                            <Ionicons
-                                                name="calendar-outline"
-                                                size={16}
-                                                color={isDark ? '#9CA3AF' : '#6B7280'}
-                                            />
-                                            <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm ml-1">
-                                                {new Date(booking.startDate).toLocaleDateString('id-ID')}
-                                            </Text>
-                                        </View>
-                                        <View className="flex-row items-center">
-                                            <Ionicons
-                                                name="cash-outline"
-                                                size={16}
-                                                color={isDark ? '#9CA3AF' : '#6B7280'}
-                                            />
-                                            <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm ml-1">
-                                                MYR {booking.rentAmount.toLocaleString()}
-                                            </Text>
-                                        </View>
-                                    </View>
-                                </TouchableOpacity>
+                                    showDate={true}
+                                />
                             ))}
                         </View>
                     )}

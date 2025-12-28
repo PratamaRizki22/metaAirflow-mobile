@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, Alert, TouchableOpacity, Image } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import MapLibreGL from '@maplibre/maplibre-react-native';
 import { MAPTILER_API_KEY } from '@env';
-import { propertyService, uploadService, propertyTypeService } from '../../services';
+import { propertyService, uploadService, propertyTypeService, amenityService } from '../../services';
 import { useThemeColors } from '../../hooks';
 import { useToast } from '../../hooks/useToast';
-import { LoadingState, Toast } from '../../components/common';
+import { LoadingState, Toast, ImagePickerSection, FormInput } from '../../components/common';
+import { PricePredictionModal } from '../../components/property/PricePredictionModal';
 
 export default function CreatePropertyScreen({ navigation }: any) {
     const { bgColor, cardBg, textColor, secondaryTextColor, borderColor, isDark } = useThemeColors();
@@ -36,6 +36,13 @@ export default function CreatePropertyScreen({ navigation }: any) {
     const [loading, setLoading] = useState(false);
     const [uploadingImages, setUploadingImages] = useState(false);
     const [showMap, setShowMap] = useState(false);
+    const [showPricePrediction, setShowPricePrediction] = useState(false);
+
+    // Amenities state
+    const [amenities, setAmenities] = useState<any[]>([]);
+    const [amenityCategories, setAmenityCategories] = useState<Record<string, any[]>>({});
+    const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+
     const { toast, showToast, hideToast } = useToast();
 
     // Configure MapLibre
@@ -43,6 +50,7 @@ export default function CreatePropertyScreen({ navigation }: any) {
 
     useEffect(() => {
         loadPropertyTypes();
+        loadAmenities();
     }, []);
 
     const loadPropertyTypes = async () => {
@@ -54,34 +62,24 @@ export default function CreatePropertyScreen({ navigation }: any) {
         }
     };
 
-    const pickImages = async () => {
+    const loadAmenities = async () => {
         try {
-            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            if (status !== 'granted') {
-                Alert.alert('Permission Denied', 'We need camera roll permissions to upload images');
-                return;
-            }
-
-            const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsMultipleSelection: true,
-                quality: 0.8,
-                aspect: [16, 9],
-            });
-
-            if (!result.canceled && result.assets) {
-                const newImages = result.assets.map(asset => asset.uri);
-                setSelectedImages([...selectedImages, ...newImages]);
+            const response = await amenityService.getAmenities();
+            // Handle both structure with categories and flat list
+            if (response.grouped) {
+                setAmenityCategories(response.grouped);
+                setAmenities(response.amenities || []);
+            } else if (Array.isArray(response)) {
+                setAmenities(response);
+            } else if (response.amenities) {
+                setAmenities(response.amenities);
             }
         } catch (error: any) {
-            Alert.alert('Error', 'Failed to pick images');
+            console.error('Failed to load amenities:', error);
         }
     };
 
-    const removeImage = (index: number) => {
-        const newImages = selectedImages.filter((_, i) => i !== index);
-        setSelectedImages(newImages);
-    };
+
 
     const handleMapPress = (feature: any) => {
         const coordinates = feature.geometry.coordinates;
@@ -94,6 +92,16 @@ export default function CreatePropertyScreen({ navigation }: any) {
             `Location updated: ${coordinates[1].toFixed(4)}, ${coordinates[0].toFixed(4)}`,
             'success'
         );
+    };
+
+    const toggleAmenity = (amenityId: string) => {
+        setSelectedAmenities(prev => {
+            if (prev.includes(amenityId)) {
+                return prev.filter(id => id !== amenityId);
+            } else {
+                return [...prev, amenityId];
+            }
+        });
     };
 
     const uploadImages = async () => {
@@ -204,17 +212,38 @@ export default function CreatePropertyScreen({ navigation }: any) {
                 isAvailable: true,
                 propertyTypeId: formData.propertyTypeId,
                 images: imageUrls,
+                amenityIds: selectedAmenities,
             });
 
             showToast('Property created successfully!', 'success');
             setTimeout(() => {
-                navigation.navigate('HostingDashboard');
+                navigation.navigate('ManageProperties');
             }, 1500);
         } catch (error: any) {
             Alert.alert('Error', error.message);
         } finally {
             setLoading(false);
         }
+    };
+
+    const renderAmenityItem = (amenity: any) => {
+        const isSelected = selectedAmenities.includes(amenity.id);
+        return (
+            <TouchableOpacity
+                key={amenity.id}
+                onPress={() => toggleAmenity(amenity.id)}
+                className={`px-3 py-2 rounded-lg border mr-2 mb-2 ${isSelected
+                    ? 'bg-primary/10 border-primary'
+                    : isDark ? 'bg-surface-dark border-gray-700' : 'bg-white border-gray-300'
+                    }`}
+            >
+                <Text
+                    className={`text-xs font-medium ${isSelected ? 'text-primary' : textColor}`}
+                >
+                    {amenity.name}
+                </Text>
+            </TouchableOpacity>
+        );
     };
 
     if (loading) {
@@ -229,49 +258,34 @@ export default function CreatePropertyScreen({ navigation }: any) {
                 </Text>
 
                 {/* Title */}
-                <View className="mb-4">
-                    <Text className={`text-base font-semibold mb-2 ${textColor}`}>
-                        Property Title <Text className="text-red-500">*</Text>
-                    </Text>
-                    <TextInput
-                        placeholder="e.g., Modern Apartment in KLCC"
-                        placeholderTextColor="#9CA3AF"
-                        value={formData.title}
-                        onChangeText={(text) => setFormData({ ...formData, title: text })}
-                        className={`${cardBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
-                    />
-                </View>
+                <FormInput
+                    label="Property Title"
+                    required
+                    placeholder="e.g., Modern Apartment in KLCC"
+                    value={formData.title}
+                    onChangeText={(text) => setFormData({ ...formData, title: text })}
+                />
 
                 {/* Description */}
-                <View className="mb-4">
-                    <Text className={`text-base font-semibold mb-2 ${textColor}`}>
-                        Description <Text className="text-red-500">*</Text>
-                    </Text>
-                    <TextInput
-                        placeholder="Describe your property..."
-                        placeholderTextColor="#9CA3AF"
-                        value={formData.description}
-                        onChangeText={(text) => setFormData({ ...formData, description: text })}
-                        multiline
-                        numberOfLines={4}
-                        className={`${cardBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
-                        style={{ textAlignVertical: 'top' }}
-                    />
-                </View>
+                <FormInput
+                    label="Description"
+                    required
+                    placeholder="Describe your property..."
+                    value={formData.description}
+                    onChangeText={(text) => setFormData({ ...formData, description: text })}
+                    multiline
+                    numberOfLines={4}
+                    style={{ textAlignVertical: 'top' }}
+                />
 
                 {/* Address */}
-                <View className="mb-4">
-                    <Text className={`text-base font-semibold mb-2 ${textColor}`}>
-                        Address <Text className="text-red-500">*</Text>
-                    </Text>
-                    <TextInput
-                        placeholder="Street address"
-                        placeholderTextColor="#9CA3AF"
-                        value={formData.address}
-                        onChangeText={(text) => setFormData({ ...formData, address: text })}
-                        className={`${cardBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
-                    />
-                </View>
+                <FormInput
+                    label="Address"
+                    required
+                    placeholder="Street address"
+                    value={formData.address}
+                    onChangeText={(text) => setFormData({ ...formData, address: text })}
+                />
 
                 {/* Map Location */}
                 <View className="mb-4">
@@ -290,13 +304,13 @@ export default function CreatePropertyScreen({ navigation }: any) {
                                 Lat: {formData.latitude.toFixed(6)}, Lng: {formData.longitude.toFixed(6)}
                             </Text>
                         </View>
-                        <Ionicons 
-                            name={showMap ? 'chevron-up' : 'location'} 
-                            size={24} 
-                            color={isDark ? '#94A3B8' : '#6B7280'} 
+                        <Ionicons
+                            name={showMap ? 'chevron-up' : 'location'}
+                            size={24}
+                            color={isDark ? '#94A3B8' : '#6B7280'}
                         />
                     </TouchableOpacity>
-                    
+
                     {showMap && (
                         <View className="mt-3 h-64 rounded-xl overflow-hidden">
                             <MapLibreGL.MapView
@@ -336,141 +350,106 @@ export default function CreatePropertyScreen({ navigation }: any) {
                 {/* City & State */}
                 <View className="flex-row gap-3 mb-4">
                     <View className="flex-1">
-                        <Text className={`text-base font-semibold mb-2 ${textColor}`}>
-                            City <Text className="text-red-500">*</Text>
-                        </Text>
-                        <TextInput
+                        <FormInput
+                            label="City"
+                            required
                             placeholder="City"
-                            placeholderTextColor="#9CA3AF"
                             value={formData.city}
                             onChangeText={(text) => setFormData({ ...formData, city: text })}
-                            className={`${cardBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
+                            containerStyle={{ marginBottom: 0 }}
                         />
                     </View>
                     <View className="flex-1">
-                        <Text className={`text-base font-semibold mb-2 ${textColor}`}>
-                            State <Text className="text-red-500">*</Text>
-                        </Text>
-                        <TextInput
+                        <FormInput
+                            label="State"
+                            required
                             placeholder="State"
-                            placeholderTextColor="#9CA3AF"
                             value={formData.state}
                             onChangeText={(text) => setFormData({ ...formData, state: text })}
-                            className={`${cardBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
+                            containerStyle={{ marginBottom: 0 }}
                         />
                     </View>
                 </View>
 
-                {/* Price */}
+                {/* Price with AI Suggestion */}
                 <View className="mb-4">
-                    <Text className={`text-base font-semibold mb-2 ${textColor}`}>
-                        Monthly Price (MYR) <Text className="text-red-500">*</Text>
-                    </Text>
-                    <TextInput
+                    <FormInput
+                        label="Monthly Price (MYR)"
+                        required
                         placeholder="e.g., 2500"
-                        placeholderTextColor="#9CA3AF"
                         value={formData.price}
                         onChangeText={(text) => setFormData({ ...formData, price: text })}
                         keyboardType="numeric"
-                        className={`${cardBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
+                        containerStyle={{ marginBottom: 0 }}
                     />
+
+                    {/* AI Price Suggestion Button */}
+                    {formData.bedrooms && formData.bathrooms && formData.areaSqm && formData.city && formData.propertyTypeId && (
+                        <TouchableOpacity
+                            onPress={() => setShowPricePrediction(true)}
+                            className="mt-2"
+                        >
+                            <LinearGradient
+                                colors={['#6366F1', '#8B5CF6']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                className="py-3 px-4 rounded-xl flex-row items-center justify-center"
+                            >
+                                <Ionicons name="analytics" size={18} color="white" style={{ marginRight: 8 }} />
+                                <Text className="text-white font-semibold">Get AI Price Suggestion</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    )}
                 </View>
 
                 {/* Bedrooms, Bathrooms, Area */}
                 <View className="flex-row gap-2 mb-4">
                     <View className="flex-1">
-                        <Text className={`text-sm font-semibold mb-2 ${textColor}`}>
-                            Beds <Text className="text-red-500">*</Text>
-                        </Text>
-                        <TextInput
+                        <FormInput
+                            label="Beds"
+                            required
                             placeholder="3"
-                            placeholderTextColor="#9CA3AF"
                             value={formData.bedrooms}
                             onChangeText={(text) => setFormData({ ...formData, bedrooms: text })}
                             keyboardType="numeric"
-                            className={`${cardBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
+                            containerStyle={{ marginBottom: 0 }}
                         />
                     </View>
                     <View className="flex-1">
-                        <Text className={`text-sm font-semibold mb-2 ${textColor}`}>
-                            Baths <Text className="text-red-500">*</Text>
-                        </Text>
-                        <TextInput
+                        <FormInput
+                            label="Baths"
+                            required
                             placeholder="2"
-                            placeholderTextColor="#9CA3AF"
                             value={formData.bathrooms}
                             onChangeText={(text) => setFormData({ ...formData, bathrooms: text })}
                             keyboardType="numeric"
-                            className={`${cardBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
+                            containerStyle={{ marginBottom: 0 }}
                         />
                     </View>
                     <View className="flex-1">
-                        <Text className={`text-sm font-semibold mb-2 ${textColor}`}>
-                            Area (m²) <Text className="text-red-500">*</Text>
-                        </Text>
-                        <TextInput
+                        <FormInput
+                            label="Area (m²)"
+                            required
                             placeholder="120"
-                            placeholderTextColor="#9CA3AF"
                             value={formData.areaSqm}
                             onChangeText={(text) => setFormData({ ...formData, areaSqm: text })}
                             keyboardType="numeric"
-                            className={`${cardBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
+                            containerStyle={{ marginBottom: 0 }}
                         />
                     </View>
                 </View>
 
                 {/* Property Images */}
-                <View className="mb-4">
-                    <Text className={`text-base font-semibold mb-3 ${textColor}`}>
-                        Property Images
-                    </Text>
-                    <TouchableOpacity
-                        onPress={pickImages}
-                        className={`border-2 border-dashed border-primary rounded-xl p-6 items-center ${cardBg}`}
-                    >
-                        <Ionicons name="images-outline" size={40} color="#14B8A6" />
-                        <Text className="text-primary mt-2 font-semibold">
-                            Tap to select images
-                        </Text>
-                        <Text className={`text-xs mt-1 ${secondaryTextColor}`}>
-                            You can select multiple images
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* Image Previews */}
-                {selectedImages.length > 0 && (
-                    <View className="mb-4">
-                        <Text className={`text-sm font-semibold mb-2 ${textColor}`}>
-                            Selected Images ({selectedImages.length})
-                        </Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                            {selectedImages.map((uri, index) => (
-                                <View key={index} className="mr-3 relative">
-                                    <Image
-                                        source={{ uri }}
-                                        className="w-24 h-24 rounded-xl"
-                                    />
-                                    <TouchableOpacity
-                                        onPress={() => removeImage(index)}
-                                        className="absolute -top-2 -right-2 bg-red-500 rounded-full w-6 h-6 items-center justify-center"
-                                    >
-                                        <Ionicons name="close" size={16} color="white" />
-                                    </TouchableOpacity>
-                                </View>
-                            ))}
-                        </ScrollView>
-                    </View>
-                )}
-
-                {uploadingImages && (
-                    <View className="flex-row items-center mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-                        <Ionicons name="cloud-upload-outline" size={20} color="#14B8A6" />
-                        <Text className="ml-2 text-primary font-medium">
-                            Uploading images...
-                        </Text>
-                    </View>
-                )}
+                {/* Property Images */}
+                <ImagePickerSection
+                    selectedImages={selectedImages}
+                    onImagesSelected={(uris) => setSelectedImages([...selectedImages, ...uris])}
+                    onRemoveImage={(index) => {
+                        const newImages = selectedImages.filter((_, i) => i !== index);
+                        setSelectedImages(newImages);
+                    }}
+                    uploading={uploadingImages}
+                />
 
                 {/* Property Type */}
                 <View className="mb-4">
@@ -496,6 +475,41 @@ export default function CreatePropertyScreen({ navigation }: any) {
                     </View>
                 </View>
 
+                {/* Amenities Selection */}
+                <View className="mb-4">
+                    <Text className={`text-base font-semibold mb-3 ${textColor}`}>
+                        Amenities
+                    </Text>
+                    <View className={`${cardBg} rounded-xl border ${borderColor} p-4`}>
+                        {Object.keys(amenityCategories).length > 0 ? (
+                            Object.entries(amenityCategories).map(([category, items]) => (
+                                <View key={category} className="mb-4">
+                                    <Text className={`text-sm font-bold mb-2 uppercase tracking-wider ${secondaryTextColor}`}>
+                                        {category}
+                                    </Text>
+                                    <View className="flex-row flex-wrap">
+                                        {items.map(renderAmenityItem)}
+                                    </View>
+                                </View>
+                            ))
+                        ) : amenities.length > 0 ? (
+                            <View className="flex-row flex-wrap">
+                                {amenities.map(renderAmenityItem)}
+                            </View>
+                        ) : (
+                            <Text className={`text-center py-4 ${secondaryTextColor}`}>
+                                Loading amenities...
+                            </Text>
+                        )}
+
+                        {selectedAmenities.length > 0 && (
+                            <Text className={`mt-2 text-right text-sm text-primary font-medium`}>
+                                {selectedAmenities.length} selected
+                            </Text>
+                        )}
+                    </View>
+                </View>
+
                 {/* Furnished */}
                 <TouchableOpacity
                     onPress={() => setFormData({ ...formData, furnished: !formData.furnished })}
@@ -516,7 +530,7 @@ export default function CreatePropertyScreen({ navigation }: any) {
                     className="mb-3"
                 >
                     <LinearGradient
-                        colors={['#14B8A6', '#0D9488']}
+                        colors={['#00D9A3', '#00B87C']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                         className="py-4 rounded-xl items-center"
@@ -536,6 +550,25 @@ export default function CreatePropertyScreen({ navigation }: any) {
 
                 <View className="h-10" />
             </View>
+
+            {/* Price Prediction Modal */}
+            <PricePredictionModal
+                visible={showPricePrediction}
+                onClose={() => setShowPricePrediction(false)}
+                onApplyPrice={(price) => {
+                    setFormData({ ...formData, price: price.toString() });
+                    showToast(`Price updated to MYR ${price.toFixed(2)}`, 'success');
+                }}
+                propertyData={{
+                    area: parseFloat(formData.areaSqm) * 10.764, // Convert sqm to sqft
+                    bathrooms: parseInt(formData.bathrooms) || 0,
+                    bedrooms: parseInt(formData.bedrooms) || 0,
+                    furnished: formData.furnished,
+                    location: `${formData.city}, ${formData.state}`,
+                    propertyType: propertyTypes.find(t => t.id === formData.propertyTypeId)?.name || '',
+                }}
+            />
+
             <Toast
                 visible={toast.visible}
                 message={toast.message}

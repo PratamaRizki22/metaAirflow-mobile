@@ -148,6 +148,8 @@ class PropertyService {
         filters?: PropertyFilters
     ): Promise<PropertiesResponse> {
         let retries = 2;
+        let lastError: any;
+
         while (retries > 0) {
             try {
                 let url = `/v1/m/properties?page=${page}&limit=${limit}`;
@@ -163,15 +165,17 @@ class PropertyService {
                 const response = await api.get<PropertiesResponse>(url);
                 return response.data;
             } catch (error: any) {
+                lastError = error;
                 retries--;
-                console.error('Get mobile properties error:', error.response?.data || error.message);
                 if (retries === 0) {
+                    // Silent fail - UI will handle error display
                     throw this.handleError(error);
                 }
+                // Wait before retry (silent)
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
         }
-        throw this.handleError(new Error('Failed to get mobile properties'));
+        throw this.handleError(lastError || new Error('Failed to get mobile properties'));
     }
 
     /**
@@ -314,6 +318,26 @@ class PropertyService {
             return response.data;
         } catch (error: any) {
             console.error('Get nearby properties error:', error.response?.data || error.message);
+            throw this.handleError(error);
+        }
+    }
+
+    /**
+     * Check property availability for dates
+     */
+    async checkAvailability(
+        propertyId: string,
+        startDate: string,
+        endDate: string
+    ): Promise<{ available: boolean; conflictingBookings: any[] }> {
+        try {
+            const response = await api.get(
+                `/v1/m/properties/${propertyId}/availability`,
+                { params: { startDate, endDate } }
+            );
+            return response.data.data;
+        } catch (error: any) {
+            console.error('Check availability error:', error.response?.data || error.message);
             throw this.handleError(error);
         }
     }

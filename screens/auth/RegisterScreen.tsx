@@ -79,18 +79,16 @@ export function RegisterScreen({ email, onRegisterSuccess, onBack }: RegisterScr
                 phone,
             });
 
-            if (response.success) {
-                Alert.alert(
-                    'Success',
-                    response.message || 'Registration successful!',
-                    [
-                        {
-                            text: 'OK',
-                            onPress: onRegisterSuccess,
-                        },
-                    ]
-                );
-            }
+            Alert.alert(
+                'Success',
+                'Registration successful!',
+                [
+                    {
+                        text: 'OK',
+                        onPress: onRegisterSuccess,
+                    },
+                ]
+            );
         } catch (err: any) {
             setError(err.message || 'Registration failed. Please try again.');
         } finally {
@@ -314,3 +312,4 @@ export function RegisterScreen({ email, onRegisterSuccess, onBack }: RegisterScr
         </View>
     );
 }
+

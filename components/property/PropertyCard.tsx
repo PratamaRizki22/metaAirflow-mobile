@@ -232,7 +232,7 @@ export const PropertyCard = React.memo(function PropertyCard({ property, onPress
                     </Text>
 
                     <View className="flex-row items-center mb-4">
-                        <Ionicons name="location-outline" size={18} color="#14B8A6" />
+                        <Ionicons name="location-outline" size={18} color="#00D9A3" />
                         <Text
                             className={`text-sm ml-1 ${isDark ? 'text-gray-400' : 'text-gray-600'
                                 }`}

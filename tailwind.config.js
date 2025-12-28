@@ -5,15 +5,22 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        'inter': ['Inter_400Regular'],
+        sans: ['VisbyRound-Regular'],
+        medium: ['VisbyRound-Medium'],
+        semibold: ['VisbyRound-DemiBold'],
+        bold: ['VisbyRound-Bold'],
       },
       colors: {
         // Primary Brand Colors
         primary: {
-          DEFAULT: '#0D9488', // Teal (Light Mode)
-          dark: '#14B8A6',    // Lighter Teal (Dark Mode)
-          hover: '#0F766E',   // Dark Teal
-          'hover-dark': '#2DD4BF', // Bright Teal
+          DEFAULT: '#00D9A3', // Modern Green (Light Mode)
+          dark: '#00D9A3',    // Modern Green (Dark Mode)
+          hover: '#00B87C',   // Dark Green
+          'hover-dark': '#00F5B8', // Bright Green
+          gradient: {
+            start: '#00D9A3',
+            end: '#00B87C',
+          },
         },
         secondary: {
           DEFAULT: '#6EE7B7', // Mint Green (Light Mode)
@@ -55,8 +62,8 @@ module.exports = {
           light: '#E5E7EB',
           dark: '#334155',
           focus: {
-            light: '#0D9488',
-            dark: '#14B8A6',
+            light: '#00D9A3',
+            dark: '#00D9A3',
           },
         },
 

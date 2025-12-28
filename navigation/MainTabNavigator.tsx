@@ -2,11 +2,12 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { CustomTabBar } from '../components/navigation/CustomTabBar';
 import { useMode } from '../contexts/ModeContext';
+import { useAuth } from '../contexts/AuthContext';
 
 // Tenant Mode Screens
 import { HomeScreen } from '../screens/tabs/HomeScreen';
 import { MessagesScreen } from '../screens/tabs/MessagesScreen';
-import { AddPropertyScreen } from '../screens/tabs/AddPropertyScreen';
+import MyTripsScreen from '../screens/tenant/MyTripsScreen';
 import { FavoritesScreen } from '../screens/tabs/FavoritesScreen';
 import { ProfileScreen } from '../screens/tabs/ProfileScreen';
 
@@ -20,6 +21,7 @@ const Tab = createBottomTabNavigator();
 
 export function MainTabNavigator() {
     const { isLandlordMode } = useMode();
+    const { user } = useAuth();
 
     if (isLandlordMode) {
         // Landlord Mode Navigation
@@ -38,13 +40,6 @@ export function MainTabNavigator() {
                     }}
                 />
                 <Tab.Screen
-                    name="Inbox"
-                    component={LandlordInboxScreen}
-                    options={{
-                        tabBarLabel: 'Inbox',
-                    }}
-                />
-                <Tab.Screen
                     name="Properties"
                     component={ManagePropertiesScreen}
                     options={{
@@ -56,6 +51,13 @@ export function MainTabNavigator() {
                     component={LandlordBookingsScreen}
                     options={{
                         tabBarLabel: 'Bookings',
+                    }}
+                />
+                <Tab.Screen
+                    name="Inbox"
+                    component={LandlordInboxScreen}
+                    options={{
+                        tabBarLabel: 'Chat',
                     }}
                 />
                 <Tab.Screen
@@ -85,26 +87,53 @@ export function MainTabNavigator() {
                 }}
             />
             <Tab.Screen
-                name="Messages"
-                component={MessagesScreen}
-                options={{
-                    tabBarLabel: 'Messages',
-                }}
-            />
-            <Tab.Screen
-                name="Add"
-                component={AddPropertyScreen}
-                options={{
-                    tabBarLabel: 'Add',
-                }}
-            />
-            <Tab.Screen
                 name="Favorites"
                 component={FavoritesScreen}
                 options={{
                     tabBarLabel: 'Favorites',
                 }}
+                listeners={({ navigation }) => ({
+                    tabPress: (e) => {
+                        if (!user) {
+                            // Prevent default navigation
+                            e.preventDefault();
+                            // Navigate to Login instead
+                            navigation.getParent()?.navigate('Auth');
+                        }
+                    },
+                })}
             />
+            <Tab.Screen
+                name="Trips"
+                component={MyTripsScreen}
+                options={{
+                    tabBarLabel: 'Trips',
+                }}
+                listeners={({ navigation }) => ({
+                    tabPress: (e) => {
+                        if (!user) {
+                            e.preventDefault();
+                            navigation.getParent()?.navigate('Auth');
+                        }
+                    },
+                })}
+            />
+            {/* Messages Tab - Disabled until WebSocket is implemented */}
+            {/* <Tab.Screen
+                name="Messages"
+                component={MessagesScreen}
+                options={{
+                    tabBarLabel: 'Chat',
+                }}
+                listeners={({ navigation }) => ({
+                    tabPress: (e) => {
+                        if (!user) {
+                            e.preventDefault();
+                            navigation.getParent()?.navigate('Auth');
+                        }
+                    },
+                })}
+            /> */}
             <Tab.Screen
                 name="Profile"
                 component={ProfileScreen}

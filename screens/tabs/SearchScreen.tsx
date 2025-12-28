@@ -268,7 +268,7 @@ export function SearchScreen({ navigation }: any) {
 
                         {loading ? (
                             <View className="items-center py-12">
-                                <ActivityIndicator size="large" color="#14B8A6" />
+                                <ActivityIndicator size="large" color="#00D9A3" />
                                 <Text className={`mt-4 ${textColor}`}>Searching...</Text>
                             </View>
                         ) : properties.length > 0 ? (

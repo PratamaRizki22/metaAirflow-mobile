@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -9,13 +9,16 @@ import {
     TextInput,
     Modal,
     Pressable,
+    Image,
+    FlatList,
+    Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import MapLibreGL from '@maplibre/maplibre-react-native';
 import { MAPTILER_API_KEY } from '@env';
-import { propertyService, favoriteService } from '../../services';
+import { propertyService, favoriteService, predictionService, PredictionResult } from '../../services';
 import { useAuth } from '../../contexts/AuthContext';
 import { useThemeColors } from '../../hooks';
 import { LoadingState, ErrorState } from '../../components/common';
@@ -31,6 +34,12 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
     const [rating, setRating] = useState(5);
     const [review, setReview] = useState('');
     const [submittingRating, setSubmittingRating] = useState(false);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [pricePrediction, setPricePrediction] = useState<PredictionResult | null>(null);
+    const [loadingPrediction, setLoadingPrediction] = useState(false);
+
+    const flatListRef = useRef<FlatList>(null);
+    const { width: screenWidth } = Dimensions.get('window');
 
     // Configure MapLibre
     MapLibreGL.setAccessToken(null);
@@ -61,10 +70,83 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                 const favStatus = await favoriteService.isFavorited(propertyId);
                 setIsFavorited(favStatus);
             }
+
+            // Get AI price prediction
+            getPricePrediction(response.data);
         } catch (error: any) {
             Alert.alert('Error', error.message || 'Failed to load property details');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const getPricePrediction = async (propertyData: any) => {
+        try {
+            setLoadingPrediction(true);
+            const prediction = await predictionService.predictPrice({
+                area: propertyData.areaSqm * 10.764, // Convert sqm to sqft
+                bathrooms: propertyData.bathrooms,
+                bedrooms: propertyData.bedrooms,
+                furnished: propertyData.furnished ? 'Yes' : 'No',
+                location: `${propertyData.city}, ${propertyData.state}`,
+                property_type: propertyData.propertyType?.name || 'Apartment',
+            });
+            setPricePrediction(prediction);
+        } catch (error) {
+            // Silently fail - prediction is optional
+            console.log('Price prediction failed:', error);
+        } finally {
+            setLoadingPrediction(false);
+        }
+    };
+
+    const getPriceComparison = () => {
+        if (!pricePrediction || !property) return null;
+
+        const actualPrice = property.price;
+        const predictedPrice = pricePrediction.predicted_price;
+        const difference = ((actualPrice - predictedPrice) / predictedPrice) * 100;
+
+        if (difference <= -15) {
+            return {
+                label: 'Great Deal',
+                color: '#10B981',
+                bgColor: '#D1FAE5',
+                icon: 'trending-down' as const,
+                message: `${Math.abs(difference).toFixed(0)}% below market average`,
+            };
+        } else if (difference <= -5) {
+            return {
+                label: 'Good Price',
+                color: '#059669',
+                bgColor: '#D1FAE5',
+                icon: 'checkmark-circle' as const,
+                message: `${Math.abs(difference).toFixed(0)}% below market average`,
+            };
+        } else if (difference <= 5) {
+            return {
+                label: 'Fair Price',
+                color: '#3B82F6',
+                bgColor: '#DBEAFE',
+                icon: 'analytics' as const,
+                message: 'Market average price',
+            };
+        } else if (difference <= 15) {
+            return {
+                label: 'Above Average',
+                color: '#F59E0B',
+                bgColor: '#FEF3C7',
+                icon: 'trending-up' as const,
+                message: `${difference.toFixed(0)}% above market average`,
+            };
+        } else {
+            return {
+                label: 'Premium',
+                color: '#EF4444',
+                bgColor: '#FEE2E2',
+                icon: 'arrow-up-circle' as const,
+                message: `${difference.toFixed(0)}% above market average`,
+            };
         }
     };
 
@@ -75,7 +157,7 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                 'Please login to save favorites',
                 [
                     { text: 'Cancel', style: 'cancel' },
-                    { text: 'Login', onPress: () => navigation.navigate('Login') },
+                    { text: 'Login', onPress: () => navigation.navigate('Auth') },
                 ]
             );
             return;
@@ -97,7 +179,7 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                 'Please login to book this property',
                 [
                     { text: 'Cancel', style: 'cancel' },
-                    { text: 'Login', onPress: () => navigation.navigate('Login') },
+                    { text: 'Login', onPress: () => navigation.navigate('Auth') },
                 ]
             );
             return;
@@ -117,7 +199,7 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                 'Please login to rate this property',
                 [
                     { text: 'Cancel', style: 'cancel' },
-                    { text: 'Login', onPress: () => navigation.navigate('Login') },
+                    { text: 'Login', onPress: () => navigation.navigate('Auth') },
                 ]
             );
             return;
@@ -166,6 +248,62 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
     return (
         <View className={`flex-1 ${bgColor}`}>
             <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+                {/* Image Gallery */}
+                {property.images && property.images.length > 0 && (
+                    <View className="relative">
+                        <FlatList
+                            ref={flatListRef}
+                            data={property.images}
+                            horizontal
+                            pagingEnabled
+                            showsHorizontalScrollIndicator={false}
+                            onScroll={(event) => {
+                                const index = Math.round(
+                                    event.nativeEvent.contentOffset.x / screenWidth
+                                );
+                                setCurrentImageIndex(index);
+                            }}
+                            scrollEventThrottle={16}
+                            renderItem={({ item }) => (
+                                <Image
+                                    source={{ uri: item }}
+                                    style={{ width: screenWidth, height: 300 }}
+                                    resizeMode="cover"
+                                />
+                            )}
+                            keyExtractor={(item, index) => `image-${index}`}
+                        />
+
+                        {/* Image Counter */}
+                        <View className="absolute top-4 right-4 bg-black/60 px-3 py-1.5 rounded-full">
+                            <Text className="text-white text-sm font-semibold">
+                                {currentImageIndex + 1} / {property.images.length}
+                            </Text>
+                        </View>
+
+                        {/* Back Button */}
+                        <TouchableOpacity
+                            onPress={() => navigation.goBack()}
+                            className="absolute top-4 left-4 w-10 h-10 bg-black/60 rounded-full items-center justify-center"
+                        >
+                            <Ionicons name="arrow-back" size={24} color="#FFF" />
+                        </TouchableOpacity>
+
+                        {/* Pagination Dots */}
+                        <View className="absolute bottom-4 left-0 right-0 flex-row justify-center gap-2">
+                            {property.images.map((_: any, index: number) => (
+                                <View
+                                    key={`dot-${index}`}
+                                    className={`h-2 rounded-full ${index === currentImageIndex
+                                        ? 'w-6 bg-white'
+                                        : 'w-2 bg-white/50'
+                                        }`}
+                                />
+                            ))}
+                        </View>
+                    </View>
+                )}
+
                 <Animated.View entering={FadeIn} className="p-6">
                     {/* Title & Location */}
                     <View className="mb-6">
@@ -188,7 +326,7 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
 
                         {/* Location */}
                         <View className="flex-row items-center">
-                            <Ionicons name="location" size={18} color="#14B8A6" />
+                            <Ionicons name="location" size={18} color="#00D9A3" />
                             <Text className={`ml-2 text-base ${secondaryTextColor}`}>
                                 {property.address}, {property.city}, {property.state}
                             </Text>
@@ -228,15 +366,82 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                         </Animated.View>
                     )}
 
-                    {/* Price */}
+                    {/* Price with AI Indicator */}
                     <Animated.View
                         entering={FadeInDown.delay(100)}
                         className={`${cardBg} p-5 rounded-2xl mb-6 border ${borderColor}`}
                     >
-                        <Text className={`text-sm mb-1 ${secondaryTextColor}`}>Price per month</Text>
+                        <View className="flex-row items-center justify-between mb-3">
+                            <Text className={`text-sm ${secondaryTextColor}`}>Price per month</Text>
+                            {pricePrediction && (() => {
+                                const comparison = getPriceComparison();
+                                return comparison ? (
+                                    <View
+                                        className="px-3 py-1 rounded-full flex-row items-center"
+                                        style={{ backgroundColor: comparison.bgColor }}
+                                    >
+                                        <Ionicons
+                                            name={comparison.icon}
+                                            size={14}
+                                            color={comparison.color}
+                                            style={{ marginRight: 4 }}
+                                        />
+                                        <Text
+                                            className="text-xs font-bold"
+                                            style={{ color: comparison.color }}
+                                        >
+                                            {comparison.label}
+                                        </Text>
+                                    </View>
+                                ) : null;
+                            })()}
+                        </View>
                         <Text className="text-3xl font-bold text-primary">
                             MYR {property.price.toLocaleString()}
                         </Text>
+
+                        {/* AI Price Comparison */}
+                        {pricePrediction && (() => {
+                            const comparison = getPriceComparison();
+                            return comparison ? (
+                                <View className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                    <View className="flex-row items-center justify-between mb-2">
+                                        <Text className="text-xs text-text-secondary-light dark:text-text-secondary-dark">
+                                            AI Market Analysis
+                                        </Text>
+                                        <View className="flex-row items-center">
+                                            <View className="w-2 h-2 rounded-full bg-primary mr-1" />
+                                            <Text className="text-xs text-text-secondary-light dark:text-text-secondary-dark">
+                                                {(pricePrediction.confidence * 100).toFixed(0)}% confidence
+                                            </Text>
+                                        </View>
+                                    </View>
+                                    <Text
+                                        className="text-sm font-medium"
+                                        style={{ color: comparison.color }}
+                                    >
+                                        {comparison.message}
+                                    </Text>
+                                    <Text className="text-xs text-text-secondary-light dark:text-text-secondary-dark mt-1">
+                                        Market avg: MYR {pricePrediction.predicted_price.toLocaleString('en-MY', {
+                                            minimumFractionDigits: 0,
+                                            maximumFractionDigits: 0,
+                                        })}
+                                    </Text>
+                                </View>
+                            ) : null;
+                        })()}
+
+                        {loadingPrediction && (
+                            <View className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                <View className="flex-row items-center">
+                                    <ActivityIndicator size="small" color="#00B87C" />
+                                    <Text className="text-xs text-text-secondary-light dark:text-text-secondary-dark ml-2">
+                                        Analyzing market price...
+                                    </Text>
+                                </View>
+                            </View>
+                        )}
                     </Animated.View>
 
                     {/* Property Info Cards */}
@@ -245,21 +450,21 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                         className="flex-row gap-3 mb-6"
                     >
                         <View className={`flex-1 ${cardBg} p-4 rounded-xl items-center border ${borderColor}`}>
-                            <Ionicons name="bed" size={24} color="#14B8A6" />
+                            <Ionicons name="bed" size={24} color="#00D9A3" />
                             <Text className={`text-xl font-bold mt-2 ${textColor}`}>
                                 {property.bedrooms}
                             </Text>
                             <Text className={`text-sm ${secondaryTextColor}`}>Bedrooms</Text>
                         </View>
                         <View className={`flex-1 ${cardBg} p-4 rounded-xl items-center border ${borderColor}`}>
-                            <Ionicons name="water" size={24} color="#14B8A6" />
+                            <Ionicons name="water" size={24} color="#00D9A3" />
                             <Text className={`text-xl font-bold mt-2 ${textColor}`}>
                                 {property.bathrooms}
                             </Text>
                             <Text className={`text-sm ${secondaryTextColor}`}>Bathrooms</Text>
                         </View>
                         <View className={`flex-1 ${cardBg} p-4 rounded-xl items-center border ${borderColor}`}>
-                            <Ionicons name="resize" size={24} color="#14B8A6" />
+                            <Ionicons name="resize" size={24} color="#00D9A3" />
                             <Text className={`text-xl font-bold mt-2 ${textColor}`}>
                                 {property.areaSqm}
                             </Text>
@@ -388,7 +593,7 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                         activeOpacity={0.8}
                     >
                         <LinearGradient
-                            colors={['#14B8A6', '#0D9488']}
+                            colors={['#00D9A3', '#00B87C']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 0 }}
                             className="h-14 rounded-2xl items-center justify-center"
@@ -466,7 +671,7 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                                 activeOpacity={0.8}
                             >
                                 <LinearGradient
-                                    colors={['#14B8A6', '#0D9488']}
+                                    colors={['#00D9A3', '#00B87C']}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 0 }}
                                     className="py-4 rounded-xl items-center"

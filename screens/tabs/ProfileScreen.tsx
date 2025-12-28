@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Modal, ViewStyle } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Modal, ViewStyle, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -28,11 +28,23 @@ const RadioButton = ({ selected }: { selected: boolean }) => (
 
 export function ProfileScreen({ navigation }: any) {
     const { theme, setTheme } = useTheme();
-    const { user, isLoggedIn, logout } = useAuth();
+    const { user, isLoggedIn, logout, refreshProfile } = useAuth();
     const { mode, switchMode, canSwitchMode, isLandlordMode, isTenantMode } = useMode();
     const [selectedLanguage, setSelectedLanguage] = useState<Language>('id');
     const [showLanguageModal, setShowLanguageModal] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = async () => {
+        setRefreshing(true);
+        try {
+            await refreshProfile();
+        } catch (error) {
+            console.error('Refresh failed:', error);
+        } finally {
+            setRefreshing(false);
+        }
+    };
 
     const languages = [
         { code: 'id' as Language, name: 'Bahasa Indonesia', flag: '🇮🇩' },
@@ -50,12 +62,22 @@ export function ProfileScreen({ navigation }: any) {
     const surfaceColor = getColor('#FFFFFF', '#1E293B');
     const textPrimaryColor = getColor('#1F2937', '#F1F5F9');
     const textSecondaryColor = getColor('#6B7280', '#CBD5E1');
-    const iconColor = isDark ? '#14B8A6' : '#0D9488';
+    const iconColor = isDark ? '#00D9A3' : '#00B87C';
     const selectedLangData = languages.find(l => l.code === selectedLanguage);
 
     return (
         <View className={`flex-1 ${bgColor}`}>
-            <ScrollView className="flex-1 px-6 pt-16">
+            <ScrollView
+                className="flex-1 px-6 pt-16"
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={iconColor}
+                        colors={[iconColor]}
+                    />
+                }
+            >
                 <Text className={`text-3xl font-bold mb-2 ${textColor}`}>
                     Profile
                 </Text>
@@ -144,6 +166,33 @@ export function ProfileScreen({ navigation }: any) {
                     )}
                 </View>
 
+                {/* Payment History - Only show if logged in */}
+                {isLoggedIn && (
+                    <View className="mb-6">
+                        <Text className={`text-lg font-semibold mb-3 ${textColor}`}>
+                            Payments
+                        </Text>
+                        <TouchableOpacity
+                            onPress={() => (navigation as any).navigate('PaymentHistory')}
+                            className="flex-row items-center justify-between p-4 rounded-2xl"
+                            style={{ backgroundColor: surfaceColor, ...CARD_STYLE }}
+                        >
+                            <View className="flex-row items-center">
+                                <Ionicons name="receipt-outline" size={22} color={iconColor} style={{ marginRight: 12 }} />
+                                <View>
+                                    <Text className="text-base font-medium" style={{ color: textPrimaryColor }}>
+                                        Payment History
+                                    </Text>
+                                    <Text className="text-xs" style={{ color: textSecondaryColor }}>
+                                        View all your transactions
+                                    </Text>
+                                </View>
+                            </View>
+                            <Ionicons name="chevron-forward" size={20} color={textSecondaryColor} />
+                        </TouchableOpacity>
+                    </View>
+                )}
+
                 {/* Become a Host Section - Only show if logged in and not landlord */}
                 {isLoggedIn && !user?.isLandlord && (
                     <View className="mb-6">
@@ -170,7 +219,7 @@ export function ProfileScreen({ navigation }: any) {
                 )}
 
                 {/* Hosting Dashboard Link - Only show if landlord */}
-                {isLoggedIn && user?.isLandlord && (
+                {isLoggedIn && canSwitchMode && (
                     <View className="mb-6">
                         <Text className={`text-lg font-semibold mb-3 ${textColor}`}>
                             Hosting
@@ -178,23 +227,31 @@ export function ProfileScreen({ navigation }: any) {
 
                         {/* Current Mode Indicator */}
                         <View className="mb-3 p-3 rounded-xl" style={{ backgroundColor: isDark ? '#1F2937' : '#F3F4F6' }}>
-                            <Text className="text-sm" style={{ color: textSecondaryColor }}>
-                                Mode Saat Ini: <Text className="font-semibold" style={{ color: textPrimaryColor }}>
-                                    {isTenantMode ? '🏠 Tenant' : '🏢 Landlord'}
+                            <View className="flex-row items-center">
+                                <Text className="text-sm" style={{ color: textSecondaryColor }}>
+                                    Mode Saat Ini:{' '}
                                 </Text>
-                            </Text>
+                                <Ionicons
+                                    name={isTenantMode ? 'home' : 'business'}
+                                    size={16}
+                                    color={textPrimaryColor}
+                                />
+                                <Text className="font-semibold text-sm ml-1" style={{ color: textPrimaryColor }}>
+                                    {isTenantMode ? 'Tenant' : 'Landlord'}
+                                </Text>
+                            </View>
                         </View>
 
-                        {/* Dashboard Link */}
+                        {/* Analytics Link */}
                         <TouchableOpacity
-                            onPress={() => (navigation as any).navigate('HostingDashboard')}
+                            onPress={() => (navigation as any).navigate('Analytics')}
                             className="flex-row items-center justify-between p-4 rounded-2xl mb-3"
                             style={{ backgroundColor: surfaceColor, ...CARD_STYLE }}
                         >
                             <View className="flex-row items-center">
-                                <Ionicons name="home" size={22} color={iconColor} style={{ marginRight: 12 }} />
+                                <Ionicons name="stats-chart" size={22} color={iconColor} style={{ marginRight: 12 }} />
                                 <Text className="text-base font-medium" style={{ color: textPrimaryColor }}>
-                                    Dashboard Hosting
+                                    Analytics & Statistics
                                 </Text>
                             </View>
                             <Ionicons name="chevron-forward" size={20} color={textSecondaryColor} />
@@ -204,14 +261,8 @@ export function ProfileScreen({ navigation }: any) {
                         <TouchableOpacity
                             onPress={async () => {
                                 await switchMode();
-                                // Navigate based on new mode
-                                if (isTenantMode) {
-                                    // Switching to landlord mode
-                                    (navigation as any).navigate('HostingDashboard');
-                                } else {
-                                    // Switching to tenant mode
-                                    (navigation as any).navigate('Home');
-                                }
+                                // Mode switch will automatically update the tab navigator
+                                // No need to navigate manually
                             }}
                             className="p-4 rounded-2xl"
                             style={{
