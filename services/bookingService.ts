@@ -1,4 +1,5 @@
 import api from './api';
+import { BaseService } from './BaseService';
 
 export type BookingStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'COMPLETED';
 
@@ -46,7 +47,7 @@ export interface CreateBookingRequest {
     message?: string;
 }
 
-class BookingService {
+class BookingService extends BaseService {
     /**
      * Get user's bookings
      */
@@ -57,15 +58,12 @@ class BookingService {
         role?: 'tenant' | 'owner'
     ): Promise<BookingsResponse> {
         try {
-            let url = `/v1/m/bookings?page=${page}&limit=${limit}`;
+            const params: Record<string, any> = { page, limit };
+            if (status) params.status = status;
+            if (role) params.role = role;
 
-            if (status) {
-                url += `&status=${status}`;
-            }
-
-            if (role) {
-                url += `&role=${role}`;
-            }
+            const queryString = this.buildQueryString(params);
+            const url = `/v1/m/bookings?${queryString}`;
 
             const response = await api.get<BookingsResponse>(url);
             return response.data;
@@ -226,19 +224,7 @@ class BookingService {
         }
     }
 
-    /**
-     * Handle API errors
-     */
-    private handleError(error: any): Error {
-        if (error.response) {
-            const message = error.response.data?.message || 'An error occurred';
-            return new Error(message);
-        } else if (error.request) {
-            return new Error('Network error. Please check your connection.');
-        } else {
-            return new Error(error.message || 'An unexpected error occurred.');
-        }
-    }
+
 }
 
 export default new BookingService();

@@ -1,4 +1,5 @@
 import api from './api';
+import { BaseService } from './BaseService';
 
 export interface PropertyType {
     id: string;
@@ -7,26 +8,15 @@ export interface PropertyType {
     propertyCount: number;
 }
 
-class PropertyTypeService {
+class PropertyTypeService extends BaseService {
     /**
      * Get all property types
      */
     async getPropertyTypes(): Promise<PropertyType[]> {
-        let retries = 2;
-        while (retries > 0) {
-            try {
-                const response = await api.get('/v1/property-types');
-                return response.data.data || response.data;
-            } catch (error: any) {
-                retries--;
-                if (retries === 0) {
-                    const message = error.response?.data?.message || 'Failed to get property types';
-                    throw new Error(message);
-                }
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-        }
-        throw new Error('Failed to get property types');
+        return this.retryRequest(async () => {
+            const response = await api.get('/v1/property-types');
+            return response.data.data || response.data;
+        }, 2);
     }
 
     /**
@@ -37,8 +27,7 @@ class PropertyTypeService {
             const response = await api.get(`/v1/property-types/${id}`);
             return response.data.data || response.data;
         } catch (error: any) {
-            const message = error.response?.data?.message || 'Failed to get property type';
-            throw new Error(message);
+            throw this.handleError(error);
         }
     }
 }

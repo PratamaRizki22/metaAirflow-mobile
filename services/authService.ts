@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from './api';
 import { handleServiceError, logError } from '../utils/errorUtils';
+import { BaseService } from './BaseService';
 import {
     RegisterRequest,
     LoginRequest,
@@ -9,7 +10,7 @@ import {
     User
 } from '../types/api';
 
-class AuthService {
+class AuthService extends BaseService {
     /**
      * Register a new user
      */
@@ -256,22 +257,7 @@ class AuthService {
         }
     }
 
-    /**
-     * Handle API errors
-     */
-    private handleError(error: any): Error {
-        if (error.response) {
-            // Server responded with error
-            const message = error.response.data?.message || 'An error occurred';
-            return new Error(message);
-        } else if (error.request) {
-            // Request made but no response
-            return new Error('Network error. Please check your connection.');
-        } else {
-            // Something else happened
-            return new Error(error.message || 'An unexpected error occurred');
-        }
-    }
+
 }
 
 export default new AuthService();

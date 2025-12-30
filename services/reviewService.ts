@@ -1,4 +1,5 @@
 import api from './api';
+import { BaseService } from './BaseService';
 
 export interface Review {
     id: string;
@@ -59,7 +60,7 @@ export interface PropertyRatingResponse {
     };
 }
 
-class ReviewService {
+class ReviewService extends BaseService {
     /**
      * Create a new review
      */
@@ -85,8 +86,9 @@ class ReviewService {
         limit: number = 10
     ): Promise<ReviewsResponse> {
         try {
+            const queryString = this.buildQueryString({ page, limit });
             const response = await api.get<ReviewsResponse>(
-                `/v1/m/properties/${propertyId}/reviews?page=${page}&limit=${limit}`
+                `/v1/m/properties/${propertyId}/reviews?${queryString}`
             );
             return response.data;
         } catch (error: any) {
@@ -103,8 +105,9 @@ class ReviewService {
         limit: number = 10
     ): Promise<ReviewsResponse> {
         try {
+            const queryString = this.buildQueryString({ page, limit });
             const response = await api.get<ReviewsResponse>(
-                `/v1/m/reviews/my-reviews?page=${page}&limit=${limit}`
+                `/v1/m/reviews/my-reviews?${queryString}`
             );
             return response.data;
         } catch (error: any) {
@@ -185,19 +188,7 @@ class ReviewService {
         }
     }
 
-    /**
-     * Handle API errors
-     */
-    private handleError(error: any): Error {
-        if (error.response) {
-            const message = error.response.data?.message || 'An error occurred';
-            return new Error(message);
-        } else if (error.request) {
-            return new Error('Network error. Please check your connection.');
-        } else {
-            return new Error(error.message || 'An unexpected error occurred.');
-        }
-    }
+
 }
 
 export default new ReviewService();

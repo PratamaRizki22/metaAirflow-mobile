@@ -1,4 +1,5 @@
 import api from './api';
+import { BaseService } from './BaseService';
 
 export interface Amenity {
     id: string;
@@ -12,7 +13,7 @@ export interface AmenitiesResponse {
     grouped: Record<string, Amenity[]>;
 }
 
-class AmenityService {
+class AmenityService extends BaseService {
     /**
      * Get all amenities
      */
@@ -22,8 +23,7 @@ class AmenityService {
             const response = await api.get(`/v1/amenities${params}`);
             return response.data.data || response.data;
         } catch (error: any) {
-            const message = error.response?.data?.message || 'Failed to get amenities';
-            throw new Error(message);
+            throw this.handleError(error);
         }
     }
 
@@ -35,8 +35,7 @@ class AmenityService {
             const response = await api.get('/v1/amenities/categories');
             return response.data.data || response.data;
         } catch (error: any) {
-            const message = error.response?.data?.message || 'Failed to get amenity categories';
-            throw new Error(message);
+            throw this.handleError(error);
         }
     }
 }

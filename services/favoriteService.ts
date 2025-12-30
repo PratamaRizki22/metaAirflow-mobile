@@ -1,4 +1,5 @@
 import api from './api';
+import { BaseService } from './BaseService';
 
 export interface Property {
     id: string;
@@ -50,14 +51,15 @@ export interface FavoritesResponse {
     };
 }
 
-class FavoriteService {
+class FavoriteService extends BaseService {
     /**
      * Get user's favorite properties
      */
     async getFavorites(page: number = 1, limit: number = 10): Promise<FavoritesResponse> {
         try {
+            const queryString = this.buildQueryString({ page, limit });
             const response = await api.get<FavoritesResponse>(
-                `/v1/m/users/favorites?page=${page}&limit=${limit}`
+                `/v1/m/users/favorites?${queryString}`
             );
             return response.data;
         } catch (error: any) {
@@ -134,19 +136,7 @@ class FavoriteService {
         }
     }
 
-    /**
-     * Handle API errors
-     */
-    private handleError(error: any): Error {
-        if (error.response) {
-            const message = error.response.data?.message || 'An error occurred';
-            return new Error(message);
-        } else if (error.request) {
-            return new Error('Network error. Please check your connection.');
-        } else {
-            return new Error(error.message || 'An unexpected error occurred.');
-        }
-    }
+
 }
 
 export default new FavoriteService();
