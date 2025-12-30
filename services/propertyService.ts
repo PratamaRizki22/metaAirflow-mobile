@@ -1,4 +1,5 @@
 import api from './api';
+import { BaseService } from './BaseService';
 
 export type PropertyStatus = 'PENDING_REVIEW' | 'ACTIVE' | 'INACTIVE' | 'REJECTED';
 
@@ -111,48 +112,23 @@ export interface PropertyFilters {
     radius?: number; // in kilometers
 }
 
-class PropertyService {
+class PropertyService extends BaseService {
     /**
-     * Get all properties with filters and pagination
+     * Internal method to fetch properties with retry logic
      */
-    async getProperties(
+    private async fetchPropertiesWithRetry(
+        endpoint: string,
         page: number = 1,
         limit: number = 10,
-        filters?: PropertyFilters
+        filters?: PropertyFilters,
+        retries: number = 2
     ): Promise<PropertiesResponse> {
-        try {
-            let url = `/v1/properties?page=${page}&limit=${limit}`;
-
-            if (filters) {
-                Object.entries(filters).forEach(([key, value]) => {
-                    if (value !== undefined && value !== null) {
-                        url += `&${key}=${value}`;
-                    }
-                });
-            }
-
-            const response = await api.get<PropertiesResponse>(url);
-            return response.data;
-        } catch (error: any) {
-            console.error('Get properties error:', error.response?.data || error.message);
-            throw this.handleError(error);
-        }
-    }
-
-    /**
-     * Get mobile properties with advanced filters (sorting, location, search)
-     */
-    async getMobileProperties(
-        page: number = 1,
-        limit: number = 10,
-        filters?: PropertyFilters
-    ): Promise<PropertiesResponse> {
-        let retries = 2;
         let lastError: any;
+        let attemptsLeft = retries;
 
-        while (retries > 0) {
+        while (attemptsLeft > 0) {
             try {
-                let url = `/v1/m/properties?page=${page}&limit=${limit}`;
+                let url = `${endpoint}?page=${page}&limit=${limit}`;
 
                 if (filters) {
                     Object.entries(filters).forEach(([key, value]) => {
@@ -166,16 +142,41 @@ class PropertyService {
                 return response.data;
             } catch (error: any) {
                 lastError = error;
-                retries--;
-                if (retries === 0) {
-                    // Silent fail - UI will handle error display
+                attemptsLeft--;
+
+                if (attemptsLeft === 0) {
+                    console.error('Fetch properties error:', error.response?.data || error.message);
                     throw this.handleError(error);
                 }
-                // Wait before retry (silent)
+
+                // Wait before retry
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
         }
-        throw this.handleError(lastError || new Error('Failed to get mobile properties'));
+
+        throw this.handleError(lastError || new Error('Failed to fetch properties'));
+    }
+
+    /**
+     * Get all properties with filters and pagination (Web endpoint)
+     */
+    async getProperties(
+        page: number = 1,
+        limit: number = 10,
+        filters?: PropertyFilters
+    ): Promise<PropertiesResponse> {
+        return this.fetchPropertiesWithRetry('/v1/properties', page, limit, filters, 1);
+    }
+
+    /**
+     * Get mobile properties with advanced filters and retry logic
+     */
+    async getMobileProperties(
+        page: number = 1,
+        limit: number = 10,
+        filters?: PropertyFilters
+    ): Promise<PropertiesResponse> {
+        return this.fetchPropertiesWithRetry('/v1/m/properties', page, limit, filters, 2);
     }
 
     /**
@@ -345,20 +346,6 @@ class PropertyService {
         } catch (error: any) {
             console.error('Check availability error:', error.response?.data || error.message);
             throw this.handleError(error);
-        }
-    }
-
-    /**
-     * Handle API errors
-     */
-    private handleError(error: any): Error {
-        if (error.response) {
-            const message = error.response.data?.message || 'An error occurred';
-            return new Error(message);
-        } else if (error.request) {
-            return new Error('Network error. Please check your connection.');
-        } else {
-            return new Error(error.message || 'An unexpected error occurred.');
         }
     }
 }
