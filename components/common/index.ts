@@ -13,3 +13,4 @@ export { ChipButton } from './ChipButton';
 export { CustomAlert, useCustomAlert } from './CustomAlert';
 export { ImagePickerSection } from './ImagePickerSection';
 export { FormInput } from './FormInput';
+export { ModeSwitchSplash } from './ModeSwitchSplash';

@@ -1,10 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, TouchableOpacity, Image, Dimensions } from 'react-native';
-import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withSpring,
-} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -23,32 +18,30 @@ export interface Property {
     image: string;
     type: 'house' | 'apartment' | 'villa' | 'land';
     isFeatured?: boolean;
+    isFavorited?: boolean;
 }
 
 interface PropertyCardProps {
     property: Property;
     onPress?: () => void;
+    onFavoriteToggle?: (propertyId: string, currentState: boolean) => void;
     variant?: 'default' | 'compact';
 }
 
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
-
-export const PropertyCard = React.memo(function PropertyCard({ property, onPress, variant = 'default' }: PropertyCardProps) {
+export const PropertyCard = React.memo(function PropertyCard({
+    property,
+    onPress,
+    onFavoriteToggle,
+    variant = 'default'
+}: PropertyCardProps) {
     const { isDark } = useTheme();
-    const [isFavorite, setIsFavorite] = useState(false);
-    const scale = useSharedValue(1);
 
-    const handlePressIn = () => {
-        scale.value = withSpring(0.97, { damping: 15 });
+    const handleFavoritePress = (e: any) => {
+        e.stopPropagation(); // Prevent card press
+        if (onFavoriteToggle) {
+            onFavoriteToggle(property.id, property.isFavorited || false);
+        }
     };
-
-    const handlePressOut = () => {
-        scale.value = withSpring(1, { damping: 15 });
-    };
-
-    const animatedStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: scale.value }],
-    }));
 
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('id-ID', {
@@ -80,12 +73,10 @@ export const PropertyCard = React.memo(function PropertyCard({ property, onPress
 
     if (variant === 'compact') {
         return (
-            <AnimatedTouchable
+            <TouchableOpacity
                 onPress={onPress}
-                onPressIn={handlePressIn}
-                onPressOut={handlePressOut}
-                style={[animatedStyle, { width: 200 }]}
-                activeOpacity={0.9}
+                style={{ width: 200 }}
+                activeOpacity={0.7}
             >
                 <View
                     className={`rounded-2xl overflow-hidden ${isDark ? 'bg-surface-dark' : 'bg-white'
@@ -112,13 +103,13 @@ export const PropertyCard = React.memo(function PropertyCard({ property, onPress
 
                         {/* Favorite Button */}
                         <TouchableOpacity
-                            onPress={() => setIsFavorite(!isFavorite)}
+                            onPress={handleFavoritePress}
                             className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 items-center justify-center"
                         >
                             <Ionicons
-                                name={isFavorite ? 'heart' : 'heart-outline'}
+                                name={property.isFavorited ? 'heart' : 'heart-outline'}
                                 size={18}
-                                color={isFavorite ? '#EF4444' : '#6B7280'}
+                                color={property.isFavorited ? '#EF4444' : '#6B7280'}
                             />
                         </TouchableOpacity>
                     </View>
@@ -147,17 +138,15 @@ export const PropertyCard = React.memo(function PropertyCard({ property, onPress
                         </View>
                     </View>
                 </View>
-            </AnimatedTouchable>
+            </TouchableOpacity>
         );
     }
 
     return (
-        <AnimatedTouchable
+        <TouchableOpacity
             onPress={onPress}
-            onPressIn={handlePressIn}
-            onPressOut={handlePressOut}
-            style={[animatedStyle, { width: CARD_WIDTH }]}
-            activeOpacity={0.9}
+            style={{ width: CARD_WIDTH }}
+            activeOpacity={0.7}
         >
             <View
                 className={`rounded-3xl overflow-hidden ${isDark ? 'bg-surface-dark' : 'bg-white'
@@ -210,13 +199,13 @@ export const PropertyCard = React.memo(function PropertyCard({ property, onPress
 
                     {/* Favorite Button */}
                     <TouchableOpacity
-                        onPress={() => setIsFavorite(!isFavorite)}
+                        onPress={handleFavoritePress}
                         className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 items-center justify-center"
                     >
                         <Ionicons
-                            name={isFavorite ? 'heart' : 'heart-outline'}
+                            name={property.isFavorited ? 'heart' : 'heart-outline'}
                             size={22}
-                            color={isFavorite ? '#EF4444' : '#6B7280'}
+                            color={property.isFavorited ? '#EF4444' : '#6B7280'}
                         />
                     </TouchableOpacity>
                 </View>
@@ -303,6 +292,6 @@ export const PropertyCard = React.memo(function PropertyCard({ property, onPress
                     </View>
                 </View>
             </View>
-        </AnimatedTouchable>
+        </TouchableOpacity>
     );
 });

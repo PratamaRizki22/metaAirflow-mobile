@@ -78,8 +78,10 @@ export default function PaymentHistoryScreen({ navigation }: any) {
     }, []);
 
     useEffect(() => {
+        setLoading(true);
         fetchPayments(1, selectedFilter === 'all' ? undefined : selectedFilter);
-    }, [selectedFilter, fetchPayments]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedFilter]);
 
     const onRefresh = () => {
         setRefreshing(true);
@@ -88,7 +90,6 @@ export default function PaymentHistoryScreen({ navigation }: any) {
 
     const handleFilterChange = (filter: PaymentStatus | 'all') => {
         setSelectedFilter(filter);
-        setLoading(true);
     };
 
     const handlePaymentPress = (payment: Payment) => {
@@ -101,11 +102,16 @@ export default function PaymentHistoryScreen({ navigation }: any) {
             <TouchableOpacity
                 key={filter}
                 onPress={() => handleFilterChange(filter)}
-                className={`px-4 py-2 rounded-full mr-2 ${isSelected ? 'bg-primary' : isDark ? 'bg-gray-700' : 'bg-gray-200'
+                className={`px-4 py-2.5 rounded-full mr-2 ${isSelected ? 'bg-primary' : isDark ? 'bg-gray-700' : 'bg-gray-200'
                     }`}
+                style={{
+                    minHeight: 36,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                }}
             >
                 <Text
-                    className={`font-medium ${isSelected ? 'text-white' : isDark ? 'text-gray-300' : 'text-gray-700'
+                    className={`font-medium text-sm ${isSelected ? 'text-white' : isDark ? 'text-gray-300' : 'text-gray-700'
                         }`}
                 >
                     {label}
@@ -167,7 +173,7 @@ export default function PaymentHistoryScreen({ navigation }: any) {
                             Amount
                         </Text>
                         <Text className={`font-bold text-lg ${textColor}`}>
-                            MYR {payment.amount.toLocaleString('en-MY', { minimumFractionDigits: 2 })}
+                            RM {payment.amount.toLocaleString('en-MY', { minimumFractionDigits: 2 })}
                         </Text>
                     </View>
                     <View
@@ -241,7 +247,11 @@ export default function PaymentHistoryScreen({ navigation }: any) {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 className="px-6 mb-4"
-                contentContainerStyle={{ paddingRight: 24 }}
+                contentContainerStyle={{
+                    paddingRight: 24,
+                    alignItems: 'center',
+                }}
+                style={{ maxHeight: 50 }}
             >
                 {renderFilterChip('all', 'All')}
                 {renderFilterChip('completed', 'Completed')}
@@ -253,6 +263,7 @@ export default function PaymentHistoryScreen({ navigation }: any) {
             {/* Payment List */}
             <ScrollView
                 className="flex-1 px-6"
+                contentContainerStyle={payments.length === 0 ? { flexGrow: 1, justifyContent: 'center' } : undefined}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}

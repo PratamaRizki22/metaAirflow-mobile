@@ -5,6 +5,8 @@ export { default as propertyService } from './propertyService';
 export { default as uploadService } from './uploadService';
 export { default as messageService, Message, Conversation } from './messageService';
 export { default as reviewService } from './reviewService';
+export { default as agreementService } from './agreementService';
+export * from './agreementService';
 export { stripeService, type Payment, type PaymentHistoryParams, type PaymentHistoryResponse } from './stripeService';
 export { predictionService, type PredictionInput, type PredictionResult, type PredictionStatus } from './predictionService';
 export { amenityService } from './amenityService';

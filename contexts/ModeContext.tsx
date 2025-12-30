@@ -10,6 +10,7 @@ interface ModeContextType {
     canSwitchMode: boolean;
     isLandlordMode: boolean;
     isTenantMode: boolean;
+    isSwitchingMode: boolean;
 }
 
 const ModeContext = createContext<ModeContextType | undefined>(undefined);
@@ -19,6 +20,7 @@ const MODE_STORAGE_KEY = '@user_mode';
 export function ModeProvider({ children }: { children: ReactNode }) {
     const { user, isLoading } = useAuth();
     const [mode, setMode] = useState<UserMode>('tenant');
+    const [isSwitchingMode, setIsSwitchingMode] = useState(false);
 
     // Check if user can switch mode (has landlord access)
     const canSwitchMode = user?.isLandlord === true;
@@ -58,10 +60,20 @@ export function ModeProvider({ children }: { children: ReactNode }) {
         const newMode: UserMode = mode === 'tenant' ? 'landlord' : 'tenant';
 
         try {
+            setIsSwitchingMode(true);
             await AsyncStorage.setItem(MODE_STORAGE_KEY, newMode);
+
+            // Small delay to show loading state and allow screens to prepare
+            await new Promise(resolve => setTimeout(resolve, 800));
+
             setMode(newMode);
         } catch (error) {
             console.error('Error saving mode preference:', error);
+        } finally {
+            // Keep loading a bit longer to ensure navigation completes
+            setTimeout(() => {
+                setIsSwitchingMode(false);
+            }, 300);
         }
     };
 
@@ -71,6 +83,7 @@ export function ModeProvider({ children }: { children: ReactNode }) {
         canSwitchMode,
         isLandlordMode: mode === 'landlord',
         isTenantMode: mode === 'tenant',
+        isSwitchingMode,
     };
 
     return <ModeContext.Provider value={value}>{children}</ModeContext.Provider>;

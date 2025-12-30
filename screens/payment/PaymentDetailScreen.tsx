@@ -202,7 +202,7 @@ export default function PaymentDetailScreen({ route, navigation }: any) {
                         AMOUNT
                     </Text>
                     <Text className={`text-4xl font-bold ${textColor}`}>
-                        MYR {payment.amount.toLocaleString('en-MY', { minimumFractionDigits: 2 })}
+                        RM {payment.amount.toLocaleString('en-MY', { minimumFractionDigits: 2 })}
                     </Text>
                     <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm mt-1">
                         {payment.currency.toUpperCase()}

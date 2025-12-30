@@ -1,6 +1,7 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, ActivityIndicator, Text } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MainTabNavigator } from './MainTabNavigator';
 import { AuthFlowScreen } from '../screens/auth/AuthFlowScreen';
 import PropertyDetailScreen from '../screens/tenant/PropertyDetailScreen';
@@ -15,6 +16,7 @@ import EditPropertyScreen from '../screens/landlord/EditPropertyScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import PaymentHistoryScreen from '../screens/profile/PaymentHistoryScreen';
 import PaymentDetailScreen from '../screens/payment/PaymentDetailScreen';
+import PaymentScreenWrapper from '../screens/payment/PaymentScreenWrapper';
 import BookingDetailScreen from '../screens/booking/BookingDetailScreen';
 import ChatDetailScreen from '../screens/chat/ChatDetailScreen';
 import WriteReviewScreen from '../screens/review/WriteReviewScreen';
@@ -22,12 +24,14 @@ import ReviewsListScreen from '../screens/review/ReviewsListScreen';
 import { OfflineBanner } from '../components/common';
 import { useNetwork } from '../hooks';
 import { useTheme } from '../contexts/ThemeContext';
+import { useMode } from '../contexts/ModeContext';
 
 const Stack = createStackNavigator();
 
 export function RootNavigator() {
     const { isOffline } = useNetwork();
     const { isDark } = useTheme();
+    const { isSwitchingMode, mode } = useMode();
 
     return (
         <View style={{ flex: 1 }}>
@@ -147,6 +151,13 @@ export function RootNavigator() {
                     component={EditProfileScreen}
                     options={{ title: 'Edit Profile' }}
                 />
+
+                {/* Payment Screens */}
+                <Stack.Screen
+                    name="Payment"
+                    component={PaymentScreenWrapper}
+                    options={{ headerShown: false }}
+                />
                 <Stack.Screen
                     name="PaymentHistory"
                     component={PaymentHistoryScreen}
@@ -161,6 +172,46 @@ export function RootNavigator() {
 
             {/* Global Offline Banner */}
             <OfflineBanner isOffline={isOffline} />
+
+            {/* Mode Switching Loading Overlay */}
+            {isSwitchingMode && (
+                <View
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        zIndex: 9999,
+                    }}
+                >
+                    <LinearGradient
+                        colors={['rgba(0, 0, 0, 0.7)', 'rgba(0, 0, 0, 0.9)']}
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                        }}
+                    />
+                    <View style={{ alignItems: 'center' }}>
+                        <ActivityIndicator size="large" color="#00D9A3" />
+                        <Text
+                            style={{
+                                color: '#FFFFFF',
+                                marginTop: 16,
+                                fontSize: 16,
+                                fontWeight: '600'
+                            }}
+                        >
+                            Switching to {mode === 'tenant' ? 'Landlord' : 'Tenant'} Mode...
+                        </Text>
+                    </View>
+                </View>
+            )}
         </View>
     );
 }

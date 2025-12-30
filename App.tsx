@@ -5,7 +5,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { OnboardingProvider, useOnboarding } from './contexts/OnboardingContext';
 import { AuthProvider } from './contexts/AuthContext';
-import { ModeProvider } from './contexts/ModeContext';
+import { ModeProvider, useMode } from './contexts/ModeContext';
 import { FavoritesProvider } from './contexts/FavoritesContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { SearchProvider } from './contexts/SearchContext';
@@ -15,7 +15,7 @@ import { SplashScreen, WelcomeSplash } from './screens/splash';
 import { PreferenceScreen } from './screens/preferences';
 import { OnboardingScreen } from './screens/onboarding';
 import { RootNavigator } from './navigation/RootNavigator';
-import { ErrorBoundary, OfflineBanner } from './components/common';
+import { ErrorBoundary, OfflineBanner, ModeSwitchSplash } from './components/common';
 import { useNetwork } from './hooks';
 
 import './global.css';
@@ -24,10 +24,21 @@ function AppContent() {
   const { isDark } = useTheme();
   const { hasSeenOnboarding, completeOnboarding } = useOnboarding();
   const { isOffline } = useNetwork();
+  const { isSwitchingMode, mode } = useMode();
   const [showSplash, setShowSplash] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
   const [showPreference, setShowPreference] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Show mode switch splash when switching modes
+  if (isSwitchingMode) {
+    return (
+      <>
+        <StatusBar style="light" />
+        <ModeSwitchSplash targetMode={mode} />
+      </>
+    );
+  }
 
   // Show splash screen first (always shows on app open)
   if (showSplash) {

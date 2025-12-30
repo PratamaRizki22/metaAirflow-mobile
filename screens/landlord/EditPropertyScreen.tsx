@@ -4,7 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import MapLibreGL from '@maplibre/maplibre-react-native';
 import { MAPTILER_API_KEY } from '@env';
 import { propertyService, uploadService } from '../../services';
-import { ImagePickerSection, FormInput } from '../../components/common';
+import { ImagePickerSection, FormInput, Toast } from '../../components/common';
+import { useToast } from '../../hooks/useToast';
 
 export default function EditPropertyScreen({ route, navigation }: any) {
     const { propertyId } = route.params;
@@ -29,6 +30,7 @@ export default function EditPropertyScreen({ route, navigation }: any) {
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState(false);
     const [showMap, setShowMap] = useState(false);
+    const { toast, showToast, hideToast } = useToast();
 
     // Configure MapLibre
     MapLibreGL.setAccessToken(null);
@@ -63,7 +65,7 @@ export default function EditPropertyScreen({ route, navigation }: any) {
             // Load existing images
             setExistingImages(property.images || []);
         } catch (error: any) {
-            Alert.alert('Error', error.message);
+            showToast(error.message || 'Failed to load property', 'error');
             navigation.goBack();
         } finally {
             setLoading(false);
@@ -132,18 +134,12 @@ export default function EditPropertyScreen({ route, navigation }: any) {
                 images: allImages,
             });
 
-            Alert.alert(
-                'Success',
-                'Property updated successfully!',
-                [
-                    {
-                        text: 'OK',
-                        onPress: () => navigation.goBack()
-                    }
-                ]
-            );
+            showToast('Property updated successfully!', 'success');
+            setTimeout(() => {
+                navigation.goBack();
+            }, 1500);
         } catch (error: any) {
-            Alert.alert('Error', error.message);
+            showToast(error.message || 'Failed to update property', 'error');
         } finally {
             setUpdating(false);
         }
@@ -159,289 +155,299 @@ export default function EditPropertyScreen({ route, navigation }: any) {
     }
 
     return (
-        <ScrollView style={{ flex: 1, padding: 20 }}>
-            <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 20 }}>
-                Edit Property
-            </Text>
+        <View style={{ flex: 1 }}>
+            <ScrollView style={{ flex: 1, padding: 20 }}>
+                <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 20 }}>
+                    Edit Property
+                </Text>
 
-            {/* Title */}
-            <FormInput
-                label="Property Title"
-                required
-                placeholder="e.g., Modern Apartment in KLCC"
-                value={formData.title}
-                onChangeText={(text) => setFormData({ ...formData, title: text })}
-            />
-
-            {/* Description */}
-            <FormInput
-                label="Description"
-                required
-                placeholder="Describe your property..."
-                value={formData.description}
-                onChangeText={(text) => setFormData({ ...formData, description: text })}
-                multiline
-                numberOfLines={4}
-                style={{ textAlignVertical: 'top' }}
-            />
-
-            {/* Property Images */}
-            <ImagePickerSection
-                label="Property Images"
-                existingImages={existingImages}
-                onRemoveExistingImage={(index) => {
-                    const updated = [...existingImages];
-                    updated.splice(index, 1);
-                    setExistingImages(updated);
-                }}
-                selectedImages={newImages}
-                onImagesSelected={(uris) => setNewImages([...newImages, ...uris])}
-                onRemoveImage={(index) => {
-                    const updated = [...newImages];
-                    updated.splice(index, 1);
-                    setNewImages(updated);
-                }}
-            />
-
-            {/* Address */}
-            <FormInput
-                label="Address"
-                required
-                placeholder="Street address"
-                value={formData.address}
-                onChangeText={(text) => setFormData({ ...formData, address: text })}
-            />
-
-            {/* Map Location */}
-            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
-                Location on Map *
-            </Text>
-            <TouchableOpacity
-                onPress={() => setShowMap(!showMap)}
-                style={{
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                    borderRadius: 8,
-                    padding: 12,
-                    marginBottom: 15,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                }}
-            >
-                <View>
-                    <Text style={{ fontWeight: '600', marginBottom: 4 }}>
-                        {showMap ? 'Hide Map' : 'Show Map'}
-                    </Text>
-                    <Text style={{ color: '#666', fontSize: 12 }}>
-                        Lat: {formData.latitude.toFixed(6)}, Lng: {formData.longitude.toFixed(6)}
-                    </Text>
-                </View>
-                <Ionicons
-                    name={showMap ? 'chevron-up' : 'location'}
-                    size={24}
-                    color="#007AFF"
+                {/* Title */}
+                <FormInput
+                    label="Property Title"
+                    required
+                    placeholder="e.g., Modern Apartment in KLCC"
+                    value={formData.title}
+                    onChangeText={(text) => setFormData({ ...formData, title: text })}
                 />
-            </TouchableOpacity>
 
-            {showMap && (
-                <View style={{ height: 250, borderRadius: 8, overflow: 'hidden', marginBottom: 15 }}>
-                    <MapLibreGL.MapView
-                        style={{ flex: 1 }}
-                        onPress={handleMapPress}
-                    >
-                        <MapLibreGL.RasterSource
-                            id="maptiler-source-edit"
-                            tileUrlTemplates={[`https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${MAPTILER_API_KEY}`]}
-                            tileSize={256}
-                        >
-                            <MapLibreGL.RasterLayer id="maptiler-layer-edit" sourceID="maptiler-source-edit" />
-                        </MapLibreGL.RasterSource>
-                        <MapLibreGL.Camera
-                            centerCoordinate={[formData.longitude, formData.latitude]}
-                            zoomLevel={15}
-                            animationDuration={1000}
-                        />
-                        <MapLibreGL.PointAnnotation
-                            id="property-location-edit"
-                            coordinate={[formData.longitude, formData.latitude]}
-                        >
-                            <View style={{
-                                backgroundColor: '#EF4444',
-                                width: 24,
-                                height: 24,
-                                borderRadius: 12,
-                                borderWidth: 2,
-                                borderColor: 'white',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}>
-                                <View style={{ backgroundColor: 'white', width: 8, height: 8, borderRadius: 4 }} />
-                            </View>
-                        </MapLibreGL.PointAnnotation>
-                    </MapLibreGL.MapView>
-                    <View style={{
-                        position: 'absolute',
-                        bottom: 8,
-                        left: 8,
-                        right: 8,
-                        backgroundColor: 'rgba(0,0,0,0.7)',
-                        padding: 8,
-                        borderRadius: 4,
-                    }}>
-                        <Text style={{ color: 'white', fontSize: 11, textAlign: 'center' }}>
-                            Tap anywhere on the map to update property location
+                {/* Description */}
+                <FormInput
+                    label="Description"
+                    required
+                    placeholder="Describe your property..."
+                    value={formData.description}
+                    onChangeText={(text) => setFormData({ ...formData, description: text })}
+                    multiline
+                    numberOfLines={4}
+                    style={{ textAlignVertical: 'top' }}
+                />
+
+                {/* Property Images */}
+                <ImagePickerSection
+                    label="Property Images"
+                    existingImages={existingImages}
+                    onRemoveExistingImage={(index) => {
+                        const updated = [...existingImages];
+                        updated.splice(index, 1);
+                        setExistingImages(updated);
+                    }}
+                    selectedImages={newImages}
+                    onImagesSelected={(uris) => setNewImages([...newImages, ...uris])}
+                    onRemoveImage={(index) => {
+                        const updated = [...newImages];
+                        updated.splice(index, 1);
+                        setNewImages(updated);
+                    }}
+                />
+
+                {/* Address */}
+                <FormInput
+                    label="Address"
+                    required
+                    placeholder="Street address"
+                    value={formData.address}
+                    onChangeText={(text) => setFormData({ ...formData, address: text })}
+                />
+
+                {/* Map Location */}
+                <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
+                    Location on Map *
+                </Text>
+                <TouchableOpacity
+                    onPress={() => setShowMap(!showMap)}
+                    style={{
+                        borderWidth: 1,
+                        borderColor: '#ddd',
+                        borderRadius: 8,
+                        padding: 12,
+                        marginBottom: 15,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                    }}
+                >
+                    <View>
+                        <Text style={{ fontWeight: '600', marginBottom: 4 }}>
+                            {showMap ? 'Hide Map' : 'Show Map'}
+                        </Text>
+                        <Text style={{ color: '#666', fontSize: 12 }}>
+                            Lat: {formData.latitude.toFixed(6)}, Lng: {formData.longitude.toFixed(6)}
                         </Text>
                     </View>
-                </View>
-            )}
-
-            {/* City & State */}
-            <View style={{ flexDirection: 'row', marginBottom: 15 }}>
-                <View style={{ flex: 1, marginRight: 10 }}>
-                    <FormInput
-                        label="City"
-                        required
-                        placeholder="City"
-                        value={formData.city}
-                        onChangeText={(text) => setFormData({ ...formData, city: text })}
-                        containerStyle={{ marginBottom: 0 }}
+                    <Ionicons
+                        name={showMap ? 'chevron-up' : 'location'}
+                        size={24}
+                        color="#007AFF"
                     />
-                </View>
-                <View style={{ flex: 1 }}>
-                    <FormInput
-                        label="State"
-                        required
-                        placeholder="State"
-                        value={formData.state}
-                        onChangeText={(text) => setFormData({ ...formData, state: text })}
-                        containerStyle={{ marginBottom: 0 }}
-                    />
-                </View>
-            </View>
+                </TouchableOpacity>
 
-            {/* Price */}
-            <FormInput
-                label="Monthly Price (IDR)"
-                required
-                placeholder="e.g., 5000000"
-                value={formData.price}
-                onChangeText={(text) => setFormData({ ...formData, price: text })}
-                keyboardType="numeric"
+                {showMap && (
+                    <View style={{ height: 250, borderRadius: 8, overflow: 'hidden', marginBottom: 15 }}>
+                        <MapLibreGL.MapView
+                            style={{ flex: 1 }}
+                            onPress={handleMapPress}
+                        >
+                            <MapLibreGL.RasterSource
+                                id="maptiler-source-edit"
+                                tileUrlTemplates={[`https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${MAPTILER_API_KEY}`]}
+                                tileSize={256}
+                            >
+                                <MapLibreGL.RasterLayer id="maptiler-layer-edit" sourceID="maptiler-source-edit" />
+                            </MapLibreGL.RasterSource>
+                            <MapLibreGL.Camera
+                                centerCoordinate={[formData.longitude, formData.latitude]}
+                                zoomLevel={15}
+                                animationDuration={1000}
+                            />
+                            <MapLibreGL.PointAnnotation
+                                id="property-location-edit"
+                                coordinate={[formData.longitude, formData.latitude]}
+                            >
+                                <View style={{
+                                    backgroundColor: '#EF4444',
+                                    width: 24,
+                                    height: 24,
+                                    borderRadius: 12,
+                                    borderWidth: 2,
+                                    borderColor: 'white',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}>
+                                    <View style={{ backgroundColor: 'white', width: 8, height: 8, borderRadius: 4 }} />
+                                </View>
+                            </MapLibreGL.PointAnnotation>
+                        </MapLibreGL.MapView>
+                        <View style={{
+                            position: 'absolute',
+                            bottom: 8,
+                            left: 8,
+                            right: 8,
+                            backgroundColor: 'rgba(0,0,0,0.7)',
+                            padding: 8,
+                            borderRadius: 4,
+                        }}>
+                            <Text style={{ color: 'white', fontSize: 11, textAlign: 'center' }}>
+                                Tap anywhere on the map to update property location
+                            </Text>
+                        </View>
+                    </View>
+                )}
+
+                {/* City & State */}
+                <View style={{ flexDirection: 'row', marginBottom: 15 }}>
+                    <View style={{ flex: 1, marginRight: 10 }}>
+                        <FormInput
+                            label="City"
+                            required
+                            placeholder="City"
+                            value={formData.city}
+                            onChangeText={(text) => setFormData({ ...formData, city: text })}
+                            containerStyle={{ marginBottom: 0 }}
+                        />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <FormInput
+                            label="State"
+                            required
+                            placeholder="State"
+                            value={formData.state}
+                            onChangeText={(text) => setFormData({ ...formData, state: text })}
+                            containerStyle={{ marginBottom: 0 }}
+                        />
+                    </View>
+                </View>
+
+                {/* Price */}
+                <FormInput
+                    label="Monthly Price (IDR)"
+                    required
+                    placeholder="e.g., 5000000"
+                    value={formData.price}
+                    onChangeText={(text) => setFormData({ ...formData, price: text })}
+                    keyboardType="numeric"
+                />
+
+                {/* Bedrooms, Bathrooms, Area */}
+                <View style={{ flexDirection: 'row', marginBottom: 15 }}>
+                    <View style={{ flex: 1, marginRight: 5 }}>
+                        <FormInput
+                            label="Bedrooms"
+                            required
+                            placeholder="3"
+                            value={formData.bedrooms}
+                            onChangeText={(text) => setFormData({ ...formData, bedrooms: text })}
+                            keyboardType="numeric"
+                            containerStyle={{ marginBottom: 0 }}
+                        />
+                    </View>
+                    <View style={{ flex: 1, marginRight: 5 }}>
+                        <FormInput
+                            label="Bathrooms"
+                            required
+                            placeholder="2"
+                            value={formData.bathrooms}
+                            onChangeText={(text) => setFormData({ ...formData, bathrooms: text })}
+                            keyboardType="numeric"
+                            containerStyle={{ marginBottom: 0 }}
+                        />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <FormInput
+                            label="Area (m²)"
+                            required
+                            placeholder="120"
+                            value={formData.areaSqm}
+                            onChangeText={(text) => setFormData({ ...formData, areaSqm: text })}
+                            keyboardType="numeric"
+                            containerStyle={{ marginBottom: 0 }}
+                        />
+                    </View>
+                </View>
+
+                {/* Furnished */}
+                <TouchableOpacity
+                    onPress={() => setFormData({ ...formData, furnished: !formData.furnished })}
+                    style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        padding: 12,
+                        borderWidth: 1,
+                        borderColor: '#ddd',
+                        borderRadius: 8,
+                        marginBottom: 15,
+                    }}
+                >
+                    <View style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 4,
+                        borderWidth: 2,
+                        borderColor: formData.furnished ? '#007AFF' : '#ddd',
+                        backgroundColor: formData.furnished ? '#007AFF' : 'white',
+                        marginRight: 10,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}>
+                        {formData.furnished && <Text style={{ color: 'white', fontWeight: 'bold' }}>✓</Text>}
+                    </View>
+                    <Text style={{ fontSize: 16 }}>Furnished</Text>
+                </TouchableOpacity>
+
+                {/* Available */}
+                <TouchableOpacity
+                    onPress={() => setFormData({ ...formData, isAvailable: !formData.isAvailable })}
+                    style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        padding: 12,
+                        borderWidth: 1,
+                        borderColor: '#ddd',
+                        borderRadius: 8,
+                        marginBottom: 20,
+                    }}
+                >
+                    <View style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 4,
+                        borderWidth: 2,
+                        borderColor: formData.isAvailable ? '#34C759' : '#ddd',
+                        backgroundColor: formData.isAvailable ? '#34C759' : 'white',
+                        marginRight: 10,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}>
+                        {formData.isAvailable && <Text style={{ color: 'white', fontWeight: 'bold' }}>✓</Text>}
+                    </View>
+                    <Text style={{ fontSize: 16 }}>Available for Rent</Text>
+                </TouchableOpacity>
+
+                {/* Submit Button */}
+                <Button
+                    title={updating ? 'Updating...' : 'Update Property'}
+                    onPress={handleSubmit}
+                    disabled={updating}
+                    color="#34C759"
+                />
+
+                <View style={{ height: 20 }} />
+
+                <Button
+                    title="Cancel"
+                    onPress={() => navigation.goBack()}
+                    color="#999"
+                />
+
+                <View style={{ height: 40 }} />
+            </ScrollView>
+
+            {/* Toast Notification */}
+            <Toast
+                visible={toast.visible}
+                message={toast.message}
+                type={toast.type}
+                onHide={hideToast}
             />
-
-            {/* Bedrooms, Bathrooms, Area */}
-            <View style={{ flexDirection: 'row', marginBottom: 15 }}>
-                <View style={{ flex: 1, marginRight: 5 }}>
-                    <FormInput
-                        label="Bedrooms"
-                        required
-                        placeholder="3"
-                        value={formData.bedrooms}
-                        onChangeText={(text) => setFormData({ ...formData, bedrooms: text })}
-                        keyboardType="numeric"
-                        containerStyle={{ marginBottom: 0 }}
-                    />
-                </View>
-                <View style={{ flex: 1, marginRight: 5 }}>
-                    <FormInput
-                        label="Bathrooms"
-                        required
-                        placeholder="2"
-                        value={formData.bathrooms}
-                        onChangeText={(text) => setFormData({ ...formData, bathrooms: text })}
-                        keyboardType="numeric"
-                        containerStyle={{ marginBottom: 0 }}
-                    />
-                </View>
-                <View style={{ flex: 1 }}>
-                    <FormInput
-                        label="Area (m²)"
-                        required
-                        placeholder="120"
-                        value={formData.areaSqm}
-                        onChangeText={(text) => setFormData({ ...formData, areaSqm: text })}
-                        keyboardType="numeric"
-                        containerStyle={{ marginBottom: 0 }}
-                    />
-                </View>
-            </View>
-
-            {/* Furnished */}
-            <TouchableOpacity
-                onPress={() => setFormData({ ...formData, furnished: !formData.furnished })}
-                style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 12,
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                    borderRadius: 8,
-                    marginBottom: 15,
-                }}
-            >
-                <View style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: 4,
-                    borderWidth: 2,
-                    borderColor: formData.furnished ? '#007AFF' : '#ddd',
-                    backgroundColor: formData.furnished ? '#007AFF' : 'white',
-                    marginRight: 10,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                }}>
-                    {formData.furnished && <Text style={{ color: 'white', fontWeight: 'bold' }}>✓</Text>}
-                </View>
-                <Text style={{ fontSize: 16 }}>Furnished</Text>
-            </TouchableOpacity>
-
-            {/* Available */}
-            <TouchableOpacity
-                onPress={() => setFormData({ ...formData, isAvailable: !formData.isAvailable })}
-                style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 12,
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                    borderRadius: 8,
-                    marginBottom: 20,
-                }}
-            >
-                <View style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: 4,
-                    borderWidth: 2,
-                    borderColor: formData.isAvailable ? '#34C759' : '#ddd',
-                    backgroundColor: formData.isAvailable ? '#34C759' : 'white',
-                    marginRight: 10,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                }}>
-                    {formData.isAvailable && <Text style={{ color: 'white', fontWeight: 'bold' }}>✓</Text>}
-                </View>
-                <Text style={{ fontSize: 16 }}>Available for Rent</Text>
-            </TouchableOpacity>
-
-            {/* Submit Button */}
-            <Button
-                title={updating ? 'Updating...' : 'Update Property'}
-                onPress={handleSubmit}
-                disabled={updating}
-                color="#34C759"
-            />
-
-            <View style={{ height: 20 }} />
-
-            <Button
-                title="Cancel"
-                onPress={() => navigation.goBack()}
-                color="#999"
-            />
-
-            <View style={{ height: 40 }} />
-        </ScrollView>
+        </View>
     );
 }

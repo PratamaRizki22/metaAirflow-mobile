@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, ScrollView, Alert, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TextInput, ScrollView, Alert, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import MapLibreGL from '@maplibre/maplibre-react-native';
 import { MAPTILER_API_KEY } from '@env';
-import { propertyService, uploadService, propertyTypeService, amenityService } from '../../services';
+import { propertyService, uploadService, propertyTypeService, amenityService, agreementService } from '../../services';
 import { useThemeColors } from '../../hooks';
 import { useToast } from '../../hooks/useToast';
 import { LoadingState, Toast, ImagePickerSection, FormInput } from '../../components/common';
@@ -58,7 +59,7 @@ export default function CreatePropertyScreen({ navigation }: any) {
             const response = await propertyTypeService.getPropertyTypes();
             setPropertyTypes(response);
         } catch (error: any) {
-            Alert.alert('Error', error.message);
+            showToast(error.message || 'Failed to load property types', 'error');
         }
     };
 
@@ -94,6 +95,7 @@ export default function CreatePropertyScreen({ navigation }: any) {
         );
     };
 
+
     const toggleAmenity = (amenityId: string) => {
         setSelectedAmenities(prev => {
             if (prev.includes(amenityId)) {
@@ -110,26 +112,84 @@ export default function CreatePropertyScreen({ navigation }: any) {
         setUploadingImages(true);
 
         try {
-            const files = selectedImages.map((imageUri, index) => ({
-                uri: imageUri,
-                type: 'image/jpeg',
-                name: `property_${Date.now()}_${index}.jpg`,
-            }));
-
-            const response = await uploadService.uploadMultiple(files, true);
+            console.log('Starting image upload for files:', selectedImages.length);
+            const response = await uploadService.uploadImages(selectedImages, true);
 
             if (response.success && response.data.files) {
                 const uploadedUrls = response.data.files.map(file => file.url);
+                console.log('Images uploaded successfully:', uploadedUrls.length);
                 setUploadedImageUrls(uploadedUrls);
                 return uploadedUrls;
             }
 
             return [];
         } catch (error: any) {
+            console.error('Image upload failed:', error);
             showToast(error.message || 'Failed to upload images', 'error');
             return [];
         } finally {
             setUploadingImages(false);
+        }
+    };
+
+
+    const [analyzing, setAnalyzing] = useState(false);
+    const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+
+    const handlePickDocument = async () => {
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: 'application/pdf',
+                copyToCacheDirectory: true,
+            });
+
+            if (result.assets && result.assets.length > 0) {
+                const file = result.assets[0];
+
+                // VALIDATION: Max 5MB
+                if (file.size && file.size > 5 * 1024 * 1024) {
+                    Alert.alert('File Too Large', 'Please upload a PDF file smaller than 5MB.');
+                    return;
+                }
+
+                setLoading(true);
+                showToast('Extracting text from PDF...', 'info');
+
+                try {
+                    const extracted = await agreementService.extractText(file);
+                    setFormData(prev => ({
+                        ...prev,
+                        description: prev.description + '\n\n=== HOUSE RULES / AGREEMENT ===\n' + extracted.text
+                    }));
+                    showToast('Text extracted successfully', 'success');
+                } catch (error: any) {
+                    showToast('Failed to extract text: ' + error.message, 'error');
+                } finally {
+                    setLoading(false);
+                }
+            }
+        } catch (error) {
+            console.error('Pick document error:', error);
+        }
+    };
+
+    const handleAnalyzeAgreement = async () => {
+        if (!formData.description) return;
+
+        try {
+            setAnalyzing(true);
+            const result = await agreementService.analyze(formData.description);
+            setAnalysisResult(result.analysis);
+
+            Alert.alert(
+                'AI Analysis',
+                result.analysis,
+                [{ text: 'Close' }]
+            );
+        } catch (error: any) {
+            showToast('Analysis failed: ' + error.message, 'error');
+        } finally {
+            setAnalyzing(false);
         }
     };
 
@@ -164,6 +224,10 @@ export default function CreatePropertyScreen({ navigation }: any) {
         }
         if (!formData.propertyTypeId) {
             showToast('Please select property type', 'error');
+            return false;
+        }
+        if (selectedImages.length < 4) {
+            showToast('Please add at least 4 images', 'error');
             return false;
         }
         return true;
@@ -204,7 +268,7 @@ export default function CreatePropertyScreen({ navigation }: any) {
                 country: formData.country,
                 zipCode: formData.zipCode,
                 price: parseFloat(formData.price),
-                currencyCode: 'MYR',
+                currencyCode: 'RM',
                 bedrooms: parseInt(formData.bedrooms),
                 bathrooms: parseInt(formData.bathrooms),
                 areaSqm: parseFloat(formData.areaSqm),
@@ -220,7 +284,7 @@ export default function CreatePropertyScreen({ navigation }: any) {
                 navigation.navigate('ManageProperties');
             }, 1500);
         } catch (error: any) {
-            Alert.alert('Error', error.message);
+            showToast(error.message || 'Failed to create property', 'error');
         } finally {
             setLoading(false);
         }
@@ -253,10 +317,6 @@ export default function CreatePropertyScreen({ navigation }: any) {
     return (
         <ScrollView className={`flex-1 ${bgColor}`}>
             <View className="p-6">
-                <Text className={`text-3xl font-bold mb-6 ${textColor}`}>
-                    Add New Property
-                </Text>
-
                 {/* Title */}
                 <FormInput
                     label="Property Title"
@@ -371,36 +431,7 @@ export default function CreatePropertyScreen({ navigation }: any) {
                     </View>
                 </View>
 
-                {/* Price with AI Suggestion */}
-                <View className="mb-4">
-                    <FormInput
-                        label="Monthly Price (MYR)"
-                        required
-                        placeholder="e.g., 2500"
-                        value={formData.price}
-                        onChangeText={(text) => setFormData({ ...formData, price: text })}
-                        keyboardType="numeric"
-                        containerStyle={{ marginBottom: 0 }}
-                    />
 
-                    {/* AI Price Suggestion Button */}
-                    {formData.bedrooms && formData.bathrooms && formData.areaSqm && formData.city && formData.propertyTypeId && (
-                        <TouchableOpacity
-                            onPress={() => setShowPricePrediction(true)}
-                            className="mt-2"
-                        >
-                            <LinearGradient
-                                colors={['#6366F1', '#8B5CF6']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                className="py-3 px-4 rounded-xl flex-row items-center justify-center"
-                            >
-                                <Ionicons name="analytics" size={18} color="white" style={{ marginRight: 8 }} />
-                                <Text className="text-white font-semibold">Get AI Price Suggestion</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
-                    )}
-                </View>
 
                 {/* Bedrooms, Bathrooms, Area */}
                 <View className="flex-row gap-2 mb-4">
@@ -510,6 +541,107 @@ export default function CreatePropertyScreen({ navigation }: any) {
                     </View>
                 </View>
 
+                {/* Rental Agreement Section */}
+                <View className="mb-6">
+                    <Text className={`text-lg font-bold mb-2 ${textColor}`}>
+                        Rental Agreement & House Rules
+                    </Text>
+
+                    <Text className={`text-sm mb-4 ${secondaryTextColor}`}>
+                        Upload a professional PDF agreement or write your house rules manually
+                    </Text>
+
+                    {/* PRIMARY: Upload PDF Button */}
+                    <TouchableOpacity
+                        onPress={handlePickDocument}
+                        activeOpacity={0.7}
+                        className="mb-4"
+                    >
+                        <LinearGradient
+                            colors={['#6366F1', '#8B5CF6']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            className="p-4 rounded-xl"
+                        >
+                            <View className="flex-row items-center justify-between">
+                                <View className="flex-row items-center flex-1">
+                                    <View className="bg-white/20 p-3 rounded-lg mr-3">
+                                        <Ionicons name="document-text" size={24} color="white" />
+                                    </View>
+                                    <View className="flex-1">
+                                        <Text className="text-white font-bold text-base mb-1">
+                                            Upload PDF Agreement
+                                        </Text>
+                                        <Text className="text-white/80 text-xs">
+                                            Recommended • Professional & Legally Binding
+                                        </Text>
+                                    </View>
+                                </View>
+                                <Ionicons name="cloud-upload-outline" size={24} color="white" />
+                            </View>
+                        </LinearGradient>
+                    </TouchableOpacity>
+
+                    {/* Divider */}
+                    <View className="flex-row items-center my-4">
+                        <View className={`flex-1 h-px ${isDark ? 'bg-gray-700' : 'bg-gray-300'}`} />
+                        <Text className={`mx-3 text-xs ${secondaryTextColor}`}>OR</Text>
+                        <View className={`flex-1 h-px ${isDark ? 'bg-gray-700' : 'bg-gray-300'}`} />
+                    </View>
+
+                    {/* SECONDARY: Manual Text Input (Collapsed by default) */}
+                    <View className={`${cardBg} border ${borderColor} rounded-xl p-4`}>
+                        <View className="flex-row items-center mb-3">
+                            <Ionicons
+                                name="create-outline"
+                                size={18}
+                                color={isDark ? '#9CA3AF' : '#6B7280'}
+                            />
+                            <Text className={`ml-2 text-sm font-medium ${secondaryTextColor}`}>
+                                Write Manually (Not Recommended)
+                            </Text>
+                        </View>
+
+                        <FormInput
+                            label=""
+                            placeholder="1. Pay rent on time&#10;2. No smoking&#10;3. Keep quiet after 10 PM..."
+                            value={formData.description}
+                            onChangeText={(text) => setFormData({ ...formData, description: text })}
+                            multiline
+                            numberOfLines={6}
+                            containerStyle={{ marginBottom: 0 }}
+                        />
+
+                        {/* Info Box */}
+                        <View className="mt-3 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+                            <View className="flex-row">
+                                <Ionicons name="information-circle" size={16} color="#F59E0B" />
+                                <Text className="ml-2 text-xs text-amber-700 dark:text-amber-400 flex-1">
+                                    Tip: Uploading a PDF is more professional and legally binding. Manual text is best for simple house rules only.
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* Analyze Button */}
+                    {formData.description.length > 50 && (
+                        <TouchableOpacity
+                            onPress={handleAnalyzeAgreement}
+                            disabled={analyzing}
+                            className="flex-row items-center justify-center bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-xl mt-3 border border-indigo-100 dark:border-indigo-800"
+                        >
+                            {analyzing ? (
+                                <ActivityIndicator size="small" color="#6366F1" />
+                            ) : (
+                                <Ionicons name="sparkles" size={18} color="#6366F1" />
+                            )}
+                            <Text className="text-indigo-600 dark:text-indigo-400 font-semibold ml-2">
+                                {analyzing ? 'Analyzing...' : 'Analyze Risk & Clauses with AI'}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+
                 {/* Furnished */}
                 <TouchableOpacity
                     onPress={() => setFormData({ ...formData, furnished: !formData.furnished })}
@@ -521,6 +653,38 @@ export default function CreatePropertyScreen({ navigation }: any) {
                     </View>
                     <Text className={`text-base ${textColor}`}>Furnished</Text>
                 </TouchableOpacity>
+
+                {/* AI Price Suggestion & Price Input - AT THE BOTTOM */}
+                <View className="mb-6">
+                    {/* AI Price Suggestion Button */}
+                    {formData.bedrooms && formData.bathrooms && formData.areaSqm && formData.city && formData.propertyTypeId && (
+                        <TouchableOpacity
+                            onPress={() => setShowPricePrediction(true)}
+                            className="mb-3"
+                        >
+                            <LinearGradient
+                                colors={['#6366F1', '#8B5CF6']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                className="py-3 px-4 rounded-xl flex-row items-center justify-center"
+                            >
+                                <Ionicons name="analytics" size={18} color="white" style={{ marginRight: 8 }} />
+                                <Text className="text-white font-semibold">Get AI Price Suggestion</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    )}
+
+                    {/* Monthly Price Input */}
+                    <FormInput
+                        label="Monthly Price (RM)"
+                        required
+                        placeholder="e.g., 2500"
+                        value={formData.price}
+                        onChangeText={(text) => setFormData({ ...formData, price: text })}
+                        keyboardType="numeric"
+                        containerStyle={{ marginBottom: 0 }}
+                    />
+                </View>
 
                 {/* Submit Button */}
                 <TouchableOpacity
@@ -557,7 +721,7 @@ export default function CreatePropertyScreen({ navigation }: any) {
                 onClose={() => setShowPricePrediction(false)}
                 onApplyPrice={(price) => {
                     setFormData({ ...formData, price: price.toString() });
-                    showToast(`Price updated to MYR ${price.toFixed(2)}`, 'success');
+                    showToast(`Price updated to RM ${price.toFixed(2)}`, 'success');
                 }}
                 propertyData={{
                     area: parseFloat(formData.areaSqm) * 10.764, // Convert sqm to sqft
@@ -575,6 +739,6 @@ export default function CreatePropertyScreen({ navigation }: any) {
                 type={toast.type}
                 onHide={hideToast}
             />
-        </ScrollView>
+        </ScrollView >
     );
 }

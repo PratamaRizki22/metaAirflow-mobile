@@ -76,7 +76,7 @@ class StripeService {
      */
     async getPaymentSheetParams(bookingId: string): Promise<PaymentSheetParams> {
         try {
-            const response = await api.post('/payments/payment-sheet', {
+            const response = await api.post('/v1/m/payments/payment-sheet', {
                 bookingId,
             });
 
@@ -96,7 +96,7 @@ class StripeService {
         paymentIntentId: string
     ): Promise<PaymentConfirmation> {
         try {
-            const response = await api.post('/payments/confirm', {
+            const response = await api.post('/v1/m/payments/confirm', {
                 bookingId,
                 paymentIntentId,
             });
@@ -120,7 +120,7 @@ class StripeService {
             if (params?.limit) queryParams.append('limit', params.limit.toString());
             if (params?.status) queryParams.append('status', params.status);
 
-            const url = `/payments/history${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+            const url = `/v1/m/payments/history${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
             const response = await api.get(url);
 
             // Backend returns { success: true, data: {...} }
@@ -136,7 +136,7 @@ class StripeService {
      */
     async getPaymentDetails(paymentId: string): Promise<Payment> {
         try {
-            const response = await api.get(`/payments/${paymentId}`);
+            const response = await api.get(`/v1/m/payments/${paymentId}`);
 
             // Backend returns { success: true, data: {...} }
             return response.data.data || response.data;
@@ -151,7 +151,7 @@ class StripeService {
      */
     async cancelPayment(paymentIntentId: string): Promise<void> {
         try {
-            await api.post('/payments/cancel', {
+            await api.post('/v1/m/payments/cancel', {
                 paymentIntentId,
             });
         } catch (error: any) {
@@ -165,7 +165,7 @@ class StripeService {
      */
     async requestRefund(bookingId: string, reason?: string): Promise<RefundResponse> {
         try {
-            const response = await api.post('/payments/refund', {
+            const response = await api.post('/v1/m/payments/refund', {
                 bookingId,
                 reason,
             });

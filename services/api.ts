@@ -1,20 +1,11 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL } from '@env';
-
-// Base URL - menggunakan environment variable
-const BASE_URL = API_BASE_URL;
-
-// Debug: Log the actual URL being used
-console.log('=== API Configuration ===');
-console.log('API_BASE_URL from env:', API_BASE_URL);
-console.log('BASE_URL being used:', BASE_URL);
-console.log('========================');
+import Config from '../config/app.config';
 
 // Create axios instance
 const api = axios.create({
-    baseURL: BASE_URL,
-    timeout: 12000, // Increased timeout
+    baseURL: Config.api.baseURL,
+    timeout: Config.api.timeout,
     headers: {
         'Content-Type': 'application/json',
     },

@@ -53,13 +53,14 @@ export function MainTabNavigator() {
                         tabBarLabel: 'Bookings',
                     }}
                 />
-                <Tab.Screen
+                {/* Inbox Tab - Disabled until WebSocket is implemented */}
+                {/* <Tab.Screen
                     name="Inbox"
                     component={LandlordInboxScreen}
                     options={{
                         tabBarLabel: 'Chat',
                     }}
-                />
+                /> */}
                 <Tab.Screen
                     name="Profile"
                     component={ProfileScreen}

@@ -212,6 +212,21 @@ class BookingService {
     }
 
     /**
+     * Get rental agreement PDF
+     */
+    async getRentalAgreementPDF(bookingId: string): Promise<any> {
+        try {
+            const response = await api.get(
+                `/v1/m/bookings/${bookingId}/rental-agreement`
+            );
+            return response.data;
+        } catch (error: any) {
+            console.error('Get rental agreement PDF error:', error.response?.data || error.message);
+            throw this.handleError(error);
+        }
+    }
+
+    /**
      * Handle API errors
      */
     private handleError(error: any): Error {

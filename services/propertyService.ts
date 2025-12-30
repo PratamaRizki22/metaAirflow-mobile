@@ -183,7 +183,13 @@ class PropertyService {
      */
     async getPropertyById(propertyId: string): Promise<PropertyResponse> {
         try {
-            const response = await api.get<PropertyResponse>(`/v1/properties/${propertyId}`);
+            console.log('Fetching property:', propertyId);
+            const response = await api.get<PropertyResponse>(`/v1/m/properties/${propertyId}`);
+            console.log('Property response:', {
+                success: response.data?.success,
+                hasData: !!response.data?.data,
+                dataKeys: response.data?.data ? Object.keys(response.data.data) : []
+            });
             return response.data;
         } catch (error: any) {
             console.error('Get property error:', error.response?.data || error.message);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Modal, ViewStyle, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Modal, ViewStyle, RefreshControl, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -8,7 +8,7 @@ import { AuthFlowScreen } from '../auth/AuthFlowScreen';
 import { useThemeColors } from '../../hooks';
 
 type Language = 'id' | 'en';
-type ThemeOption = 'light' | 'dark' | 'system';
+type ThemeOption = 'light' | 'dark';
 
 // Reusable card style
 const CARD_STYLE: ViewStyle = {
@@ -45,6 +45,25 @@ export function ProfileScreen({ navigation }: any) {
             setRefreshing(false);
         }
     };
+
+    const handleLogout = () => {
+        Alert.alert(
+            'Logout',
+            'Are you sure you want to logout?',
+            [
+                {
+                    text: 'Cancel',
+                    style: 'cancel'
+                },
+                {
+                    text: 'Logout',
+                    style: 'destructive',
+                    onPress: () => logout()
+                }
+            ]
+        );
+    };
+
 
     const languages = [
         { code: 'id' as Language, name: 'Bahasa Indonesia', flag: '🇮🇩' },
@@ -124,7 +143,7 @@ export function ProfileScreen({ navigation }: any) {
 
                                 {/* Logout Button */}
                                 <TouchableOpacity
-                                    onPress={logout}
+                                    onPress={handleLogout}
                                     className="bg-error-light rounded-xl py-3"
                                 >
                                     <Text className="text-white text-center font-semibold">
@@ -166,8 +185,8 @@ export function ProfileScreen({ navigation }: any) {
                     )}
                 </View>
 
-                {/* Payment History - Only show if logged in */}
-                {isLoggedIn && (
+                {/* Payment History - Only show for Tenant Mode */}
+                {isLoggedIn && isTenantMode && (
                     <View className="mb-6">
                         <Text className={`text-lg font-semibold mb-3 ${textColor}`}>
                             Payments
@@ -242,20 +261,24 @@ export function ProfileScreen({ navigation }: any) {
                             </View>
                         </View>
 
-                        {/* Analytics Link */}
-                        <TouchableOpacity
-                            onPress={() => (navigation as any).navigate('Analytics')}
-                            className="flex-row items-center justify-between p-4 rounded-2xl mb-3"
-                            style={{ backgroundColor: surfaceColor, ...CARD_STYLE }}
-                        >
-                            <View className="flex-row items-center">
-                                <Ionicons name="stats-chart" size={22} color={iconColor} style={{ marginRight: 12 }} />
-                                <Text className="text-base font-medium" style={{ color: textPrimaryColor }}>
-                                    Analytics & Statistics
-                                </Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={20} color={textSecondaryColor} />
-                        </TouchableOpacity>
+
+                        {/* Analytics Link - Only for Landlord Mode */}
+                        {!isTenantMode && (
+                            <TouchableOpacity
+                                onPress={() => (navigation as any).navigate('Analytics')}
+                                className="flex-row items-center justify-between p-4 rounded-2xl mb-3"
+                                style={{ backgroundColor: surfaceColor, ...CARD_STYLE }}
+                            >
+                                <View className="flex-row items-center">
+                                    <Ionicons name="stats-chart" size={22} color={iconColor} style={{ marginRight: 12 }} />
+                                    <Text className="text-base font-medium" style={{ color: textPrimaryColor }}>
+                                        Analytics & Statistics
+                                    </Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={20} color={textSecondaryColor} />
+                            </TouchableOpacity>
+                        )}
+
 
                         {/* Switch Mode Button */}
                         <TouchableOpacity
@@ -332,20 +355,6 @@ export function ProfileScreen({ navigation }: any) {
                             <RadioButton selected={theme === 'light'} />
                         </TouchableOpacity>
 
-                        {/* System Default */}
-                        <TouchableOpacity
-                            onPress={() => setTheme('system')}
-                            className="flex-row items-center justify-between p-4 rounded-2xl"
-                            style={{ backgroundColor: surfaceColor, ...CARD_STYLE }}
-                        >
-                            <View className="flex-row items-center">
-                                <Ionicons name="phone-portrait-outline" size={22} color={iconColor} style={{ marginRight: 12 }} />
-                                <Text className="text-base font-medium" style={{ color: textPrimaryColor }}>
-                                    Sesuai pengaturan perangkat
-                                </Text>
-                            </View>
-                            <RadioButton selected={theme === 'system'} />
-                        </TouchableOpacity>
                     </View>
                 </View>
 

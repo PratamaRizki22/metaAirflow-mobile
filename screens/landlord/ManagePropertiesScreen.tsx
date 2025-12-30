@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useFocusEffect } from '@react-navigation/native';
 import { propertyService, reviewService } from '../../services';
 import { useThemeColors } from '../../hooks';
-import { LoadingState, EmptyState, useCustomAlert } from '../../components/common';
+import { LoadingState, EmptyState, useCustomAlert, Button } from '../../components/common';
 import { StarRating } from '../../components/review';
 
 export default function ManagePropertiesScreen({ navigation }: any) {
@@ -63,23 +63,23 @@ export default function ManagePropertiesScreen({ navigation }: any) {
     };
 
     const getStatusBadge = (status: string) => {
-        const statusConfig: Record<string, { bg: string; text: string }> = {
-            'ACTIVE': { bg: 'bg-green-500', text: 'Active' },
-            'PENDING_REVIEW': { bg: 'bg-yellow-500', text: 'Pending' },
-            'INACTIVE': { bg: 'bg-gray-500', text: 'Inactive' },
-            'REJECTED': { bg: 'bg-red-500', text: 'Rejected' },
+        const statusConfig: Record<string, { bg: string; text: string; color: string }> = {
+            'ACTIVE': { bg: '#10B981', text: 'Active', color: '#ECFDF5' },
+            'PENDING_REVIEW': { bg: '#F59E0B', text: 'Pending', color: '#FFFBEB' },
+            'INACTIVE': { bg: '#6B7280', text: 'Inactive', color: '#F3F4F6' },
+            'REJECTED': { bg: '#EF4444', text: 'Rejected', color: '#FEF2F2' },
         };
 
-        const config = statusConfig[status] || { bg: 'bg-gray-500', text: status };
+        const config = statusConfig[status] || { bg: '#6B7280', text: status, color: '#F3F4F6' };
 
         return (
-            <View className={`${config.bg} px-2 py-1 rounded`}>
-                <Text className="text-white text-xs font-bold">{config.text}</Text>
+            <View style={{ backgroundColor: config.bg, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 }}>
+                <Text style={{ color: 'white', fontSize: 12, fontWeight: '700' }}>{config.text}</Text>
             </View>
         );
     };
 
-    // Property Card Component with Rating
+    // Enhanced Property Card Component with Image
     const PropertyCardWithRating = ({ item, index }: any) => {
         const [rating, setRating] = useState<any>(null);
         const [loadingRating, setLoadingRating] = useState(true);
@@ -100,81 +100,109 @@ export default function ManagePropertiesScreen({ navigation }: any) {
         };
 
         return (
-            <Animated.View
-                entering={FadeInDown.delay(index * 100)}
-                className={`${cardBg} p-4 rounded-2xl mb-3 border ${borderColor}`}
+            <View
+                className={`${cardBg} rounded-2xl p-4 mb-4 border ${borderColor}`}
+                style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    elevation: 3,
+                }}
             >
                 {/* Title & Status */}
-                <View className="flex-row justify-between items-start mb-2">
+                <View className="flex-row justify-between items-start mb-3">
                     <Text className={`text-lg font-bold flex-1 mr-2 ${textColor}`}>
                         {item.title}
                     </Text>
                     {getStatusBadge(item.status)}
                 </View>
 
-                {/* Rating */}
-                {!loadingRating && rating && rating.totalReviews > 0 && (
-                    <View className="flex-row items-center mb-2">
-                        <StarRating rating={rating.averageRating} size={14} />
-                        <Text className={`ml-2 text-sm ${secondaryTextColor}`}>
-                            {rating.averageRating.toFixed(1)} ({rating.totalReviews} {rating.totalReviews === 1 ? 'review' : 'reviews'})
-                        </Text>
-                    </View>
-                )}
-
                 {/* Location */}
-                <View className="flex-row items-center mb-2">
-                    <Ionicons name="location-outline" size={16} color="#9CA3AF" />
-                    <Text className={`ml-1 ${secondaryTextColor}`}>
+                <View className="flex-row items-center mb-3">
+                    <Ionicons name="location" size={16} color="#EF4444" />
+                    <Text className={`ml-1 text-sm ${secondaryTextColor}`}>
                         {item.city}, {item.state}
                     </Text>
                 </View>
 
                 {/* Price */}
-                <Text className="text-xl font-bold text-primary mb-2">
-                    MYR {item.price.toLocaleString()}/month
-                </Text>
+                <View className="bg-primary/10 px-4 py-3 rounded-xl mb-3">
+                    <Text className={`text-xs ${secondaryTextColor} mb-1`}>Monthly Rent</Text>
+                    <Text className="text-primary text-2xl font-bold">
+                        RM {item.price.toLocaleString()}
+                    </Text>
+                </View>
 
                 {/* Property Info */}
-                <View className="flex-row items-center mb-4">
-                    <View className="flex-row items-center mr-4">
-                        <Ionicons name="bed-outline" size={16} color="#9CA3AF" />
-                        <Text className={`ml-1 ${secondaryTextColor}`}>{item.bedrooms}</Text>
+                <View className="flex-row mb-4">
+                    <View className="flex-1 items-center">
+                        <Ionicons name="bed-outline" size={20} color="#00D9A3" />
+                        <Text className={`mt-1 text-sm font-semibold ${textColor}`}>{item.bedrooms}</Text>
+                        <Text className={`text-xs ${secondaryTextColor}`}>Beds</Text>
                     </View>
-                    <View className="flex-row items-center mr-4">
-                        <Ionicons name="water-outline" size={16} color="#9CA3AF" />
-                        <Text className={`ml-1 ${secondaryTextColor}`}>{item.bathrooms}</Text>
+                    <View className="flex-1 items-center">
+                        <Ionicons name="water-outline" size={20} color="#10B981" />
+                        <Text className={`mt-1 text-sm font-semibold ${textColor}`}>{item.bathrooms}</Text>
+                        <Text className={`text-xs ${secondaryTextColor}`}>Baths</Text>
                     </View>
-                    <View className="flex-row items-center">
-                        <Ionicons name="resize-outline" size={16} color="#9CA3AF" />
-                        <Text className={`ml-1 ${secondaryTextColor}`}>{item.areaSqm} m²</Text>
+                    <View className="flex-1 items-center">
+                        <Ionicons name="resize-outline" size={20} color="#F59E0B" />
+                        <Text className={`mt-1 text-sm font-semibold ${textColor}`}>{item.areaSqm}</Text>
+                        <Text className={`text-xs ${secondaryTextColor}`}>m²</Text>
                     </View>
                 </View>
+
+                {/* Reviews Info */}
+                {!loadingRating && rating && rating.totalReviews > 0 && (
+                    <View className="flex-row items-center justify-between mb-3 bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg">
+                        <View className="flex-row items-center">
+                            <Ionicons name="star" size={16} color="#F59E0B" />
+                            <Text className={`ml-1 text-sm font-semibold ${textColor}`}>
+                                {rating.averageRating.toFixed(1)}
+                            </Text>
+                            <Text className={`ml-1 text-xs ${secondaryTextColor}`}>
+                                ({rating.totalReviews} reviews)
+                            </Text>
+                        </View>
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('PropertyDetail', { propertyId: item.id, scrollToReviews: true })}
+                            className="flex-row items-center"
+                        >
+                            <Text className="text-primary text-xs font-semibold mr-1">View Reviews</Text>
+                            <Ionicons name="chevron-forward" size={14} color="#00D9A3" />
+                        </TouchableOpacity>
+                    </View>
+                )}
 
                 {/* Action Buttons */}
                 <View className="flex-row gap-2">
-                    <TouchableOpacity
+                    <Button
                         onPress={() => navigation.navigate('PropertyDetail', { propertyId: item.id })}
-                        className="flex-1 bg-blue-500 py-3 rounded-xl"
+                        variant="primary"
+                        size="sm"
+                        className="flex-1"
                     >
-                        <Text className="text-white text-center font-semibold">View</Text>
-                    </TouchableOpacity>
+                        View
+                    </Button>
 
-                    <TouchableOpacity
+                    <Button
                         onPress={() => navigation.navigate('EditProperty', { propertyId: item.id })}
-                        className="flex-1 bg-green-500 py-3 rounded-xl"
+                        variant="primary"
+                        size="sm"
+                        className="flex-1 bg-success-light"
                     >
-                        <Text className="text-white text-center font-semibold">Edit</Text>
-                    </TouchableOpacity>
+                        Edit
+                    </Button>
 
                     <TouchableOpacity
                         onPress={() => handleDeleteProperty(item.id, item.title)}
-                        className="flex-1 bg-red-500 py-3 rounded-xl"
+                        className="bg-error-light/10 border border-error-light/30 px-4 py-3 rounded-xl"
                     >
-                        <Text className="text-white text-center font-semibold">Delete</Text>
+                        <Ionicons name="trash-outline" size={18} color="#EF4444" />
                     </TouchableOpacity>
                 </View>
-            </Animated.View>
+            </View>
         );
     };
 
@@ -184,35 +212,18 @@ export default function ManagePropertiesScreen({ navigation }: any) {
 
     return (
         <View className={`flex-1 ${bgColor}`}>
-            <FlatList
-                data={properties}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={{ paddingBottom: 20 }}
-                refreshing={refreshing}
-                onRefresh={handleRefresh}
-                ListHeaderComponent={
-                    <View className="px-6 pt-16 pb-4">
-                        <View className="flex-row justify-between items-center mb-2">
-                            <Text className={`text-3xl font-bold ${textColor}`}>
-                                My Properties
-                            </Text>
-                            <TouchableOpacity
-                                onPress={() => navigation.navigate('CreateProperty')}
-                                className="bg-primary px-4 py-2 rounded-xl flex-row items-center"
-                            >
-                                <Ionicons name="add" size={20} color="white" />
-                                <Text className="text-white font-semibold ml-1">Add</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                }
-                renderItem={({ item, index }) => (
-                    <View className="px-6 mb-3">
-                        <PropertyCardWithRating item={item} index={index} />
-                    </View>
-                )}
-                ListEmptyComponent={
-                    <View style={{ height: Dimensions.get('window').height - 200, justifyContent: 'center' }}>
+            <ScrollView className="flex-1 px-6 pt-16">
+                <Text className={`text-3xl font-bold mb-2 ${textColor}`}>
+                    My Properties
+                </Text>
+                <Text className="text-text-secondary-light dark:text-text-secondary-dark mb-6">
+                    Manage your rental listings
+                </Text>
+
+                {loading ? (
+                    <LoadingState message="Loading your properties..." />
+                ) : properties.length === 0 ? (
+                    <View style={{ height: Dimensions.get('window').height - 300, justifyContent: 'center' }}>
                         <EmptyState
                             icon="home-outline"
                             title="No Properties Yet"
@@ -221,8 +232,17 @@ export default function ManagePropertiesScreen({ navigation }: any) {
                             onAction={() => navigation.navigate('CreateProperty')}
                         />
                     </View>
-                }
-            />
+                ) : (
+                    <>
+                        {properties.map((item, index) => (
+                            <PropertyCardWithRating key={item.id} item={item} index={index} />
+                        ))}
+                    </>
+                )}
+
+                {/* Bottom padding for tab bar */}
+                <View style={{ height: 100 }} />
+            </ScrollView>
 
             {/* Custom Alert */}
             <AlertComponent />

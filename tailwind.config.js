@@ -37,7 +37,7 @@ module.exports = {
           dark: '#1E293B',
         },
         card: {
-          light: '#FFFFFF',
+          light: '#F9FAFB',  // Light gray for better contrast
           dark: '#334155',
         },
 
