@@ -4,8 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMode } from '../../contexts/ModeContext';
-import { RegisterScreen } from '../auth/RegisterScreen';
-import { LoginScreen } from '../auth/LoginScreen';
+import { AuthFlowScreen } from '../auth/AuthFlowScreen';
 import { useThemeColors } from '../../hooks';
 
 type Language = 'id' | 'en';
@@ -33,8 +32,7 @@ export function ProfileScreen({ navigation }: any) {
     const { mode, switchMode, canSwitchMode, isLandlordMode, isTenantMode } = useMode();
     const [selectedLanguage, setSelectedLanguage] = useState<Language>('id');
     const [showLanguageModal, setShowLanguageModal] = useState(false);
-    const [showRegisterModal, setShowRegisterModal] = useState(false);
-    const [showLoginModal, setShowLoginModal] = useState(false);
+    const [showAuthModal, setShowAuthModal] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
 
     const onRefresh = async () => {
@@ -167,7 +165,7 @@ export function ProfileScreen({ navigation }: any) {
                                     Sign in to save favorites, post properties, and more
                                 </Text>
                                 <TouchableOpacity
-                                    onPress={() => setShowRegisterModal(true)}
+                                    onPress={() => setShowAuthModal(true)}
                                     className="bg-primary rounded-xl py-3 mb-3"
                                 >
                                     <Text className="text-white text-center font-semibold">
@@ -175,7 +173,7 @@ export function ProfileScreen({ navigation }: any) {
                                     </Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
-                                    onPress={() => setShowLoginModal(true)}
+                                    onPress={() => setShowAuthModal(true)}
                                     className="border-2 border-primary rounded-xl py-3"
                                 >
                                     <Text className="text-primary text-center font-semibold">
@@ -437,39 +435,18 @@ export function ProfileScreen({ navigation }: any) {
                 </TouchableOpacity>
             </Modal>
 
-            {/* Register Modal */}
+            {/* Auth Flow Modal */}
             <Modal
-                visible={showRegisterModal}
+                visible={showAuthModal}
                 animationType="slide"
                 presentationStyle="pageSheet"
-                onRequestClose={() => setShowRegisterModal(false)}
+                onRequestClose={() => setShowAuthModal(false)}
             >
-                <RegisterScreen
-                    onRegisterSuccess={() => {
-                        setShowRegisterModal(false);
+                <AuthFlowScreen
+                    onAuthSuccess={() => {
+                        setShowAuthModal(false);
                     }}
-                    onNavigateToLogin={() => {
-                        setShowRegisterModal(false);
-                        setShowLoginModal(true);
-                    }}
-                />
-            </Modal>
-
-            {/* Login Modal */}
-            <Modal
-                visible={showLoginModal}
-                animationType="slide"
-                presentationStyle="pageSheet"
-                onRequestClose={() => setShowLoginModal(false)}
-            >
-                <LoginScreen
-                    onLoginSuccess={() => {
-                        setShowLoginModal(false);
-                    }}
-                    onNavigateToRegister={() => {
-                        setShowLoginModal(false);
-                        setShowRegisterModal(true);
-                    }}
+                    onClose={() => setShowAuthModal(false)}
                 />
             </Modal>
         </View>

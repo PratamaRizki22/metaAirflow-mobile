@@ -3,8 +3,7 @@ import { View, ActivityIndicator, Text } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MainTabNavigator } from './MainTabNavigator';
-import { LoginScreen } from '../screens/auth/LoginScreen';
-import { RegisterScreen } from '../screens/auth/RegisterScreen';
+import { AuthFlowScreen } from '../screens/auth/AuthFlowScreen';
 import PropertyDetailScreen from '../screens/tenant/PropertyDetailScreen';
 import CreateBookingScreen from '../screens/tenant/CreateBookingScreen';
 import ExploreScreen from '../screens/tenant/ExploreScreen';
@@ -58,24 +57,13 @@ export function RootNavigator() {
 
                 {/* Auth Screens */}
                 <Stack.Screen
-                    name="Login"
-                    options={{ title: 'Login', headerShown: false }}
+                    name="Auth"
+                    options={{ title: 'Authentication', headerShown: false }}
                 >
                     {({ navigation }) => (
-                        <LoginScreen
-                            onLoginSuccess={() => navigation.goBack()}
-                            onNavigateToRegister={() => navigation.replace('Register')}
-                        />
-                    )}
-                </Stack.Screen>
-                <Stack.Screen
-                    name="Register"
-                    options={{ title: 'Register', headerShown: false }}
-                >
-                    {({ navigation }) => (
-                        <RegisterScreen
-                            onRegisterSuccess={() => navigation.goBack()}
-                            onNavigateToLogin={() => navigation.replace('Login')}
+                        <AuthFlowScreen
+                            onAuthSuccess={() => navigation.goBack()}
+                            onClose={() => navigation.goBack()}
                         />
                     )}
                 </Stack.Screen>

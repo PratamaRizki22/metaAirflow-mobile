@@ -122,7 +122,7 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                 'Please login to save favorites',
                 [
                     { text: 'Cancel', style: 'cancel' },
-                    { text: 'Login', onPress: () => navigation.navigate('Login') },
+                    { text: 'Login', onPress: () => navigation.navigate('Auth') },
                 ]
             );
             return;
@@ -144,7 +144,7 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                 'Please login to book this property',
                 [
                     { text: 'Cancel', style: 'cancel' },
-                    { text: 'Login', onPress: () => navigation.navigate('Login') },
+                    { text: 'Login', onPress: () => navigation.navigate('Auth') },
                 ]
             );
             return;
@@ -169,7 +169,7 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                 'Please login to rate this property',
                 [
                     { text: 'Cancel', style: 'cancel' },
-                    { text: 'Login', onPress: () => navigation.navigate('Login') },
+                    { text: 'Login', onPress: () => navigation.navigate('Auth') },
                 ]
             );
             return;

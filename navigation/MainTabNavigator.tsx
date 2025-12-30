@@ -99,7 +99,7 @@ export function MainTabNavigator() {
                             // Prevent default navigation
                             e.preventDefault();
                             // Navigate to Login instead
-                            navigation.getParent()?.navigate('Login');
+                            navigation.getParent()?.navigate('Auth');
                         }
                     },
                 })}
@@ -114,7 +114,7 @@ export function MainTabNavigator() {
                     tabPress: (e) => {
                         if (!user) {
                             e.preventDefault();
-                            navigation.getParent()?.navigate('Login');
+                            navigation.getParent()?.navigate('Auth');
                         }
                     },
                 })}
@@ -130,7 +130,7 @@ export function MainTabNavigator() {
                     tabPress: (e) => {
                         if (!user) {
                             e.preventDefault();
-                            navigation.getParent()?.navigate('Login');
+                            navigation.getParent()?.navigate('Auth');
                         }
                     },
                 })}
