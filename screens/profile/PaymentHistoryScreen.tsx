@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../../hooks';
 import { stripeService, Payment } from '../../services';
 import { LoadingState, EmptyState, ErrorState } from '../../components/common/States';
-import { format } from 'date-fns';
+import { formatDate } from '../../utils/dateUtils';
 
 type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
 
@@ -196,8 +196,8 @@ export default function PaymentHistoryScreen({ navigation }: any) {
                 <View className="flex-row items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
                     <Text className="text-text-secondary-light dark:text-text-secondary-dark text-xs">
                         {payment.completedAt
-                            ? format(new Date(payment.completedAt), 'MMM dd, yyyy • HH:mm')
-                            : format(new Date(payment.createdAt), 'MMM dd, yyyy • HH:mm')}
+                            ? formatDate(new Date(payment.completedAt), 'MMM dd, yyyy HH:mm')
+                            : formatDate(new Date(payment.createdAt), 'MMM dd, yyyy HH:mm')}
                     </Text>
                     <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
                 </View>

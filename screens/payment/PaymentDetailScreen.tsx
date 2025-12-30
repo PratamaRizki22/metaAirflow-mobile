@@ -12,7 +12,7 @@ import { useThemeColors } from '../../hooks';
 import { stripeService, Payment } from '../../services';
 import { LoadingState } from '../../components/common/States';
 import { CancelPaymentModal } from '../../components/payment/CancelPaymentModal';
-import { format } from 'date-fns';
+import { formatDate } from '../../utils/dateUtils';
 
 const STATUS_CONFIG = {
     pending: {
@@ -266,7 +266,7 @@ export default function PaymentDetailScreen({ route, navigation }: any) {
                             Created
                         </Text>
                         <Text className={`text-sm ${textColor}`}>
-                            {format(new Date(payment.createdAt), 'MMMM dd, yyyy • HH:mm')}
+                            {formatDate(new Date(payment.createdAt), 'MMMM dd, yyyy HH:mm')}
                         </Text>
                     </View>
 
@@ -277,7 +277,7 @@ export default function PaymentDetailScreen({ route, navigation }: any) {
                                 Completed
                             </Text>
                             <Text className={`text-sm ${textColor}`}>
-                                {format(new Date(payment.completedAt), 'MMMM dd, yyyy • HH:mm')}
+                                {formatDate(new Date(payment.completedAt), 'MMMM dd, yyyy HH:mm')}
                             </Text>
                         </View>
                     )}
@@ -289,7 +289,7 @@ export default function PaymentDetailScreen({ route, navigation }: any) {
                                 Refunded
                             </Text>
                             <Text className={`text-sm ${textColor}`}>
-                                {format(new Date(payment.refundedAt), 'MMMM dd, yyyy • HH:mm')}
+                                {formatDate(new Date(payment.refundedAt), 'MMMM dd, yyyy HH:mm')}
                             </Text>
                         </View>
                     )}
