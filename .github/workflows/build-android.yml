@@ -1,0 +1,51 @@
+name: Build Android APK (Gradle)
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch: # Supaya bisa di-klik manual tombol "Run Workflow"
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    
+    # Supaya step berjalan di dalam folder mobile app (jika ini monorepo)
+    # Jika repo ini KHUSUS mobile app, Anda bisa hapus 'working-directory' di setiap step
+    defaults:
+      run:
+        working-directory: ./
+
+    steps:
+      - name: 🏗 Setup Repository
+        uses: actions/checkout@v3
+
+      - name: ☕ Setup Java (JDK 17)
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: ⚙️ Expo Prebuild (Generate Android Folder)
+        run: npx expo prebuild --platform android --no-interactive
+
+      - name: 🐘 Build APK with Gradle
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: 📤 Upload APK Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: rentverse-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
