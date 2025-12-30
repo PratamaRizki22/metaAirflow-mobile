@@ -145,7 +145,7 @@ export function LandlordTodayScreen({ navigation }: any) {
 
                 {/* Stats Cards */}
                 <View className="flex-row gap-3 mb-6">
-                    <View className={`flex-1 ${cardBg} p-4 rounded-2xl`}>
+                    <View className={`flex-1 ${cardBg} p-4 rounded-2xl border ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
                         <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm mb-1">
                             Pending
                         </Text>
@@ -153,7 +153,7 @@ export function LandlordTodayScreen({ navigation }: any) {
                             {stats.pending}
                         </Text>
                     </View>
-                    <View className={`flex-1 ${cardBg} p-4 rounded-2xl`}>
+                    <View className={`flex-1 ${cardBg} p-4 rounded-2xl border ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
                         <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm mb-1">
                             Approved
                         </Text>
@@ -164,7 +164,7 @@ export function LandlordTodayScreen({ navigation }: any) {
                 </View>
 
                 {/* Monthly Revenue Card */}
-                <View className={`${cardBg} p-4 rounded-2xl mb-6`}>
+                <View className={`${cardBg} p-4 rounded-2xl mb-6 border ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
                     <View className="flex-row items-center mb-2">
                         <Ionicons name="cash-outline" size={20} color="#00D9A3" />
                         <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm ml-2">
@@ -172,7 +172,7 @@ export function LandlordTodayScreen({ navigation }: any) {
                         </Text>
                     </View>
                     <Text className={`text-3xl font-bold ${textColor}`}>
-                        MYR {stats.revenue.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        RM {stats.revenue.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Text>
                     <Text className="text-text-secondary-light dark:text-text-secondary-dark text-xs mt-1">
                         Dari booking yang disetujui
@@ -185,7 +185,7 @@ export function LandlordTodayScreen({ navigation }: any) {
                 </Text>
 
                 {todayBookings.length === 0 ? (
-                    <View className={`${cardBg} p-8 rounded-2xl items-center`}>
+                    <View className={`${cardBg} p-8 rounded-2xl items-center border ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
                         <Ionicons
                             name="calendar-outline"
                             size={48}
@@ -237,37 +237,6 @@ export function LandlordTodayScreen({ navigation }: any) {
                     </View>
                 )}
 
-                {/* Quick Actions */}
-                <Text className={`text-xl font-bold mb-4 mt-6 ${textColor}`}>
-                    Quick Actions
-                </Text>
-                <View className="gap-3">
-                    <TouchableOpacity
-                        onPress={() => navigation.navigate('ManageProperties')}
-                        className={`${cardBg} p-4 rounded-2xl flex-row items-center justify-between`}
-                    >
-                        <View className="flex-row items-center">
-                            <Ionicons name="home-outline" size={24} color="#007AFF" />
-                            <Text className={`ml-3 text-base font-medium ${textColor}`}>
-                                Kelola Properti
-                            </Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={20} color={isDark ? '#9CA3AF' : '#6B7280'} />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        onPress={() => navigation.navigate('CreateProperty')}
-                        className={`${cardBg} p-4 rounded-2xl flex-row items-center justify-between`}
-                    >
-                        <View className="flex-row items-center">
-                            <Ionicons name="add-circle-outline" size={24} color="#007AFF" />
-                            <Text className={`ml-3 text-base font-medium ${textColor}`}>
-                                Tambah Properti Baru
-                            </Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={20} color={isDark ? '#9CA3AF' : '#6B7280'} />
-                    </TouchableOpacity>
-                </View>
             </View>
         </ScrollView>
     );

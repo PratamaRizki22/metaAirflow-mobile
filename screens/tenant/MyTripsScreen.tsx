@@ -6,7 +6,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { bookingService } from '../../services';
 import { useThemeColors } from '../../hooks';
 import { useAuth } from '../../contexts/AuthContext';
-import { LoadingState } from '../../components/common';
+import { LoadingState, Toast, Button } from '../../components/common';
+import { useToast } from '../../hooks/useToast';
 import { DEFAULT_IMAGES } from '../../constants/images';
 
 export default function MyTripsScreen({ navigation }: any) {
@@ -17,6 +18,7 @@ export default function MyTripsScreen({ navigation }: any) {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'COMPLETED'>('ALL');
+    const { toast, showToast, hideToast } = useToast();
 
     useEffect(() => {
         if (isLoggedIn) {
@@ -58,10 +60,10 @@ export default function MyTripsScreen({ navigation }: any) {
                     onPress: async () => {
                         try {
                             await bookingService.cancelBooking(bookingId, 'Changed plans');
-                            Alert.alert('Success', 'Booking cancelled successfully');
+                            showToast('Booking cancelled successfully', 'success');
                             loadBookings();
                         } catch (error: any) {
-                            Alert.alert('Error', error.message);
+                            showToast(error.message || 'Failed to cancel booking', 'error');
                         }
                     }
                 }
@@ -89,6 +91,23 @@ export default function MyTripsScreen({ navigation }: any) {
             case 'COMPLETED': return 'checkmark-done-circle';
             default: return 'help-circle';
         }
+    };
+
+    const getPaymentStatusColor = (paymentStatus: string) => {
+        switch (paymentStatus) {
+            case 'paid': return { bg: '#34C75920', text: '#34C759', icon: 'checkmark-circle' };
+            case 'pending': return { bg: '#FF950020', text: '#FF9500', icon: 'time' };
+            case 'refunded': return { bg: '#9C27B020', text: '#9C27B0', icon: 'refresh' };
+            default: return { bg: '#9CA3AF20', text: '#9CA3AF', icon: 'help-circle' };
+        }
+    };
+
+    const handlePayNow = (bookingId: string, amount: number, propertyTitle: string) => {
+        navigation.navigate('Payment', {
+            bookingId,
+            amount,
+            propertyTitle,
+        });
     };
 
     if (loading) {
@@ -191,44 +210,82 @@ export default function MyTripsScreen({ navigation }: any) {
                                     </View>
                                 </View>
 
-                                {/* Status Badge */}
+                                {/* Status and Payment Badge */}
                                 <View className="flex-row items-center justify-between mb-3">
-                                    <View
-                                        className="flex-row items-center px-3 py-1.5 rounded-full"
-                                        style={{ backgroundColor: `${getStatusColor(item.status)}20` }}
-                                    >
-                                        <Ionicons
-                                            name={getStatusIcon(item.status) as any}
-                                            size={16}
-                                            color={getStatusColor(item.status)}
-                                        />
-                                        <Text
-                                            className="ml-1.5 text-xs font-semibold"
-                                            style={{ color: getStatusColor(item.status) }}
+                                    <View className="flex-row gap-2">
+                                        <View
+                                            className="flex-row items-center px-3 py-1.5 rounded-full"
+                                            style={{ backgroundColor: `${getStatusColor(item.status)}20` }}
                                         >
-                                            {item.status}
-                                        </Text>
+                                            <Ionicons
+                                                name={getStatusIcon(item.status) as any}
+                                                size={16}
+                                                color={getStatusColor(item.status)}
+                                            />
+                                            <Text
+                                                className="ml-1.5 text-xs font-semibold"
+                                                style={{ color: getStatusColor(item.status) }}
+                                            >
+                                                {item.status}
+                                            </Text>
+                                        </View>
+
+                                        {/* Payment Status Badge */}
+                                        {item.paymentStatus && (
+                                            <View
+                                                className="flex-row items-center px-3 py-1.5 rounded-full"
+                                                style={{ backgroundColor: getPaymentStatusColor(item.paymentStatus).bg }}
+                                            >
+                                                <Ionicons
+                                                    name={getPaymentStatusColor(item.paymentStatus).icon as any}
+                                                    size={14}
+                                                    color={getPaymentStatusColor(item.paymentStatus).text}
+                                                />
+                                                <Text
+                                                    className="ml-1 text-xs font-semibold capitalize"
+                                                    style={{ color: getPaymentStatusColor(item.paymentStatus).text }}
+                                                >
+                                                    {item.paymentStatus}
+                                                </Text>
+                                            </View>
+                                        )}
                                     </View>
 
                                     {/* Price */}
                                     {item.totalPrice && (
                                         <Text className="text-primary font-bold text-base">
-                                            MYR {item.totalPrice.toLocaleString()}
+                                            RM {item.totalPrice.toLocaleString()}
                                         </Text>
                                     )}
                                 </View>
 
-                                {/* Cancel Button */}
-                                {(item.status === 'PENDING' || item.status === 'APPROVED') && (
-                                    <TouchableOpacity
-                                        onPress={() => handleCancelBooking(item.id)}
-                                        className="bg-red-500/10 border border-red-500/30 rounded-xl py-3 mt-2"
-                                    >
-                                        <Text className="text-red-500 text-center font-semibold">
-                                            Cancel Booking
-                                        </Text>
-                                    </TouchableOpacity>
-                                )}
+                                {/* Action Buttons */}
+                                <View className="gap-2">
+                                    {/* Pay Now Button - for APPROVED but not paid */}
+                                    {item.status === 'APPROVED' && item.paymentStatus === 'pending' && (
+                                        <TouchableOpacity
+                                            onPress={() => handlePayNow(item.id, item.totalPrice, item.property?.title)}
+                                            className="bg-primary rounded-xl py-3 flex-row items-center justify-center gap-2"
+                                        >
+                                            <Ionicons name="card" size={18} color="white" />
+                                            <Text className="text-white text-center font-semibold">
+                                                Pay Now
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )}
+
+                                    {/* Cancel Button */}
+                                    {(item.status === 'PENDING' || (item.status === 'APPROVED' && item.paymentStatus === 'pending')) && (
+                                        <TouchableOpacity
+                                            onPress={() => handleCancelBooking(item.id)}
+                                            className="bg-red-500/10 border border-red-500/30 rounded-xl py-3"
+                                        >
+                                            <Text className="text-red-500 text-center font-semibold">
+                                                Cancel Booking
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
                             </View>
                         </TouchableOpacity>
                     </Animated.View>
@@ -246,24 +303,24 @@ export default function MyTripsScreen({ navigation }: any) {
                             }
                         </Text>
                         {filter === 'ALL' && (
-                            <TouchableOpacity
+                            <Button
                                 onPress={() => navigation.navigate('Home')}
+                                variant="primary"
                                 className="mt-6"
                             >
-                                <LinearGradient
-                                    colors={['#00D9A3', '#00B87C']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 0 }}
-                                    className="px-6 py-3 rounded-xl"
-                                >
-                                    <Text className="text-white font-semibold">
-                                        Explore Properties
-                                    </Text>
-                                </LinearGradient>
-                            </TouchableOpacity>
+                                Explore Properties
+                            </Button>
                         )}
                     </View>
                 }
+            />
+
+            {/* Toast Notification */}
+            <Toast
+                visible={toast.visible}
+                message={toast.message}
+                type={toast.type}
+                onHide={hideToast}
             />
         </View>
     );

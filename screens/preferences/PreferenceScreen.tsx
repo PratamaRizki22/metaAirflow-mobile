@@ -8,7 +8,7 @@ interface PreferenceScreenProps {
 }
 
 type Language = 'id' | 'en';
-type ThemeOption = 'light' | 'dark' | 'system';
+type ThemeOption = 'light' | 'dark';
 
 // Reusable card style
 const CARD_STYLE: ViewStyle = {
@@ -125,38 +125,61 @@ export function PreferenceScreen({ onComplete }: PreferenceScreenProps) {
                     </Text>
                 </TouchableOpacity>
 
-                {/* Theme Options */}
-                <View className="gap-4 mb-6">
-                    <ThemeOptionButton
-                        icon="moon"
-                        label="Dark"
-                        value="dark"
-                        currentTheme={theme}
-                        onPress={() => setTheme('dark')}
-                        surfaceColor={surfaceColor}
-                        textColor={textPrimaryColor}
-                        iconColor={iconColor}
-                    />
-                    <ThemeOptionButton
-                        icon="sunny"
-                        label="Light"
-                        value="light"
-                        currentTheme={theme}
-                        onPress={() => setTheme('light')}
-                        surfaceColor={surfaceColor}
-                        textColor={textPrimaryColor}
-                        iconColor={iconColor}
-                    />
-                    <ThemeOptionButton
-                        icon="phone-portrait-outline"
-                        label="Sesuai pengaturan perangkat"
-                        value="system"
-                        currentTheme={theme}
-                        onPress={() => setTheme('system')}
-                        surfaceColor={surfaceColor}
-                        textColor={textPrimaryColor}
-                        iconColor={iconColor}
-                    />
+                {/* Theme Selector - Segmented Control */}
+                <View className="mb-6">
+                    <Text className="text-sm mb-3" style={{ color: textSecondaryColor }}>
+                        Theme
+                    </Text>
+                    <View
+                        className="flex-row rounded-2xl p-1"
+                        style={{ backgroundColor: surfaceColor, ...CARD_STYLE }}
+                    >
+                        {/* Dark Option */}
+                        <TouchableOpacity
+                            onPress={() => setTheme('dark')}
+                            className="flex-1 py-3 px-4 rounded-xl items-center justify-center"
+                            style={{
+                                backgroundColor: theme === 'dark' ? iconColor : 'transparent',
+                            }}
+                        >
+                            <Ionicons
+                                name="moon"
+                                size={20}
+                                color={theme === 'dark' ? '#FFFFFF' : textSecondaryColor}
+                            />
+                            <Text
+                                className="text-xs mt-1 font-medium"
+                                style={{
+                                    color: theme === 'dark' ? '#FFFFFF' : textSecondaryColor
+                                }}
+                            >
+                                Dark
+                            </Text>
+                        </TouchableOpacity>
+
+                        {/* Light Option */}
+                        <TouchableOpacity
+                            onPress={() => setTheme('light')}
+                            className="flex-1 py-3 px-4 rounded-xl items-center justify-center"
+                            style={{
+                                backgroundColor: theme === 'light' ? iconColor : 'transparent',
+                            }}
+                        >
+                            <Ionicons
+                                name="sunny"
+                                size={20}
+                                color={theme === 'light' ? '#FFFFFF' : textSecondaryColor}
+                            />
+                            <Text
+                                className="text-xs mt-1 font-medium"
+                                style={{
+                                    color: theme === 'light' ? '#FFFFFF' : textSecondaryColor
+                                }}
+                            >
+                                Light
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* Continue Button */}

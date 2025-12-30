@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useColorScheme, Appearance } from 'react-native';
+import { Appearance } from 'react-native';
 
-type Theme = 'light' | 'dark' | 'system';
+type Theme = 'light' | 'dark';
 
 interface ThemeContextType {
     theme: Theme;
@@ -13,28 +13,15 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-    const systemColorScheme = useColorScheme();
-    // Start with 'system' theme to follow device settings
-    // When device is in dark mode, app will be dark; when light, app will be light
-    // Users can override by selecting 'light' or 'dark' explicitly
-    const [theme, setTheme] = useState<Theme>('system');
+    // Default to light theme
+    const [theme, setTheme] = useState<Theme>('light');
 
-    const isDark = theme === 'system'
-        ? (systemColorScheme ?? 'light') === 'dark'
-        : theme === 'dark';
+    const isDark = theme === 'dark';
 
     // Force the app to use the selected color scheme
     useEffect(() => {
-        if (theme === 'system') {
-            // Reset to system preference
-            Appearance.setColorScheme(null);
-        } else {
-            // Force light or dark mode
-            Appearance.setColorScheme(theme);
-        }
+        Appearance.setColorScheme(theme);
     }, [theme]);
-
-
 
     const toggleTheme = () => {
         setTheme(isDark ? 'light' : 'dark');

@@ -183,7 +183,7 @@ export default function AnalyticsScreen({ navigation }: any) {
                             <Text className={`ml-2 ${secondaryTextColor}`}>Total Revenue</Text>
                         </View>
                         <Text className={`text-3xl font-bold text-green-600 dark:text-green-400`}>
-                            MYR {stats.totalRevenue.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            RM {stats.totalRevenue.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </Text>
                     </View>
                     <View className={`${cardBg} p-5 rounded-2xl`}>
@@ -192,7 +192,7 @@ export default function AnalyticsScreen({ navigation }: any) {
                             <Text className={`ml-2 ${secondaryTextColor}`}>This Month</Text>
                         </View>
                         <Text className={`text-3xl font-bold text-primary`}>
-                            MYR {stats.monthlyRevenue.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            RM {stats.monthlyRevenue.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </Text>
                     </View>
                 </View>

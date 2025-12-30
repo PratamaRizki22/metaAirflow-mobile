@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking, Modal, TextInput, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { bookingService, reviewService, stripeService } from '../../services';
+import { bookingService, reviewService, stripeService, agreementService } from '../../services';
 import { useToast } from '../../hooks/useToast';
 import { Toast } from '../../components/common';
 import { LinearGradient } from 'expo-linear-gradient';
 import { RefundModal } from '../../components/booking/RefundModal';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function BookingDetailScreen({ route, navigation }: any) {
     const { bookingId } = route.params;
@@ -16,6 +17,18 @@ export default function BookingDetailScreen({ route, navigation }: any) {
     const [showRefundModal, setShowRefundModal] = useState(false);
     const [refundEligibility, setRefundEligibility] = useState<{ eligible: boolean; daysRemaining: number }>({ eligible: false, daysRemaining: 0 });
     const { toast, showToast, hideToast } = useToast();
+    const { isDark } = useTheme();
+
+    // AI Chatbot states
+    const [showAIChatbot, setShowAIChatbot] = useState(false);
+    const [agreementPdfUrl, setAgreementPdfUrl] = useState<string | null>(null);
+    const [agreementText, setAgreementText] = useState<string>('');
+    const [chatHistory, setChatHistory] = useState<any[]>([
+        { role: 'bot', content: 'Hello! I am your AI Agreement Assistant. I can help you understand your rental agreement. Ask me anything!' }
+    ]);
+    const [chatQuery, setChatQuery] = useState('');
+    const [chatLoading, setChatLoading] = useState(false);
+    const [aiAnalysisLoading, setAiAnalysisLoading] = useState(false);
 
     useEffect(() => {
         loadBookingDetail();
@@ -147,6 +160,101 @@ export default function BookingDetailScreen({ route, navigation }: any) {
         if (booking?.property?.latitude && booking?.property?.longitude) {
             const url = `https://www.google.com/maps?q=${booking.property.latitude},${booking.property.longitude}`;
             Linking.openURL(url);
+        }
+    };
+
+    const handleViewAgreementPDF = async () => {
+        try {
+            const response = await bookingService.getRentalAgreementPDF(bookingId);
+            const pdfUrl = response.data.pdf?.url;
+
+            if (pdfUrl) {
+                setAgreementPdfUrl(pdfUrl);
+                Linking.openURL(pdfUrl);
+            } else {
+                showToast('PDF not available yet', 'error');
+            }
+        } catch (error: any) {
+            showToast(error.message || 'Failed to load rental agreement', 'error');
+        }
+    };
+
+    const handleAnalyzeWithAI = async () => {
+        try {
+            setShowAIChatbot(true);
+
+            // If agreement text not loaded yet, load it
+            if (!agreementText) {
+                setAiAnalysisLoading(true);
+
+                // Get PDF URL
+                const response = await bookingService.getRentalAgreementPDF(bookingId);
+                const pdfUrl = response.data.pdf?.url;
+
+                if (!pdfUrl) {
+                    showToast('PDF not available yet', 'error');
+                    setShowAIChatbot(false);
+                    return;
+                }
+
+                setAgreementPdfUrl(pdfUrl);
+
+                // Download and extract text from PDF
+                // Note: In production, you might want to do this on backend
+                // For now, we'll use property description as placeholder
+                const placeholderText = `Rental Agreement for ${booking.property?.title}
+                
+Property: ${booking.property?.title}
+Location: ${booking.property?.address}, ${booking.property?.city}
+Check-in: ${new Date(booking.checkInDate).toLocaleDateString()}
+Check-out: ${new Date(booking.checkOutDate).toLocaleDateString()}
+Total Price: RM ${booking.totalPrice}
+
+Terms and Conditions:
+1. Payment must be made in full before check-in
+2. Security deposit is refundable upon checkout
+3. No smoking inside the property
+4. Pets are not allowed unless specified
+5. Tenant is responsible for any damages
+6. Notice period for cancellation: 7 days
+
+For full agreement details, please refer to the PDF document.`;
+
+                setAgreementText(placeholderText);
+
+                // Auto-analyze
+                try {
+                    const analysisResponse = await agreementService.analyze(placeholderText);
+                    setChatHistory(prev => [...prev,
+                    { role: 'bot', content: `📄 Agreement Analysis:\n\n${analysisResponse.analysis}` }
+                    ]);
+                } catch (analyzeError) {
+                    console.log('Auto-analysis failed:', analyzeError);
+                }
+
+                setAiAnalysisLoading(false);
+            }
+        } catch (error: any) {
+            setAiAnalysisLoading(false);
+            showToast(error.message || 'Failed to load agreement', 'error');
+        }
+    };
+
+    const handleAskAI = async () => {
+        if (!chatQuery.trim()) return;
+
+        const question = chatQuery;
+        setChatQuery('');
+        setChatHistory(prev => [...prev, { role: 'user', content: question }]);
+        setChatLoading(true);
+
+        try {
+            const response = await agreementService.ask(agreementText, question);
+            setChatHistory(prev => [...prev, { role: 'bot', content: response.answer }]);
+        } catch (error) {
+            setChatHistory(prev => [...prev, { role: 'bot', content: "Sorry, I couldn't process your question at the moment." }]);
+        } finally {
+            setChatLoading(false);
         }
     };
 
@@ -391,6 +499,112 @@ export default function BookingDetailScreen({ route, navigation }: any) {
                     </View>
                 )}
 
+                {/* Pay Now Button (for APPROVED bookings not yet paid) */}
+                {booking.status === 'APPROVED' && booking.paymentStatus === 'pending' && !booking.isOwner && (
+                    <View style={{ marginTop: 16 }}>
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('Payment', {
+                                bookingId: booking.id,
+                                amount: booking.totalPrice,
+                                propertyTitle: booking.property?.title
+                            })}
+                            activeOpacity={0.8}
+                        >
+                            <LinearGradient
+                                colors={['#6366F1', '#4F46E5']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={{
+                                    padding: 16,
+                                    borderRadius: 12,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
+                            >
+                                <Ionicons name="card" size={20} color="white" />
+                                <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 8, fontSize: 16 }}>
+                                    Pay Now - RM {booking.totalPrice?.toLocaleString()}
+                                </Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                {/* Payment Completed Badge */}
+                {booking.paymentStatus === 'paid' && (
+                    <View style={{
+                        marginTop: 16,
+                        padding: 16,
+                        backgroundColor: '#D1FAE5',
+                        borderRadius: 12,
+                        flexDirection: 'row',
+                        alignItems: 'center'
+                    }}>
+                        <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                        <Text style={{ color: '#059669', marginLeft: 12, flex: 1, fontWeight: '600' }}>
+                            Payment completed successfully
+                        </Text>
+                    </View>
+                )}
+
+                {/* Rental Agreement Section (for paid bookings) */}
+                {booking.status === 'APPROVED' && booking.paymentStatus === 'paid' && !booking.isOwner && (
+                    <View style={{ marginTop: 16 }}>
+                        <View style={{ backgroundColor: 'white', borderRadius: 12, padding: 16 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                                <Ionicons name="document-text" size={20} color="#6366F1" />
+                                <Text style={{ fontSize: 18, fontWeight: 'bold', marginLeft: 8 }}>
+                                    Rental Agreement
+                                </Text>
+                            </View>
+
+                            <Text style={{ color: '#666', marginBottom: 16, fontSize: 14 }}>
+                                View your rental agreement and get AI-powered insights
+                            </Text>
+
+                            {/* View PDF Button */}
+                            <TouchableOpacity
+                                onPress={handleViewAgreementPDF}
+                                activeOpacity={0.8}
+                                style={{
+                                    backgroundColor: '#6366F1',
+                                    padding: 14,
+                                    borderRadius: 10,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginBottom: 10
+                                }}
+                            >
+                                <Ionicons name="document" size={18} color="white" />
+                                <Text style={{ color: 'white', fontWeight: '600', marginLeft: 8, fontSize: 15 }}>
+                                    View PDF Agreement
+                                </Text>
+                            </TouchableOpacity>
+
+                            {/* Analyze with AI Button */}
+                            <TouchableOpacity
+                                onPress={handleAnalyzeWithAI}
+                                activeOpacity={0.8}
+                                style={{
+                                    backgroundColor: '#10B981',
+                                    padding: 14,
+                                    borderRadius: 10,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
+                            >
+                                <Ionicons name="chatbubbles" size={18} color="white" />
+                                <Text style={{ color: 'white', fontWeight: '600', marginLeft: 8, fontSize: 15 }}>
+                                    🤖 Analyze with AI
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                )}
+
                 {/* Refund Button (for confirmed bookings within 7 days) */}
                 {booking.status === 'APPROVED' && booking.paymentStatus === 'paid' && refundEligibility.eligible && !booking.isOwner && (
                     <View style={{ marginTop: 16 }}>
@@ -467,6 +681,140 @@ export default function BookingDetailScreen({ route, navigation }: any) {
                 }}
                 daysRemaining={refundEligibility.daysRemaining}
             />
+
+            {/* AI Chatbot Modal */}
+            <Modal
+                visible={showAIChatbot}
+                animationType="slide"
+                presentationStyle="pageSheet"
+                onRequestClose={() => setShowAIChatbot(false)}
+            >
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    style={{ flex: 1, backgroundColor: isDark ? '#1F2937' : '#F5F5F5' }}
+                >
+                    <View style={{ flex: 1 }}>
+                        {/* Header */}
+                        <View style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: 16,
+                            borderBottomWidth: 1,
+                            borderBottomColor: isDark ? '#374151' : '#E5E5E5',
+                            backgroundColor: isDark ? '#111827' : 'white'
+                        }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Ionicons name="chatbubbles" size={24} color="#10B981" />
+                                <Text style={{
+                                    fontSize: 18,
+                                    fontWeight: 'bold',
+                                    marginLeft: 8,
+                                    color: isDark ? 'white' : 'black'
+                                }}>
+                                    AI Agreement Assistant
+                                </Text>
+                            </View>
+                            <TouchableOpacity onPress={() => setShowAIChatbot(false)} style={{ padding: 8 }}>
+                                <Ionicons name="close" size={24} color={isDark ? 'white' : 'black'} />
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Loading Indicator */}
+                        {aiAnalysisLoading && (
+                            <View style={{ padding: 16, alignItems: 'center' }}>
+                                <ActivityIndicator size="large" color="#10B981" />
+                                <Text style={{ marginTop: 8, color: isDark ? '#9CA3AF' : '#666' }}>
+                                    Analyzing agreement...
+                                </Text>
+                            </View>
+                        )}
+
+                        {/* Chat History */}
+                        <FlatList
+                            data={chatHistory}
+                            keyExtractor={(_, index) => index.toString()}
+                            contentContainerStyle={{ padding: 16 }}
+                            renderItem={({ item }) => (
+                                <View style={{
+                                    marginBottom: 16,
+                                    flexDirection: 'row',
+                                    justifyContent: item.role === 'user' ? 'flex-end' : 'flex-start'
+                                }}>
+                                    <View style={{
+                                        maxWidth: '80%',
+                                        borderRadius: 16,
+                                        padding: 12,
+                                        backgroundColor: item.role === 'user'
+                                            ? '#10B981'
+                                            : (isDark ? '#374151' : 'white'),
+                                        borderWidth: item.role === 'bot' ? 1 : 0,
+                                        borderColor: isDark ? '#4B5563' : '#E5E5E5',
+                                        ...(item.role === 'user' ? { borderTopRightRadius: 4 } : { borderTopLeftRadius: 4 })
+                                    }}>
+                                        <Text style={{
+                                            color: item.role === 'user' ? 'white' : (isDark ? 'white' : 'black'),
+                                            fontSize: 15,
+                                            lineHeight: 22
+                                        }}>
+                                            {item.content}
+                                        </Text>
+                                    </View>
+                                </View>
+                            )}
+                        />
+
+                        {/* Input Area */}
+                        <View style={{
+                            padding: 16,
+                            borderTopWidth: 1,
+                            borderTopColor: isDark ? '#374151' : '#E5E5E5',
+                            backgroundColor: isDark ? '#111827' : 'white',
+                            paddingBottom: Platform.OS === 'ios' ? 32 : 16
+                        }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <TextInput
+                                    style={{
+                                        flex: 1,
+                                        backgroundColor: isDark ? '#374151' : '#F3F4F6',
+                                        borderRadius: 24,
+                                        paddingHorizontal: 16,
+                                        paddingVertical: 12,
+                                        marginRight: 8,
+                                        color: isDark ? 'white' : 'black',
+                                        fontSize: 15
+                                    }}
+                                    placeholder="Ask about your agreement..."
+                                    placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
+                                    value={chatQuery}
+                                    onChangeText={setChatQuery}
+                                    onSubmitEditing={handleAskAI}
+                                    multiline
+                                    maxLength={500}
+                                />
+                                <TouchableOpacity
+                                    onPress={handleAskAI}
+                                    disabled={chatLoading || !chatQuery.trim()}
+                                    style={{
+                                        width: 48,
+                                        height: 48,
+                                        borderRadius: 24,
+                                        backgroundColor: (chatLoading || !chatQuery.trim()) ? '#9CA3AF' : '#10B981',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                >
+                                    {chatLoading ? (
+                                        <ActivityIndicator color="white" size="small" />
+                                    ) : (
+                                        <Ionicons name="send" size={20} color="white" />
+                                    )}
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </KeyboardAvoidingView>
+            </Modal>
         </ScrollView>
     );
 }

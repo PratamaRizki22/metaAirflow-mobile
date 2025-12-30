@@ -13,6 +13,8 @@ interface ImagePickerSectionProps {
     label?: string;
     existingImages?: string[]; // For edit mode
     onRemoveExistingImage?: (index: number) => void;
+    maxImages?: number;
+    minImages?: number;
 }
 
 export function ImagePickerSection({
@@ -22,28 +24,44 @@ export function ImagePickerSection({
     uploading = false,
     label = 'Property Images',
     existingImages = [],
-    onRemoveExistingImage
+    onRemoveExistingImage,
+    maxImages = 8,
+    minImages = 4
 }: ImagePickerSectionProps) {
     const { cardBg, textColor, secondaryTextColor, borderColor, isDark } = useThemeColors();
+    const totalImages = selectedImages.length + existingImages.length;
+    const remainingSlots = maxImages - totalImages;
 
     const pickImages = async () => {
+        if (remainingSlots <= 0) {
+            alert(`You can only upload up to ${maxImages} images.`);
+            return;
+        }
+
         try {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
-                // Handle permission denial potentially via a callback or alert in parent
                 return;
             }
 
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsMultipleSelection: true,
+                selectionLimit: remainingSlots, // Enforce limit in native picker if supported
                 quality: 0.8,
                 aspect: [16, 9],
             });
 
             if (!result.canceled && result.assets) {
                 const newImages = result.assets.map(asset => asset.uri);
-                onImagesSelected(newImages);
+
+                // Double check limit manually
+                if (newImages.length > remainingSlots) {
+                    alert(`You can only select ${remainingSlots} more images.`);
+                    onImagesSelected(newImages.slice(0, remainingSlots));
+                } else {
+                    onImagesSelected(newImages);
+                }
             }
         } catch (error) {
             console.error('Pick images failed', error);
@@ -52,21 +70,27 @@ export function ImagePickerSection({
 
     return (
         <View className="mb-4">
-            <Text className={`text-base font-semibold mb-3 ${textColor}`}>
-                {label}
-            </Text>
+            <View className="flex-row justify-between items-center mb-3">
+                <Text className={`text-base font-semibold ${textColor}`}>
+                    {label} <Text className="text-red-500">*</Text>
+                </Text>
+                <Text className={`text-sm ${totalImages < minImages ? 'text-orange-500' : totalImages >= maxImages ? 'text-red-500' : secondaryTextColor}`}>
+                    {totalImages}/{maxImages}
+                </Text>
+            </View>
 
             {/* Pick Button */}
             <TouchableOpacity
                 onPress={pickImages}
-                className={`border-2 border-dashed ${isDark ? 'border-gray-700' : 'border-gray-300'} rounded-xl p-6 items-center ${cardBg} mb-4`}
+                disabled={totalImages >= maxImages}
+                className={`border-2 border-dashed ${isDark ? 'border-gray-700' : 'border-gray-300'} rounded-xl p-6 items-center ${cardBg} mb-4 ${totalImages >= maxImages ? 'opacity-50' : ''}`}
             >
-                <Ionicons name="images-outline" size={40} color="#00D9A3" />
-                <Text className="text-primary mt-2 font-semibold">
-                    Tap to select images
+                <Ionicons name="images-outline" size={40} color={totalImages >= maxImages ? '#6B7280' : '#00D9A3'} />
+                <Text className={`${totalImages >= maxImages ? secondaryTextColor : 'text-primary'} mt-2 font-semibold`}>
+                    {totalImages >= maxImages ? 'Limit Reached' : 'Tap to select images'}
                 </Text>
                 <Text className={`text-xs mt-1 ${secondaryTextColor}`}>
-                    You can select multiple images
+                    Min {minImages}, Max {maxImages} images
                 </Text>
             </TouchableOpacity>
 

@@ -12,6 +12,8 @@ import { useStripe } from '@stripe/stripe-react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { stripeService } from '../../services/stripeService';
 import { useThemeColors } from '../../hooks';
+import { useToast } from '../../hooks/useToast';
+import { Toast } from '../common';
 
 interface PaymentScreenProps {
     bookingId: string;
@@ -32,6 +34,7 @@ export function PaymentScreen({
     const { bgColor, textColor, cardBg } = useThemeColors();
     const [loading, setLoading] = useState(false);
     const [ready, setReady] = useState(false);
+    const { toast, showToast, hideToast } = useToast();
 
     // Initialize Payment Sheet when component mounts
     useEffect(() => {
@@ -98,11 +101,8 @@ export function PaymentScreen({
             setReady(true);
         } catch (error: any) {
             console.error('Payment Sheet initialization error:', error);
-            Alert.alert(
-                'Error',
-                error.message || 'Failed to initialize payment',
-                [{ text: 'OK', onPress: onCancel }]
-            );
+            showToast(error.message || 'Failed to initialize payment', 'error');
+            setTimeout(() => onCancel(), 2000);
         } finally {
             setLoading(false);
         }
@@ -126,30 +126,19 @@ export function PaymentScreen({
                         console.log('Payment canceled by user');
                         break;
                     case 'Failed':
-                        Alert.alert(
-                            'Payment Failed',
-                            error.message || 'Your payment could not be processed. Please try again.'
-                        );
+                        showToast(error.message || 'Payment failed. Please try again.', 'error');
                         break;
                     default:
-                        Alert.alert('Error', error.message);
+                        showToast(error.message || 'Payment error occurred', 'error');
                 }
             } else {
                 // Payment successful!
-                Alert.alert(
-                    'Success! 🎉',
-                    'Your payment has been confirmed. Your booking is now complete!',
-                    [
-                        {
-                            text: 'View Booking',
-                            onPress: onSuccess,
-                        },
-                    ]
-                );
+                showToast('Payment successful! 🎉 Your booking is confirmed', 'success');
+                setTimeout(() => onSuccess(), 1500);
             }
         } catch (error: any) {
             console.error('Payment error:', error);
-            Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+            showToast('An unexpected error occurred. Please try again.', 'error');
         }
     };
 
@@ -288,6 +277,14 @@ export function PaymentScreen({
                     </Text>
                 </View>
             </View>
+
+            {/* Toast Notification */}
+            <Toast
+                visible={toast.visible}
+                message={toast.message}
+                type={toast.type}
+                onHide={hideToast}
+            />
         </ScrollView>
     );
 }

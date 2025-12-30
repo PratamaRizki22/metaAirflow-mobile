@@ -72,7 +72,7 @@ router.post('/payment-sheet', async (req, res) => {
     }
 
     // 2. Get or create Stripe customer
-    let customer;
+    let customer;ya lanjut
     if (booking.tenant.stripeCustomerId) {
       customer = await stripe.customers.retrieve(booking.tenant.stripeCustomerId);
     } else {

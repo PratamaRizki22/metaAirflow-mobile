@@ -64,27 +64,44 @@ class UploadService {
      */
     async uploadMultiple(files: any[], optimize: boolean = true): Promise<MultipleUploadResponse> {
         try {
+            console.log(`Uploading ${files.length} files...`);
             const formData = new FormData();
 
             files.forEach((file, index) => {
-                formData.append('files', file);
+                // Ensure file object has required properties for React Native
+                const fileObj = {
+                    uri: file.uri,
+                    name: file.name || `file_${index}.jpg`,
+                    type: file.type || 'image/jpeg',
+                };
+                formData.append('files', fileObj as any);
             });
 
             formData.append('optimize', optimize.toString());
 
+            // Note: When using FormData in React Native/Axios, 
+            // do NOT set Content-Type header manually, let the instance handle it
+            // to generate the correct boundary
             const response = await api.post<MultipleUploadResponse>(
                 '/v1/m/upload/multiple',
                 formData,
                 {
                     headers: {
-                        'Content-Type': 'multipart/form-data',
+                        'Accept': 'application/json',
+                        'Content-Type': 'multipart/form-data', // Explicitly set needed sometimes, but often auto-handled
                     },
+                    transformRequest: (data) => data, // Prevent axios from transforming FormData
                 }
             );
 
+            console.log('Upload response:', response.data);
             return response.data;
         } catch (error: any) {
-            console.error('Upload multiple files error:', error.response?.data || error.message);
+            console.error('Upload multiple files error:', {
+                message: error.message,
+                status: error.response?.status,
+                data: error.response?.data
+            });
             throw this.handleError(error);
         }
     }

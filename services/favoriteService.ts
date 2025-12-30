@@ -101,12 +101,20 @@ class FavoriteService {
      */
     async isFavorited(propertyId: string): Promise<boolean> {
         try {
-            const response = await api.get<{ success: boolean; data: { isFavorited: boolean } }>(
-                `/v1/m/users/favorites/${propertyId}/check`
+            // Use the property detail endpoint which includes isFavorited field
+            const response = await api.get<{ success: boolean; data: any }>(
+                `/v1/m/properties/${propertyId}`
             );
-            return response.data.data.isFavorited;
+
+            // Check if response is successful and has data
+            if (response.data?.success && response.data?.data) {
+                return response.data.data.isFavorited === true;
+            }
+
+            return false;
         } catch (error: any) {
-            console.error('Check favorite error:', error.response?.data || error.message);
+            // Silently fail - favorite status is not critical
+            console.log('Check favorite error:', error.response?.data?.message || error.message);
             return false;
         }
     }
