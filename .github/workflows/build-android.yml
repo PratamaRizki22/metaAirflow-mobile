@@ -36,7 +36,7 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: ⚙️ Expo Prebuild (Generate Android Folder)
-        run: npx expo prebuild --platform android --no-interactive
+        run: npx expo prebuild --platform android
 
       - name: 🐘 Build APK with Gradle
         run: |
