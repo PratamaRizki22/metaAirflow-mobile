@@ -1,17 +1,14 @@
-name: Build Android APK (Gradle)
+name: Build Android APK (Release)
 on:
   push:
     branches:
       - main
       - master
-  workflow_dispatch: # Supaya bisa di-klik manual tombol "Run Workflow"
+  workflow_dispatch:
 
 jobs:
   build-android:
     runs-on: ubuntu-latest
-    
-    # Supaya step berjalan di dalam folder mobile app (jika ini monorepo)
-    # Jika repo ini KHUSUS mobile app, Anda bisa hapus 'working-directory' di setiap step
     defaults:
       run:
         working-directory: ./
@@ -26,14 +23,17 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: � Setup Gradle Cache
+      - name: 🐘 Setup Gradle Cache
         uses: gradle/gradle-build-action@v2
 
-      - name: �🟢 Setup Node.js
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
           cache: 'npm'
+
+      - name: 🔐 Create .env file
+        run: echo "${{ secrets.ENV_FILE }}" > .env
 
       - name: 📦 Install Dependencies
         run: npm ci --legacy-peer-deps
@@ -41,14 +41,22 @@ jobs:
       - name: ⚙️ Expo Prebuild (Generate Android Folder)
         run: npx expo prebuild --platform android
 
-      - name: 🐘 Build APK with Gradle
+      - name: 🔑 Decode Keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/production.keystore
+
+      - name: 🚀 Build Release APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=$(pwd)/app/production.keystore \
+            -Pandroid.injected.signing.store.password=${{ secrets.ANDROID_KEY_PASSWORD }} \
+            -Pandroid.injected.signing.key.alias=${{ secrets.ANDROID_KEY_ALIAS }} \
+            -Pandroid.injected.signing.key.password=${{ secrets.ANDROID_KEY_PASSWORD }}
 
-      - name: 📤 Upload APK Artifact
+      - name: 📤 Upload Release APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rentverse-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: rentverse-release
+          path: android/app/build/outputs/apk/release/app-release.apk
