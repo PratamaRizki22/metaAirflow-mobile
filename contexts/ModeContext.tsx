@@ -22,8 +22,8 @@ export function ModeProvider({ children }: { children: ReactNode }) {
     const [mode, setMode] = useState<UserMode>('tenant');
     const [isSwitchingMode, setIsSwitchingMode] = useState(false);
 
-    // Check if user can switch mode (has landlord access)
-    const canSwitchMode = user?.isLandlord === true;
+    // Check if user can switch mode (any logged-in user can switch)
+    const canSwitchMode = !!user;
 
     // Load saved mode preference whenever auth loading finishes or user changes
     useEffect(() => {
@@ -35,10 +35,10 @@ export function ModeProvider({ children }: { children: ReactNode }) {
                 const savedMode = await AsyncStorage.getItem(MODE_STORAGE_KEY);
 
                 // Logic:
-                // 1. If saved is 'landlord' AND user is actually a landlord => Restore Landlord
-                // 2. Otherwise => Default to Tenant
-                if (savedMode === 'landlord' && user?.isLandlord) {
-                    setMode('landlord');
+                // 1. If saved mode exists, restore it
+                // 2. Otherwise, default to Tenant
+                if (savedMode === 'landlord' || savedMode === 'tenant') {
+                    setMode(savedMode);
                 } else {
                     setMode('tenant');
                 }
@@ -52,8 +52,8 @@ export function ModeProvider({ children }: { children: ReactNode }) {
     }, [isLoading, user]);
 
     const switchMode = async () => {
-        if (!canSwitchMode) {
-            console.warn('User cannot switch mode - not a landlord');
+        if (!user) {
+            console.warn('User must be logged in to switch mode');
             return;
         }
 
