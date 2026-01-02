@@ -22,6 +22,8 @@ import ChatDetailScreen from '../screens/chat/ChatDetailScreen';
 import WriteReviewScreen from '../screens/review/WriteReviewScreen';
 import ReviewsListScreen from '../screens/review/ReviewsListScreen';
 import { SearchInputScreen } from '../screens/search/SearchInputScreen';
+import { LocationPropertiesScreen } from '../screens/search/LocationPropertiesScreen';
+import { TopRatedPropertiesScreen } from '../screens/search/TopRatedPropertiesScreen';
 import { MapSearchScreen } from '../screens/map/MapSearchScreen';
 import { AllWishlistScreen } from '../screens/tabs/AllWishlistScreen';
 import { OfflineBanner, GradientHeader } from '../components/common';
@@ -177,6 +179,16 @@ export function RootNavigator() {
                 <Stack.Screen
                     name="SearchInput"
                     component={SearchInputScreen}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="LocationProperties"
+                    component={LocationPropertiesScreen}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="TopRatedProperties"
+                    component={TopRatedPropertiesScreen}
                     options={{ headerShown: false }}
                 />
                 <Stack.Screen

@@ -19,12 +19,14 @@ export interface Property {
     type: 'house' | 'apartment' | 'villa' | 'land';
     isFeatured?: boolean;
     isFavorited?: boolean;
+    rating?: number;
 }
 
 interface PropertyCardProps {
     property: Property;
     onPress?: () => void;
     onFavoriteToggle?: (propertyId: string) => void;
+    onAddToCollection?: (propertyId: string) => void;
     variant?: 'default' | 'compact';
     style?: StyleProp<ViewStyle>;
 }
@@ -33,6 +35,7 @@ export const PropertyCard = React.memo(function PropertyCard({
     property,
     onPress,
     onFavoriteToggle,
+    onAddToCollection,
     variant = 'default',
     style
 }: PropertyCardProps) {
@@ -42,6 +45,13 @@ export const PropertyCard = React.memo(function PropertyCard({
         e.stopPropagation(); // Prevent card press
         if (onFavoriteToggle) {
             onFavoriteToggle(property.id);
+        }
+    };
+
+    const handleAddToCollectionPress = (e: any) => {
+        e.stopPropagation(); // Prevent card press
+        if (onAddToCollection) {
+            onAddToCollection(property.id);
         }
     };
 
@@ -110,6 +120,20 @@ export const PropertyCard = React.memo(function PropertyCard({
                                 color={property.isFavorited ? '#EF4444' : '#6B7280'}
                             />
                         </TouchableOpacity>
+
+                        {/* Add to Collection Button */}
+                        {onAddToCollection && (
+                            <TouchableOpacity
+                                onPress={handleAddToCollectionPress}
+                                className="absolute top-2 right-12 w-8 h-8 rounded-full bg-white/90 items-center justify-center"
+                            >
+                                <Ionicons
+                                    name="bookmark-outline"
+                                    size={18}
+                                    color="#6B7280"
+                                />
+                            </TouchableOpacity>
+                        )}
                     </View>
 
                     {/* Content */}
@@ -134,6 +158,14 @@ export const PropertyCard = React.memo(function PropertyCard({
                                 {property.location}
                             </Text>
                         </View>
+                        {property.rating !== undefined && (
+                            <View className="flex-row items-center mt-1">
+                                <Ionicons name="star" size={12} color="#F59E0B" />
+                                <Text className={`text-xs ml-1 font-bold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                    {property.rating ? property.rating.toFixed(1) : 'New'}
+                                </Text>
+                            </View>
+                        )}
                     </View>
                 </View>
             </TouchableOpacity>
@@ -206,6 +238,20 @@ export const PropertyCard = React.memo(function PropertyCard({
                             color={property.isFavorited ? '#EF4444' : '#6B7280'}
                         />
                     </TouchableOpacity>
+
+                    {/* Add to Collection Button */}
+                    {onAddToCollection && (
+                        <TouchableOpacity
+                            onPress={handleAddToCollectionPress}
+                            className="absolute top-4 right-16 w-10 h-10 rounded-full bg-white/90 items-center justify-center"
+                        >
+                            <Ionicons
+                                name="bookmark-outline"
+                                size={22}
+                                color="#6B7280"
+                            />
+                        </TouchableOpacity>
+                    )}
                 </View>
 
                 {/* Content */}
@@ -228,6 +274,18 @@ export const PropertyCard = React.memo(function PropertyCard({
                             {property.location}
                         </Text>
                     </View>
+
+                    {/* Rating Badge for Default Variant */}
+                    {property.rating !== undefined && (
+                        <View className="absolute top-0 right-0 p-5">
+                            <View className="flex-row items-center bg-white/90 dark:bg-black/60 px-2 py-1 rounded-lg backdrop-blur-sm">
+                                <Ionicons name="star" size={14} color="#F59E0B" />
+                                <Text className={`text-xs ml-1 font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                    {property.rating ? property.rating.toFixed(1) : 'New'}
+                                </Text>
+                            </View>
+                        </View>
+                    )}
 
                     <Text className="text-primary font-bold text-2xl mb-4">
                         {formatPrice(property.price)}

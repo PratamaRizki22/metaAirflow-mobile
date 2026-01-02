@@ -146,7 +146,7 @@ class PropertyService extends BaseService {
                     propertiesCount: response.data?.data?.properties?.length || 0,
                     totalCount: response.data?.data?.pagination?.total || 0
                 });
-                
+
                 return response.data;
             } catch (error: any) {
                 lastError = error;
@@ -295,6 +295,22 @@ class PropertyService extends BaseService {
             throw this.handleError(error);
         }
     }
+
+    /**
+     * Get recently viewed properties
+     */
+    async getRecentlyViewedProperties(limit: number = 10): Promise<{ success: boolean; data: { properties: Property[]; total: number } }> {
+        try {
+            const response = await api.get<{ success: boolean; data: { properties: Property[]; total: number } }>(
+                `/v1/m/properties/recently-viewed?limit=${limit}`
+            );
+            return response.data;
+        } catch (error: any) {
+            console.error('Get recently viewed properties error:', error.response?.data || error.message);
+            throw this.handleError(error);
+        }
+    }
+
 
 
 

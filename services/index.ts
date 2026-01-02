@@ -12,4 +12,5 @@ export { stripeService, type Payment, type PaymentHistoryParams, type PaymentHis
 export { predictionService, type PredictionInput, type PredictionResult, type PredictionStatus } from './predictionService';
 export { amenityService } from './amenityService';
 export { propertyTypeService } from './propertyTypeService';
+export { locationService, type Location } from './locationService';
 export { default as api } from './api';

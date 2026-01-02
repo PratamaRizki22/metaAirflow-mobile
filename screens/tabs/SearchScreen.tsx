@@ -12,6 +12,7 @@ import {
     Alert,
     Modal,
     Platform,
+    ImageBackground,
 } from 'react-native';
 import * as Location from 'expo-location';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
@@ -20,6 +21,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useFavorites } from '../../contexts/FavoritesContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { PropertyCard, Property } from '../../components/property';
 import {
     AdvancedSearchModal,
@@ -36,7 +38,7 @@ import { PropertyCardSkeleton } from '../../components/common/Skeleton';
 import { IconButton, ChipButton, TabBarBottomSpacer } from '../../components/common';
 import { HomeBackground } from '../../components/common/HomeBackground';
 import { useDebounce, useThemeColors } from '../../hooks';
-import { propertyService, propertyTypeService } from '../../services';
+import { propertyService, propertyTypeService, locationService, Location as LocationData } from '../../services';
 
 const CATEGORIES = [
     { id: 'all', label: 'All', icon: 'apps-outline' },
@@ -46,10 +48,34 @@ const CATEGORIES = [
     { id: 'land', label: 'Land', icon: 'map-outline' },
 ];
 
+// Default images for locations if no specific image is available
+const LOCATION_IMAGES: { [key: string]: string } = {
+    'Kuala Lumpur': 'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=500',
+    'Selangor': 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=500',
+    'Penang': 'https://images.unsplash.com/photo-1598965402089-897ce52e8355?w=500',
+    'Johor': 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=500',
+    'Johor Bahru': 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=500',
+    'Putrajaya': 'https://images.unsplash.com/photo-1549471053-4c46a2e13919?w=500',
+    'Melaka': 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=500',
+    'Malacca': 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=500',
+    'default': 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=500',
+};
+
+// Dummy locations for initial display
+const DUMMY_LOCATIONS = [
+    { name: 'Kuala Lumpur' },
+    { name: 'Selangor' },
+    { name: 'Penang' },
+    { name: 'Johor Bahru' },
+    { name: 'Putrajaya' },
+    { name: 'Melaka' },
+];
+
 export function SearchScreen({ navigation }: any) {
     const { isDark } = useTheme();
     const { unreadCount } = useNotifications();
     const { isFavorited, toggleFavorite } = useFavorites();
+    const { isLoggedIn } = useAuth();
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -59,12 +85,20 @@ export function SearchScreen({ navigation }: any) {
     const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
     const [searchFilters, setSearchFilters] = useState<any>({});
     const [propertyTypes, setPropertyTypes] = useState<any[]>([]);
+    const [recentlyViewedProperties, setRecentlyViewedProperties] = useState<any[]>([]);
+    const [popularProperties, setPopularProperties] = useState<any[]>([]); // Properties from user location
+    const [topRatedProperties, setTopRatedProperties] = useState<any[]>([]); // Top rated from all locations
 
     // Filter bottom sheet states
     const [showPriceFilter, setShowPriceFilter] = useState(false);
     const [showBedroomsFilter, setShowBedroomsFilter] = useState(false);
     const [showBathroomsFilter, setShowBathroomsFilter] = useState(false);
     const [showPropertyTypeFilter, setShowPropertyTypeFilter] = useState(false);
+    const [showLocationFilter, setShowLocationFilter] = useState(false);
+    const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
+    const [popularLocations, setPopularLocations] = useState<LocationData[]>([]);
+    const [locationsLoading, setLocationsLoading] = useState(false);
+    const [locationCounts, setLocationCounts] = useState<{ [key: string]: number }>({});
 
     // Sort state
     const [sortBy, setSortBy] = useState('latest');
@@ -89,6 +123,34 @@ export function SearchScreen({ navigation }: any) {
             // Silent fail - property types are optional for browsing
             setPropertyTypes([]);
         }
+    };
+
+    const loadPopularLocations = async () => {
+        try {
+            setLocationsLoading(true);
+            const locations = await locationService.getPopularLocations(10);
+            setPopularLocations(locations || []);
+            
+            // Create a map of location counts
+            const counts: { [key: string]: number } = {};
+            if (locations && Array.isArray(locations)) {
+                locations.forEach(loc => {
+                    counts[loc.name] = loc.propertyCount;
+                });
+            }
+            setLocationCounts(counts);
+        } catch (error) {
+            console.error('Error loading popular locations:', error);
+            setPopularLocations([]);
+            setLocationCounts({});
+        } finally {
+            setLocationsLoading(false);
+        }
+    };
+
+    // Load locations when modal is opened
+    const handleOpenLocationFilter = () => {
+        setShowLocationFilter(true);
     };
 
     // Component lifecycle logging for memory management verification
@@ -118,10 +180,10 @@ export function SearchScreen({ navigation }: any) {
             });
 
             if (address && address.length > 0) {
-                // Prioritize City, then Region, then Country
-                const city = address[0].city || address[0].region || address[0].country;
-                if (city) {
-                    setUserLocationName(city);
+                // Prioritize Region (state/province) over City
+                const state = address[0].region || address[0].city || address[0].country;
+                if (state) {
+                    setUserLocationName(state);
                 }
             }
         } catch (error) {
@@ -130,11 +192,71 @@ export function SearchScreen({ navigation }: any) {
         }
     };
 
+    const loadRecentlyViewedProperties = async () => {
+        if (!isLoggedIn) {
+            setRecentlyViewedProperties([]);
+            return;
+        }
+
+        try {
+            const response = await propertyService.getRecentlyViewedProperties(5);
+            if (response.success && response.data.properties) {
+                setRecentlyViewedProperties(response.data.properties);
+            }
+        } catch (error) {
+            // Silent fail - recently viewed is optional
+            console.log('Failed to load recently viewed properties:', error);
+            setRecentlyViewedProperties([]);
+        }
+    };
+
+    const loadFeaturedProperties = async () => {
+        try {
+            // Load properties from user's location
+            const locationResponse = await propertyService.getMobileProperties(1, 3, {
+                city: userLocationName,
+                sortBy: 'rating',
+            });
+
+            if (locationResponse.success && locationResponse.data.properties) {
+                setPopularProperties(locationResponse.data.properties);
+            } else {
+                setPopularProperties([]);
+            }
+
+            // Always load top rated properties from all locations
+            const topRatedResponse = await propertyService.getMobileProperties(1, 3, {
+                sortBy: 'rating',
+            });
+
+            if (topRatedResponse.success && topRatedResponse.data.properties) {
+                setTopRatedProperties(topRatedResponse.data.properties);
+            } else {
+                setTopRatedProperties([]);
+            }
+        } catch (error) {
+            console.log('Failed to load featured properties:', error);
+            setPopularProperties([]);
+            setTopRatedProperties([]);
+        }
+    };
+
     // Load property types and location on mount
     useEffect(() => {
         loadPropertyTypes();
+        loadPopularLocations(); // Load counts on mount
         getUserLocation();
-    }, []);
+        if (isLoggedIn) {
+            loadRecentlyViewedProperties();
+        }
+    }, [isLoggedIn]);
+
+    // Load featured properties when location changes
+    useEffect(() => {
+        if (userLocationName && userLocationName !== 'Area Around You') {
+            loadFeaturedProperties();
+        }
+    }, [userLocationName]);
 
     const loadProperties = useCallback(async (pageNum: number = 1, reset: boolean = false) => {
         try {
@@ -222,6 +344,11 @@ export function SearchScreen({ navigation }: any) {
         }
     }, [toggleFavorite]);
 
+    const handleAddToCollection = useCallback((propertyId: string) => {
+        // TODO: Implement add to collection functionality
+        navigation.navigate('Collections', { propertyId });
+    }, [navigation]);
+
     const clearAllFilters = useCallback(() => {
         setSearchFilters({});
         setSearchQuery('');
@@ -250,18 +377,8 @@ export function SearchScreen({ navigation }: any) {
         });
     }, [selectedCategory, properties]);
 
-    // Memoized featured properties (top 3 with highest ratings or newest)
-    const featuredProperties = useMemo(() => {
-        return properties
-            .sort((a, b) => {
-                // Sort by rating first, then by date
-                if (a.averageRating && b.averageRating) {
-                    return b.averageRating - a.averageRating;
-                }
-                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-            })
-            .slice(0, 3);
-    }, [properties]);
+    // Use popularProperties from state (loaded via API)
+    const featuredProperties = popularProperties;
 
     // Memoized renderItem for FlatList
     const renderPropertyItem: ListRenderItem<any> = useCallback(({ item, index }) => (
@@ -277,16 +394,17 @@ export function SearchScreen({ navigation }: any) {
                     location: `${item.city}, ${item.state}`,
                     bedrooms: item.bedrooms,
                     bathrooms: item.bathrooms,
-                    area: item.areaSqm,
+                    area: Number(item.areaSqm),
                     image: item.images?.[0] || DEFAULT_IMAGES.PROPERTY,
                     type: item.propertyType?.name?.toLowerCase() || 'house',
                     isFavorited: isFavorited(item.id),
                 }}
                 onPress={() => handlePropertyPress(item.id)}
                 onFavoriteToggle={handleFavoriteToggle}
+                onAddToCollection={handleAddToCollection}
             />
         </Animated.View>
-    ), [handlePropertyPress, handleFavoriteToggle, isFavorited]);
+    ), [handlePropertyPress, handleFavoriteToggle, handleAddToCollection, isFavorited]);
 
     const keyExtractor = useCallback((item: any) => item.id, []);
 
@@ -370,7 +488,7 @@ export function SearchScreen({ navigation }: any) {
                                 }}
                             >
                                 <Ionicons name="search-outline" size={24} color="#9CA3AF" />
-                                <Text className={`ml-3 text-lg text-gray-400 flex-1`}>
+                                <Text className={`ml-3 text-lg font-normal text-gray-400 flex-1`}>
                                     Search location...
                                 </Text>
                             </TouchableOpacity>
@@ -387,147 +505,207 @@ export function SearchScreen({ navigation }: any) {
                         />
                     </Animated.View>
 
-
+                    {/* Last Viewed Section */}
+                    <Animated.View entering={FadeInDown.delay(250).springify()} className="mt-6">
+                        <View className="px-6 mb-4">
+                            <Text className={`text-xl font-bold ${textColor}`}>
+                                Last Viewed
+                            </Text>
+                        </View>
+                        {recentlyViewedProperties.length > 0 ? (
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={{ paddingLeft: 24, paddingRight: 24, gap: 16, paddingBottom: 8 }}
+                            >
+                                {recentlyViewedProperties.map((property) => (
+                                    <PropertyCard
+                                        key={property.id}
+                                        property={{
+                                            id: property.id,
+                                            title: property.title,
+                                            price: property.price,
+                                            location: `${property.city}, ${property.state}`,
+                                            bedrooms: property.bedrooms,
+                                            bathrooms: property.bathrooms,
+                                            area: Number(property.areaSqm),
+                                            image: property.images?.[0] || DEFAULT_IMAGES.PROPERTY,
+                                            type: property.propertyType?.name?.toLowerCase() || 'house',
+                                            isFavorited: isFavorited(property.id),
+                                        }}
+                                        variant="compact"
+                                        onPress={() => handlePropertyPress(property.id)}
+                                        onFavoriteToggle={handleFavoriteToggle}
+                                    />
+                                ))}
+                            </ScrollView>
+                        ) : (
+                            <View className="px-6 py-8 bg-gray-100 dark:bg-gray-800 mx-6 rounded-2xl">
+                                <View className="flex-row items-center">
+                                    <Ionicons 
+                                        name="information-circle-outline" 
+                                        size={24} 
+                                        color={isDark ? '#9CA3AF' : '#6B7280'} 
+                                    />
+                                    <Text className={`ml-3 font-normal ${secondaryTextColor} flex-1`}>
+                                        No properties viewed yet
+                                    </Text>
+                                </View>
+                            </View>
+                        )}
+                    </Animated.View>
                 </View>
+
 
                 {/* Popular / Featured Section Title */}
                 {selectedCategory === 'all' && (
-                    <TouchableOpacity
-                        className="flex-row items-center px-6 mb-4 mt-6"
-                        onPress={() => navigation.navigate('MapSearchInfo', { searchQuery: userLocationName })}
-                    >
-                        <Text className={`text-xl font-bold ${textColor} mr-1`}>
-                            Popular in {userLocationName}
-                        </Text>
-                        <Ionicons name="chevron-forward" size={20} color={isDark ? '#FFF' : '#111827'} />
-                    </TouchableOpacity>
-                )}
-
-                {/* Featured Properties List */}
-                {featuredProperties.length > 0 && selectedCategory === 'all' && (
-                    <Animated.View entering={FadeInDown.delay(300).springify()} className="mb-6">
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            className="px-6"
-                            contentContainerStyle={{ gap: 16, paddingBottom: 8 }}
-                        >
-                            {featuredProperties.map((property) => (
-                                <PropertyCard
-                                    key={property.id}
-                                    property={{
-                                        id: property.id,
-                                        title: property.title,
-                                        price: property.price,
-                                        location: `${property.city}, ${property.state}`,
-                                        bedrooms: property.bedrooms,
-                                        bathrooms: property.bathrooms,
-                                        area: property.areaSqm,
-                                        image: property.images?.[0] || DEFAULT_IMAGES.PROPERTY,
-                                        type: property.propertyType?.name?.toLowerCase() || 'house',
-                                        isFeatured: true,
-                                        isFavorited: isFavorited(property.id),
-                                    }}
-                                    variant="compact"
-                                    onPress={() => handlePropertyPress(property.id)}
-                                    onFavoriteToggle={handleFavoriteToggle}
-                                />
-                            ))}
-                        </ScrollView>
-                    </Animated.View>
-                )}
-
-                {/* All Properties */}
-                <Animated.View entering={FadeInDown.delay(400).springify()} className="px-6">
-                    <View className="flex-row items-center justify-between mb-4">
+                    <View className="px-6 mb-4 mt-6">
                         <Text className={`text-xl font-bold ${textColor}`}>
-                            {selectedCategory === 'all' ? '' : `${CATEGORIES.find(c => c.id === selectedCategory)?.label} Properties`}
+                            Popular Property in Your Location
                         </Text>
-                        <Text className={secondaryTextColor}>
-                            {filteredProperties.length} found
+                    </View>
+                )}
+
+                {/* Featured Properties List or Empty State */}
+                {selectedCategory === 'all' && (
+                    <>
+                        {featuredProperties.length > 0 ? (
+                            <Animated.View entering={FadeInDown.delay(300).springify()} className="mb-6">
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    className="px-6"
+                                    contentContainerStyle={{ gap: 16, paddingBottom: 8 }}
+                                >
+                                    {featuredProperties.map((property) => (
+                                        <PropertyCard
+                                            key={property.id}
+                                            property={{
+                                                id: property.id,
+                                                title: property.title,
+                                                price: property.price,
+                                                location: `${property.city}, ${property.state}`,
+                                                bedrooms: property.bedrooms,
+                                                bathrooms: property.bathrooms,
+                                                area: Number(property.areaSqm),
+                                                image: property.images?.[0] || DEFAULT_IMAGES.PROPERTY,
+                                                type: property.propertyType?.name?.toLowerCase() || 'house',
+                                                isFeatured: true,
+                                                isFavorited: isFavorited(property.id),
+                                            }}
+                                            variant="compact"
+                                            onPress={() => handlePropertyPress(property.id)}
+                                            onFavoriteToggle={handleFavoriteToggle}
+                                            onAddToCollection={handleAddToCollection}
+                                        />
+                                    ))}
+                                </ScrollView>
+                            </Animated.View>
+                        ) : (
+                            <Animated.View entering={FadeInDown.delay(300).springify()} className="mx-6 mb-6 p-4 rounded-2xl bg-gray-100 dark:bg-gray-800">
+                                <View className="flex-row items-center">
+                                    <Ionicons name="information-circle-outline" size={24} color="#9CA3AF" />
+                                    <Text className={`ml-3 flex-1 font-normal ${secondaryTextColor}`}>
+                                        Tidak ada properti di sekitar wilayah Anda saat ini
+                                    </Text>
+                                </View>
+                            </Animated.View>
+                        )}
+                    </>
+                )}
+
+                {/* Top Rated Section - Rekomendasi Terbaik */}
+                {selectedCategory === 'all' && topRatedProperties.length > 0 && (
+                    <>
+                        <TouchableOpacity
+                            className="flex-row items-center px-6 mb-4 mt-6"
+                            onPress={() => navigation.navigate('TopRatedProperties')}
+                        >
+                            <Text className={`text-xl font-bold ${textColor} mr-1`}>
+                                Rekomendasi Terbaik
+                            </Text>
+                            <Ionicons name="chevron-forward" size={20} color={isDark ? '#FFF' : '#111827'} />
+                        </TouchableOpacity>
+                        <Animated.View entering={FadeInDown.delay(350).springify()}>
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={{ paddingLeft: 24, paddingRight: 24, gap: 16, paddingBottom: 8 }}
+                            >
+                                {topRatedProperties.map((property) => (
+                                    <PropertyCard
+                                        key={property.id}
+                                        property={{
+                                            id: property.id,
+                                            title: property.title,
+                                            price: property.price,
+                                            location: `${property.city}, ${property.state}`,
+                                            bedrooms: property.bedrooms,
+                                            bathrooms: property.bathrooms,
+                                            area: Number(property.areaSqm),
+                                            image: property.images?.[0] || DEFAULT_IMAGES.PROPERTY,
+                                            type: property.propertyType?.name?.toLowerCase() || 'house',
+                                            isFeatured: true,
+                                            isFavorited: isFavorited(property.id),
+                                        }}
+                                        variant="compact"
+                                        onPress={() => handlePropertyPress(property.id)}
+                                        onFavoriteToggle={handleFavoriteToggle}
+                                        onAddToCollection={handleAddToCollection}
+                                    />
+                                ))}
+                            </ScrollView>
+                        </Animated.View>
+                    </>
+                )}
+
+                {/* Explore Popular Locations */}
+                <Animated.View entering={FadeInDown.delay(400).springify()} className="mb-6">
+                    <View className="px-6 mb-4">
+                        <Text className={`text-xl font-bold ${textColor}`}>
+                            Explore Popular Locations
                         </Text>
                     </View>
 
-                    <FlatList
-                        data={filteredProperties}
-                        renderItem={renderPropertyItem}
-                        keyExtractor={keyExtractor}
-                        scrollEnabled={false}
-                        showsVerticalScrollIndicator={false}
-                        // Pagination
-                        onEndReached={handleLoadMore}
-                        onEndReachedThreshold={0.5}
-                        ListFooterComponent={
-                            loadingMore && !error ? (
-                                <View className="py-4">
-                                    <ActivityIndicator size="small" color="#00D9A3" />
-                                </View>
-                            ) : null
-                        }
-                        ListEmptyComponent={
-                            !loading ? (
-                                error ? (
-                                    <View className="items-center justify-center py-12 px-6">
-                                        <Ionicons name="cloud-offline-outline" size={64} color="#EF4444" />
-                                        <Text className={`text-lg font-semibold mt-4 text-center ${textColor}`}>
-                                            Connection Error
-                                        </Text>
-                                        <Text className={`text-sm mt-2 text-center ${secondaryTextColor}`}>
-                                            {error}
-                                        </Text>
-                                        <TouchableOpacity
-                                            onPress={() => {
-                                                setPage(1);
-                                                loadProperties(1, true);
-                                            }}
-                                            disabled={loading}
-                                            className="mt-6"
+                    {locationsLoading ? (
+                        <View className="px-6">
+                            <ActivityIndicator size="small" color="#00D9A3" />
+                        </View>
+                    ) : (
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={{ paddingLeft: 24, paddingRight: 24 }}
+                            className="mb-4"
+                        >
+                            {DUMMY_LOCATIONS.map((location, index) => (
+                                <TouchableOpacity
+                                    key={index}
+                                    onPress={() => {
+                                        setSelectedLocation(location.name);
+                                        setShowLocationFilter(true);
+                                    }}
+                                    className="mr-4"
+                                    style={{ width: 120 }}
+                                >
+                                    <ImageBackground
+                                        source={{ uri: LOCATION_IMAGES[location.name] || LOCATION_IMAGES.default }}
+                                        className="w-full h-32 rounded-2xl overflow-hidden"
+                                        imageStyle={{ borderRadius: 16 }}
+                                    >
+                                        <LinearGradient
+                                            colors={['transparent', 'rgba(0,0,0,0.8)']}
+                                            className="flex-1 justify-end p-3"
                                         >
-                                            <LinearGradient
-                                                colors={loading ? ['#9CA3AF', '#6B7280'] : ['#10A0F7', '#01E8AD']}
-                                                start={{ x: 0, y: 0 }}
-                                                end={{ x: 1, y: 0 }}
-                                                className="px-6 py-3 rounded-xl flex-row items-center justify-center"
-                                            >
-                                                {loading ? (
-                                                    <>
-                                                        <ActivityIndicator size="small" color="#FFF" />
-                                                        <Text className="text-white font-semibold ml-2">Loading...</Text>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Ionicons name="refresh" size={20} color="#FFF" />
-                                                        <Text className="text-white font-semibold ml-2">Try Again</Text>
-                                                    </>
-                                                )}
-                                            </LinearGradient>
-                                        </TouchableOpacity>
-                                    </View>
-                                ) : (
-                                    <View className="items-center justify-center py-12">
-                                        <Ionicons name="home-outline" size={64} color="#9CA3AF" />
-                                        <Text className={`text-lg font-semibold mt-4 ${textColor}`}>
-                                            No Properties Found
-                                        </Text>
-                                        <Text className={`text-sm mt-2 ${secondaryTextColor}`}>
-                                            Try adjusting your search or filters
-                                        </Text>
-                                    </View>
-                                )
-                            ) : null
-                        }
-                        // Performance optimizations
-                        initialNumToRender={5}
-                        maxToRenderPerBatch={10}
-                        windowSize={5}
-                        removeClippedSubviews={true}
-                        // getItemLayout for better scroll performance
-                        getItemLayout={(data, index) => ({
-                            length: 280, // Approximate card height
-                            offset: 280 * index,
-                            index,
-                        })}
-                    />
+                                            <Text className="text-white font-bold text-sm" numberOfLines={1}>
+                                                {location.name}
+                                            </Text>
+                                        </LinearGradient>
+                                    </ImageBackground>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    )}
                 </Animated.View>
 
                 {/* Bottom Padding */}
@@ -595,6 +773,99 @@ export function SearchScreen({ navigation }: any) {
                 currentValue={sortBy}
                 isDark={isDark}
             />
+
+            {/* Location Filter Bottom Sheet */}
+            <Modal
+                visible={showLocationFilter}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setShowLocationFilter(false)}
+            >
+                <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <TouchableOpacity
+                        className="flex-1"
+                        activeOpacity={1}
+                        onPress={() => setShowLocationFilter(false)}
+                    />
+                    <View
+                        className={`rounded-t-3xl ${isDark ? 'bg-surface-dark' : 'bg-white'}`}
+                        style={{
+                            height: '80%',
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: -4 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 12,
+                            elevation: 20,
+                        }}
+                    >
+                        {/* Header */}
+                        <View className="px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                            <View className="flex-row items-center justify-between">
+                                <Text className={`text-xl font-bold ${textColor}`}>
+                                    Properties in {selectedLocation}
+                                </Text>
+                                <TouchableOpacity onPress={() => setShowLocationFilter(false)}>
+                                    <Ionicons name="close" size={24} color={isDark ? '#FFF' : '#000'} />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+
+                        {/* Properties List */}
+                        <ScrollView 
+                            className="flex-1 px-6 pt-4"
+                            showsVerticalScrollIndicator={true}
+                            contentContainerStyle={{ paddingBottom: 20 }}
+                        >
+                            {loading ? (
+                                <View className="items-center py-8">
+                                    <ActivityIndicator size="large" color="#00D9A3" />
+                                </View>
+                            ) : filteredProperties.filter(p => p.state === selectedLocation).length > 0 ? (
+                                <View className="flex-row flex-wrap" style={{ gap: 8 }}>
+                                    {filteredProperties.filter(p => p.state === selectedLocation).map((property, index) => (
+                                        <View key={property.id} style={{ width: '48%', marginBottom: 8 }}>
+                                            <PropertyCard
+                                                property={{
+                                                    id: property.id,
+                                                    title: property.title,
+                                                    location: `${property.city}, ${property.state}`,
+                                                    price: property.price,
+                                                    rating: property.averageRating || 0,
+                                                    image: property.images?.[0] || DEFAULT_IMAGES.PROPERTY,
+                                                    bedrooms: property.bedrooms,
+                                                    bathrooms: property.bathrooms,
+                                                    area: Number(property.areaSqm),
+                                                    type: property.propertyType?.name?.toLowerCase() || 'house',
+                                                    isFeatured: false,
+                                                    isFavorited: isFavorited(property.id),
+                                                }}
+                                                variant="compact"
+                                                style={{ width: '100%' }}
+                                                onPress={() => {
+                                                    setShowLocationFilter(false);
+                                                    handlePropertyPress(property.id);
+                                                }}
+                                                onFavoriteToggle={handleFavoriteToggle}
+                                                onAddToCollection={handleAddToCollection}
+                                            />
+                                        </View>
+                                    ))}
+                                </View>
+                            ) : (
+                                <View className="items-center justify-center py-12">
+                                    <Ionicons name="home-outline" size={64} color="#9CA3AF" />
+                                    <Text className={`text-lg font-semibold mt-4 ${textColor}`}>
+                                        No Properties Found
+                                    </Text>
+                                    <Text className={`text-sm font-normal mt-2 ${secondaryTextColor}`}>
+                                        Try selecting another location
+                                    </Text>
+                                </View>
+                            )}
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }

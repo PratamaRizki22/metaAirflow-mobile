@@ -192,7 +192,7 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
 
     const handleToggleFavorite = async () => {
         console.log('Toggle favorite clicked, isLoggedIn:', isLoggedIn);
-        
+
         if (!isLoggedIn) {
             Alert.alert(
                 'Login Required',
@@ -466,18 +466,21 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                                         }}
                                     >
                                         <View style={{
-                                            width: 24,
-                                            height: 24,
-                                            backgroundColor: '#00D9A3',
-                                            borderRadius: 12,
-                                            borderWidth: 3,
-                                            borderColor: 'white',
-                                            shadowColor: '#000',
-                                            shadowOffset: { width: 0, height: 2 },
-                                            shadowOpacity: 0.3,
-                                            shadowRadius: 4,
-                                            elevation: 5
-                                        }} />
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                        }}>
+                                            <Ionicons
+                                                name="location"
+                                                size={40}
+                                                color="#EF4444"
+                                                style={{
+                                                    shadowColor: '#000',
+                                                    shadowOffset: { width: 0, height: 2 },
+                                                    shadowOpacity: 0.5,
+                                                    shadowRadius: 4,
+                                                }}
+                                            />
+                                        </View>
                                     </MapLibreGL.PointAnnotation>
                                 </MapLibreGL.MapView>
                             </View>
