@@ -152,7 +152,7 @@ export default function MyTripsScreen({ navigation }: any) {
             <FlatList
                 data={bookings}
                 keyExtractor={(item) => item.id}
-                contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100 }}
+                contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 200 }}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                 }
@@ -304,7 +304,7 @@ export default function MyTripsScreen({ navigation }: any) {
                         </Text>
                         {filter === 'ALL' && (
                             <Button
-                                onPress={() => navigation.navigate('Home')}
+                                onPress={() => navigation.navigate('Search')}
                                 variant="primary"
                                 className="mt-6"
                             >

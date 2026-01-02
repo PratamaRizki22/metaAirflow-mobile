@@ -95,7 +95,7 @@ export function LandlordBookingsScreen({ navigation }: any) {
                 contentContainerStyle={{
                     flexGrow: 1,
                     paddingHorizontal: 24,
-                    paddingBottom: 100,
+                    paddingBottom: 200,
                 }}
                 refreshControl={
                     <RefreshControl

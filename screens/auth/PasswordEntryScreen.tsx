@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import authService from '../../services/authService';
 import { useToast } from '../../hooks/useToast';
 import { Toast } from '../../components/common';
+import { Button } from '../../components/common';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface PasswordEntryScreenProps {
@@ -102,9 +103,8 @@ export function PasswordEntryScreen({
                                 <Text className="text-sm text-[#475569] mb-2">Password</Text>
                                 <View className="relative">
                                     <TextInput
-                                        className={`bg-white border ${
-                                            fieldError ? 'border-red-500' : 'border-[#10A0F7]'
-                                        } rounded-md px-4 py-3 pr-12 text-[#64748b]`}
+                                        className={`bg-white border ${fieldError ? 'border-red-500' : 'border-[#10A0F7]'
+                                            } rounded-md px-4 py-3 pr-12 text-[#64748b]`}
                                         placeholder="akuganteng123"
                                         placeholderTextColor="#64748b"
                                         value={password}
@@ -138,32 +138,14 @@ export function PasswordEntryScreen({
 
                             {/* Next Button */}
                             <View className="mt-auto pb-8">
-                                <TouchableOpacity
+                                <Button
                                     onPress={handleLogin}
-                                    disabled={isLoading}
-                                    className={isLoading ? 'opacity-50' : ''}
+                                    loading={isLoading}
+                                    size="lg"
+                                    fullWidth
                                 >
-                                    <LinearGradient
-                                        colors={['#10A0F7', '#01E8AD']}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 0 }}
-                                        className="rounded-md py-3 px-4 shadow-lg"
-                                        style={{
-                                            shadowColor: '#10A0F7',
-                                            shadowOffset: { width: 4, height: 4 },
-                                            shadowOpacity: 0.4,
-                                            shadowRadius: 12,
-                                        }}
-                                    >
-                                        {isLoading ? (
-                                            <ActivityIndicator color="white" />
-                                        ) : (
-                                            <Text className="text-[#f1f5f9] text-center font-semibold text-sm">
-                                                Next
-                                            </Text>
-                                        )}
-                                    </LinearGradient>
-                                </TouchableOpacity>
+                                    Next
+                                </Button>
                             </View>
                         </View>
                     </ScrollView>

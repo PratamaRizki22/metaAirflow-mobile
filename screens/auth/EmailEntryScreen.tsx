@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import authService from '../../services/authService';
 import { useToast } from '../../hooks/useToast';
 import { Toast } from '../../components/common';
+import { Button } from '../../components/common';
 
 interface EmailEntryScreenProps {
     onEmailNotRegistered: (email: string) => void;
@@ -141,37 +142,16 @@ export function EmailEntryScreen({
                             </TouchableOpacity>
 
                             {/* Next Button */}
-                            <TouchableOpacity
-                                className={isLoading ? 'opacity-50 mb-8' : 'mb-8'}
-                                style={{
-                                    borderRadius: 8,
-                                    overflow: 'hidden',
-                                }}
-                                onPress={handleNext}
-                                disabled={isLoading}
-                            >
-                                <LinearGradient
-                                    colors={['#10A0F7', '#01E8AD']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 0.65 }}
-                                    className="py-3 px-4"
-                                    style={{
-                                        shadowColor: '#10A0F7',
-                                        shadowOffset: { width: 4, height: 4 },
-                                        shadowOpacity: 0.4,
-                                        shadowRadius: 12,
-                                        elevation: 8,
-                                    }}
+                            <View className="mb-8">
+                                <Button
+                                    onPress={handleNext}
+                                    loading={isLoading}
+                                    size="lg"
+                                    fullWidth
                                 >
-                                    {isLoading ? (
-                                        <ActivityIndicator color="white" />
-                                    ) : (
-                                        <Text className="text-[#f1f5f9] text-center font-semibold text-sm">
-                                            Next
-                                        </Text>
-                                    )}
-                                </LinearGradient>
-                            </TouchableOpacity>
+                                    Next
+                                </Button>
+                            </View>
 
                             {/* Divider */}
                             <View className="flex-row items-center mb-8">

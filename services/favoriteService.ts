@@ -126,12 +126,16 @@ class FavoriteService extends BaseService {
      */
     async toggleFavorite(propertyId: string): Promise<{ success: boolean; message: string; isFavorited: boolean }> {
         try {
+            console.log('FavoriteService: Calling toggle API for propertyId:', propertyId);
             const response = await api.post<{ success: boolean; message: string; isFavorited: boolean }>(
                 `/v1/m/properties/${propertyId}/favorite`
             );
+            console.log('FavoriteService: Toggle response:', response.data);
             return response.data;
         } catch (error: any) {
             console.error('Toggle favorite error:', error.response?.data || error.message);
+            console.error('Error status:', error.response?.status);
+            console.error('Error config:', error.config?.url);
             throw this.handleError(error);
         }
     }

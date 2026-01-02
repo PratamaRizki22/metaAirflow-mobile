@@ -21,7 +21,10 @@ import BookingDetailScreen from '../screens/booking/BookingDetailScreen';
 import ChatDetailScreen from '../screens/chat/ChatDetailScreen';
 import WriteReviewScreen from '../screens/review/WriteReviewScreen';
 import ReviewsListScreen from '../screens/review/ReviewsListScreen';
-import { OfflineBanner } from '../components/common';
+import { SearchInputScreen } from '../screens/search/SearchInputScreen';
+import { MapSearchScreen } from '../screens/map/MapSearchScreen';
+import { AllWishlistScreen } from '../screens/tabs/AllWishlistScreen';
+import { OfflineBanner, GradientHeader } from '../components/common';
 import { useNetwork } from '../hooks';
 import { useTheme } from '../contexts/ThemeContext';
 import { useMode } from '../contexts/ModeContext';
@@ -39,10 +42,11 @@ export function RootNavigator() {
                 screenOptions={{
                     headerShown: true,
                     headerBackTitle: '',
+                    headerBackground: () => <GradientHeader />,
                     headerStyle: {
-                        backgroundColor: isDark ? '#0F172A' : '#FFFFFF',
+                        backgroundColor: 'transparent',
                     },
-                    headerTintColor: isDark ? '#F1F5F9' : '#1F2937',
+                    headerTintColor: '#FFFFFF',
                     headerTitleStyle: {
                         fontWeight: 'bold',
                     },
@@ -72,7 +76,7 @@ export function RootNavigator() {
                 <Stack.Screen
                     name="PropertyDetail"
                     component={PropertyDetailScreen}
-                    options={{ title: 'Property Details' }}
+                    options={{ headerShown: false }}
                 />
                 <Stack.Screen
                     name="CreateBooking"
@@ -166,6 +170,23 @@ export function RootNavigator() {
                 <Stack.Screen
                     name="PaymentDetail"
                     component={PaymentDetailScreen}
+                    options={{ headerShown: false }}
+                />
+
+                {/* Search & Map Screens */}
+                <Stack.Screen
+                    name="SearchInput"
+                    component={SearchInputScreen}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="MapSearchInfo"
+                    component={MapSearchScreen}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="AllWishlist"
+                    component={AllWishlistScreen}
                     options={{ headerShown: false }}
                 />
             </Stack.Navigator>

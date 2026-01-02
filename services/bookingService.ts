@@ -11,8 +11,10 @@ export interface Booking {
     checkOutDate: string;
     totalPrice: number;
     status: BookingStatus;
+    paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
     guests: number;
     notes?: string;
+    isOwner?: boolean;
     property: {
         id: string;
         title: string;

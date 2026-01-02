@@ -144,7 +144,7 @@ export default function HostingDashboardScreen({ navigation }: any) {
                         <View style={{ padding: 15, backgroundColor: '#f9f9f9', marginBottom: 10 }}>
                             <Text style={{ fontWeight: 'bold' }}>{item.title}</Text>
                             <Text>{item.city}, {item.state}</Text>
-                            <Text>Rp {item.price.toLocaleString()}/bulan</Text>
+                            <Text>RM {item.price.toLocaleString()}/bulan</Text>
                             <Text>Status: {item.status}</Text>
                         </View>
                     )}

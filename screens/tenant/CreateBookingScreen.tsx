@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, ActivityIndicator, Modal, KeyboardAvoidingView, Platform, FlatList } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
 import { DateRangePicker } from '../../components/booking';
 import { bookingService, propertyService, agreementService } from '../../services';
@@ -358,29 +359,113 @@ export default function CreateBookingScreen({ route, navigation }: any) {
             >
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                    className={`flex-1 ${bgColor}`}
+                    className={`flex-1`}
+                    style={{ backgroundColor: isDark ? '#0F172A' : '#F8FAFC' }}
                 >
                     <View className="flex-1">
-                        {/* Header */}
-                        <View className={`flex-row items-center justify-between px-4 py-3 border-b ${borderColor}`}>
-                            <Text className={`text-lg font-bold ${textColor}`}>Agreement Assistant</Text>
-                            <TouchableOpacity onPress={() => setShowChatbot(false)} className="p-2">
-                                <Ionicons name="close" size={24} color={isDark ? '#FFF' : '#000'} />
-                            </TouchableOpacity>
-                        </View>
+                        {/* Gradient Header */}
+                        <LinearGradient
+                            colors={['#10B981', '#059669']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={{
+                                paddingTop: insets.top + 16,
+                                paddingHorizontal: 20,
+                                paddingBottom: 20,
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 8,
+                                elevation: 4,
+                            }}
+                        >
+                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                                    <View style={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: 20,
+                                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        marginRight: 12
+                                    }}>
+                                        <Ionicons name="sparkles" size={22} color="#FFF" />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{
+                                            fontSize: 20,
+                                            fontWeight: 'bold',
+                                            fontFamily: 'VisbyRound-Bold',
+                                            color: 'white',
+                                            marginBottom: 2
+                                        }}>
+                                            AI Assistant
+                                        </Text>
+                                        <Text style={{
+                                            fontSize: 13,
+                                            fontFamily: 'VisbyRound-Regular',
+                                            color: 'rgba(255, 255, 255, 0.9)'
+                                        }}>
+                                            Ask me about house rules & agreement
+                                        </Text>
+                                    </View>
+                                </View>
+                                <TouchableOpacity
+                                    onPress={() => setShowChatbot(false)}
+                                    style={{
+                                        width: 36,
+                                        height: 36,
+                                        borderRadius: 18,
+                                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                >
+                                    <Ionicons name="close" size={22} color="white" />
+                                </TouchableOpacity>
+                            </View>
+                        </LinearGradient>
 
                         {/* Chat History */}
                         <FlatList
                             data={chatHistory}
                             keyExtractor={(_, index) => index.toString()}
-                            contentContainerStyle={{ padding: 16 }}
+                            contentContainerStyle={{ padding: 16, paddingBottom: 8 }}
                             renderItem={({ item }) => (
-                                <View className={`mb-4 flex-row ${item.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    <View className={`max-w-[80%] rounded-2xl p-3 ${item.role === 'user'
-                                        ? 'bg-primary rounded-tr-none'
-                                        : `${cardBg} rounded-tl-none border ${borderColor}`
-                                        }`}>
-                                        <Text className={item.role === 'user' ? 'text-white' : textColor}>
+                                <View className={`mb-3 flex-row ${item.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                    {item.role === 'bot' && (
+                                        <View style={{
+                                            width: 32,
+                                            height: 32,
+                                            borderRadius: 16,
+                                            backgroundColor: '#10B981',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            marginRight: 8,
+                                            marginTop: 4
+                                        }}>
+                                            <Ionicons name="sparkles" size={16} color="white" />
+                                        </View>
+                                    )}
+                                    <View style={{
+                                        maxWidth: '75%',
+                                        borderRadius: 20,
+                                        padding: 14,
+                                        backgroundColor: item.role === 'user' ? '#10B981' : (isDark ? '#1E293B' : 'white'),
+                                        shadowColor: '#000',
+                                        shadowOffset: { width: 0, height: 1 },
+                                        shadowOpacity: item.role === 'user' ? 0.2 : 0.05,
+                                        shadowRadius: 4,
+                                        elevation: 2,
+                                        ...(item.role === 'user' ? { borderTopRightRadius: 6 } : { borderTopLeftRadius: 6 })
+                                    }}>
+                                        <Text style={{
+                                            color: item.role === 'user' ? 'white' : (isDark ? '#F1F5F9' : '#1E293B'),
+                                            fontSize: 15,
+                                            lineHeight: 22,
+                                            fontFamily: 'VisbyRound-Regular'
+                                        }}>
                                             {item.content}
                                         </Text>
                                     </View>
@@ -389,26 +474,60 @@ export default function CreateBookingScreen({ route, navigation }: any) {
                         />
 
                         {/* Input Area */}
-                        <View className={`p-4 border-t ${borderColor} ${cardBg} pb-8`}>
-                            <View className="flex-row items-center">
+                        <View style={{
+                            paddingHorizontal: 16,
+                            paddingTop: 12,
+                            paddingBottom: Math.max(insets.bottom + 8, 20),
+                            backgroundColor: isDark ? '#0F172A' : '#F8FAFC',
+                            borderTopWidth: 1,
+                            borderTopColor: isDark ? '#1E293B' : '#E2E8F0',
+                        }}>
+                            <View style={{
+                                flexDirection: 'row',
+                                alignItems: 'flex-end',
+                                backgroundColor: isDark ? '#1E293B' : 'white',
+                                borderRadius: 24,
+                                paddingHorizontal: 16,
+                                paddingVertical: 8,
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.08,
+                                shadowRadius: 8,
+                                elevation: 3,
+                            }}>
                                 <TextInput
-                                    className={`flex-1 ${inputBg} rounded-full px-4 py-3 mr-2 ${textColor}`}
+                                    style={{
+                                        flex: 1,
+                                        color: isDark ? '#F1F5F9' : '#1E293B',
+                                        fontSize: 15,
+                                        maxHeight: 100,
+                                        paddingVertical: 8,
+                                        paddingRight: 8
+                                    }}
                                     placeholder="Ask about rules, parking, etc..."
-                                    placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
+                                    placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
                                     value={chatQuery}
                                     onChangeText={setChatQuery}
                                     onSubmitEditing={handleAskAI}
+                                    multiline
                                 />
                                 <TouchableOpacity
                                     onPress={handleAskAI}
                                     disabled={chatLoading || !chatQuery.trim()}
-                                    className={`w-12 h-12 rounded-full items-center justify-center ${chatLoading || !chatQuery.trim() ? 'bg-gray-300 dark:bg-gray-700' : 'bg-primary'
-                                        }`}
+                                    style={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: 20,
+                                        backgroundColor: (chatLoading || !chatQuery.trim()) ? '#94A3B8' : '#10B981',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        marginLeft: 8
+                                    }}
                                 >
                                     {chatLoading ? (
                                         <ActivityIndicator color="white" size="small" />
                                     ) : (
-                                        <Ionicons name="send" size={20} color="white" />
+                                        <Ionicons name="send" size={18} color="white" />
                                     )}
                                 </TouchableOpacity>
                             </View>

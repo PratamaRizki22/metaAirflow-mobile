@@ -19,6 +19,18 @@ import { ErrorBoundary, OfflineBanner, ModeSwitchSplash } from './components/com
 import { useNetwork } from './hooks';
 
 import './global.css';
+import { Text, TextInput } from 'react-native';
+
+const setGlobalFont = () => {
+  const oldTextRender = (Text as any).render;
+  (Text as any).defaultProps = (Text as any).defaultProps || {};
+  (Text as any).defaultProps.style = [{ fontFamily: 'VisbyRound-Regular' }, (Text as any).defaultProps.style];
+
+  (TextInput as any).defaultProps = (TextInput as any).defaultProps || {};
+  (TextInput as any).defaultProps.style = [{ fontFamily: 'VisbyRound-Regular' }, (TextInput as any).defaultProps.style];
+};
+
+setGlobalFont();
 
 function AppContent() {
   const { isDark } = useTheme();

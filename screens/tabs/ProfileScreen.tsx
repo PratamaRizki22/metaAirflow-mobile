@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Modal, ViewStyle, RefreshControl, Alert } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMode } from '../../contexts/ModeContext';
 import { AuthFlowScreen } from '../auth/AuthFlowScreen';
 import { useThemeColors } from '../../hooks';
+import { Button, TabBarBottomSpacer } from '../../components/common';
 
 type Language = 'id' | 'en';
 type ThemeOption = 'light' | 'dark';
@@ -17,6 +19,7 @@ const CARD_STYLE: ViewStyle = {
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderRadius: 12,
 };
 
 // Radio Button Component
@@ -38,7 +41,12 @@ export function ProfileScreen({ navigation }: any) {
     const onRefresh = async () => {
         setRefreshing(true);
         try {
-            await refreshProfile();
+            if (isLoggedIn) {
+                await refreshProfile();
+            } else {
+                // Determine if we should try to restore session or just wait
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
         } catch (error) {
             console.error('Refresh failed:', error);
         } finally {
@@ -132,24 +140,27 @@ export function ProfileScreen({ navigation }: any) {
                                 </View>
 
                                 {/* Edit Profile Button */}
-                                <TouchableOpacity
-                                    onPress={() => navigation.navigate('EditProfile')}
-                                    className="bg-primary rounded-xl py-3 mb-2"
-                                >
-                                    <Text className="text-white text-center font-semibold">
+                                <View className="mb-2">
+                                    <Button
+                                        onPress={() => navigation.navigate('EditProfile')}
+                                        variant="primary"
+                                        fullWidth
+                                    >
                                         Edit Profile
-                                    </Text>
-                                </TouchableOpacity>
+                                    </Button>
+                                </View>
 
                                 {/* Logout Button */}
-                                <TouchableOpacity
-                                    onPress={handleLogout}
-                                    className="bg-error-light rounded-xl py-3"
-                                >
-                                    <Text className="text-white text-center font-semibold">
-                                        Logout
-                                    </Text>
-                                </TouchableOpacity>
+                                <View>
+                                    <Button
+                                        onPress={handleLogout}
+                                        variant="secondary"
+                                        fullWidth
+                                        className="bg-red-500"
+                                    >
+                                        <Text className="text-white">Logout</Text>
+                                    </Button>
+                                </View>
                             </View>
                         </>
                     ) : (
@@ -164,22 +175,24 @@ export function ProfileScreen({ navigation }: any) {
                                 <Text className="text-base mb-4" style={{ color: textSecondaryColor }}>
                                     Sign in to save favorites, post properties, and more
                                 </Text>
-                                <TouchableOpacity
-                                    onPress={() => setShowAuthModal(true)}
-                                    className="bg-primary rounded-xl py-3 mb-3"
-                                >
-                                    <Text className="text-white text-center font-semibold">
+                                <View className="mb-3">
+                                    <Button
+                                        onPress={() => setShowAuthModal(true)}
+                                        variant="primary"
+                                        fullWidth
+                                    >
                                         Create Account
-                                    </Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    onPress={() => setShowAuthModal(true)}
-                                    className="border-2 border-primary rounded-xl py-3"
-                                >
-                                    <Text className="text-primary text-center font-semibold">
+                                    </Button>
+                                </View>
+                                <View>
+                                    <Button
+                                        onPress={() => setShowAuthModal(true)}
+                                        variant="outline"
+                                        fullWidth
+                                    >
                                         Sign In
-                                    </Text>
-                                </TouchableOpacity>
+                                    </Button>
+                                </View>
                             </View>
                         </>
                     )}
@@ -225,14 +238,13 @@ export function ProfileScreen({ navigation }: any) {
                             <Text className="text-text-secondary-light dark:text-text-secondary-dark mb-3">
                                 Mulai menyewakan properti Anda dan dapatkan penghasilan tambahan
                             </Text>
-                            <TouchableOpacity
+                            <Button
                                 onPress={() => (navigation as any).navigate('BecomeHost')}
-                                className="bg-primary rounded-xl py-3"
+                                variant="primary"
+                                fullWidth
                             >
-                                <Text className="text-white text-center font-semibold">
-                                    Mulai Sekarang
-                                </Text>
-                            </TouchableOpacity>
+                                Mulai Sekarang
+                            </Button>
                         </View>
                     </View>
                 )}
@@ -287,33 +299,37 @@ export function ProfileScreen({ navigation }: any) {
                                 // Mode switch will automatically update the tab navigator
                                 // No need to navigate manually
                             }}
-                            className="p-4 rounded-2xl"
-                            style={{
-                                backgroundColor: isDark ? '#1E40AF' : '#3B82F6',
-                                ...CARD_STYLE
-                            }}
+                            activeOpacity={0.8}
                         >
-                            <View className="flex-row items-center justify-between">
-                                <View className="flex-1">
-                                    <View className="flex-row items-center mb-1">
-                                        <Ionicons
-                                            name="swap-horizontal"
-                                            size={22}
-                                            color="#FFFFFF"
-                                            style={{ marginRight: 12 }}
-                                        />
-                                        <Text className="text-white text-base font-semibold">
-                                            Beralih ke Mode {isTenantMode ? 'Landlord' : 'Tenant'}
+                            <LinearGradient
+                                colors={isTenantMode ? ['#10B981', '#059669'] : ['#6366F1', '#8B5CF6']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                className="p-4 rounded-xl"
+                                style={CARD_STYLE}
+                            >
+                                <View className="flex-row items-center justify-between">
+                                    <View className="flex-1">
+                                        <View className="flex-row items-center mb-1">
+                                            <Ionicons
+                                                name="swap-horizontal"
+                                                size={22}
+                                                color="#FFFFFF"
+                                                style={{ marginRight: 12 }}
+                                            />
+                                            <Text className="text-white text-base font-semibold">
+                                                Beralih ke Mode {isTenantMode ? 'Landlord' : 'Tenant'}
+                                            </Text>
+                                        </View>
+                                        <Text className="text-white/80 text-sm ml-8">
+                                            {isTenantMode
+                                                ? 'Kelola properti yang Anda sewakan'
+                                                : 'Cari properti untuk disewa'}
                                         </Text>
                                     </View>
-                                    <Text className="text-white/80 text-sm ml-8">
-                                        {isTenantMode
-                                            ? 'Kelola properti yang Anda sewakan'
-                                            : 'Cari properti untuk disewa'}
-                                    </Text>
+                                    <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
                                 </View>
-                                <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-                            </View>
+                            </LinearGradient>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -380,7 +396,7 @@ export function ProfileScreen({ navigation }: any) {
                 </View>
 
                 {/* Bottom padding for tab bar */}
-                <View style={{ height: 100 }} />
+                <TabBarBottomSpacer />
             </ScrollView>
 
             {/* Language Modal */}

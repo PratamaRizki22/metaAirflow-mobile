@@ -1,3 +1,26 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  /* Map Tailwind font-bold to VisbyRound-Bold */
+  .font-bold {
+    font-family: 'VisbyRound-Bold' !important;
+    font-weight: normal !important; /* Reset fontWeight to avoid conflict */
+  }
+  
+  /* Map other font weights */
+  .font-semibold {
+    font-family: 'VisbyRound-DemiBold' !important;
+    font-weight: normal !important;
+  }
+  
+  .font-medium {
+    font-family: 'VisbyRound-Medium' !important;
+    font-weight: normal !important;
+  }
+  
+  .font-normal {
+    font-family: 'VisbyRound-Regular' !important;
+  }
+}

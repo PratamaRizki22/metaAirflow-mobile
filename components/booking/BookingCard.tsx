@@ -87,16 +87,19 @@ export function BookingCard({ booking, onPress, showDate = false, showPayButton 
                     </View>
                 </View>
 
-                <View className={`px-2.5 py-1 rounded-full ${paymentColors.bg} flex-row items-center gap-1`}>
-                    <Ionicons
-                        name={paymentColors.icon as any}
-                        size={12}
-                        color={paymentColors.text.replace('text-', '#')}
-                    />
-                    <Text className={`text-xs font-medium ${paymentColors.text} capitalize`}>
-                        {booking.paymentStatus}
-                    </Text>
-                </View>
+                {/* Only show payment status badge if booking is APPROVED */}
+                {booking.status === 'APPROVED' && (
+                    <View className={`px-2.5 py-1 rounded-full ${paymentColors.bg} flex-row items-center gap-1`}>
+                        <Ionicons
+                            name={paymentColors.icon as any}
+                            size={12}
+                            color={paymentColors.text.replace('text-', '#')}
+                        />
+                        <Text className={`text-xs font-medium ${paymentColors.text} capitalize`}>
+                            {booking.paymentStatus}
+                        </Text>
+                    </View>
+                )}
             </View>
 
             {(showPayButton && canPay && onPayPress) && (

@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
+import { View, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { propertyService, reviewService } from '../../services';
 import { useThemeColors } from '../../hooks';
-import { LoadingState, EmptyState, useCustomAlert, Button } from '../../components/common';
+import { LoadingState, EmptyState, useCustomAlert, Button, Text, TabBarBottomSpacer } from '../../components/common';
 import { StarRating } from '../../components/review';
 
 export default function ManagePropertiesScreen({ navigation }: any) {
@@ -112,7 +112,10 @@ export default function ManagePropertiesScreen({ navigation }: any) {
             >
                 {/* Title & Status */}
                 <View className="flex-row justify-between items-start mb-3">
-                    <Text className={`text-lg font-bold flex-1 mr-2 ${textColor}`}>
+                    <Text
+                        className={`text-lg flex-1 mr-2 ${textColor}`}
+                        style={{ fontFamily: 'VisbyRound-Bold' }}
+                    >
                         {item.title}
                     </Text>
                     {getStatusBadge(item.status)}
@@ -129,7 +132,10 @@ export default function ManagePropertiesScreen({ navigation }: any) {
                 {/* Price */}
                 <View className="bg-primary/10 px-4 py-3 rounded-xl mb-3">
                     <Text className={`text-xs ${secondaryTextColor} mb-1`}>Monthly Rent</Text>
-                    <Text className="text-primary text-2xl font-bold">
+                    <Text
+                        className="text-primary text-2xl"
+                        style={{ fontFamily: 'VisbyRound-Bold' }}
+                    >
                         RM {item.price.toLocaleString()}
                     </Text>
                 </View>
@@ -190,7 +196,7 @@ export default function ManagePropertiesScreen({ navigation }: any) {
                         onPress={() => navigation.navigate('EditProperty', { propertyId: item.id })}
                         variant="primary"
                         size="sm"
-                        className="flex-1 bg-success-light"
+                        className="flex-1"
                     >
                         Edit
                     </Button>
@@ -212,13 +218,20 @@ export default function ManagePropertiesScreen({ navigation }: any) {
 
     return (
         <View className={`flex-1 ${bgColor}`}>
-            <ScrollView className="flex-1 px-6 pt-16">
-                <Text className={`text-3xl font-bold mb-2 ${textColor}`}>
-                    My Properties
-                </Text>
-                <Text className="text-text-secondary-light dark:text-text-secondary-dark mb-6">
-                    Manage your rental listings
-                </Text>
+            <ScrollView className="flex-1">
+                <View className="px-6 pt-16 pb-6">
+                    {/* Header */}
+                    <Text
+                        className={`text-3xl mb-2 ${textColor}`}
+                        style={{ fontFamily: 'VisbyRound-Bold' }}
+                    >
+                        My Properties
+                    </Text>
+                    <Text className="text-text-secondary-light dark:text-text-secondary-dark mb-6">
+                        Manage your rental listings
+                    </Text>
+                </View>
+
 
                 {loading ? (
                     <LoadingState message="Loading your properties..." />
@@ -233,15 +246,15 @@ export default function ManagePropertiesScreen({ navigation }: any) {
                         />
                     </View>
                 ) : (
-                    <>
+                    <View className="px-6">
                         {properties.map((item, index) => (
                             <PropertyCardWithRating key={item.id} item={item} index={index} />
                         ))}
-                    </>
+                    </View>
                 )}
 
                 {/* Bottom padding for tab bar */}
-                <View style={{ height: 100 }} />
+                <TabBarBottomSpacer />
             </ScrollView>
 
             {/* Custom Alert */}

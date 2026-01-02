@@ -122,28 +122,6 @@ export function FilterBar({
                     )}
                 </TouchableOpacity>
 
-                {/* More Filters Chip */}
-                <TouchableOpacity
-                    onPress={onShowAdvanced}
-                    className={`flex-row items-center px-4 py-2.5 rounded-full border ${getFilterChipStyle(Object.keys(searchFilters).length > 0)}`}
-                >
-                    <Ionicons
-                        name="options-outline"
-                        size={18}
-                        color={getIconColor(Object.keys(searchFilters).length > 0)}
-                    />
-                    <Text className={`ml-1.5 font-medium text-sm ${getTextColor(Object.keys(searchFilters).length > 0)}`}>
-                        More Filters
-                    </Text>
-                    {Object.keys(searchFilters).length > 0 && (
-                        <View className="ml-1.5 px-1.5 py-0.5 bg-primary rounded-full">
-                            <Text className="text-white text-xs font-bold">
-                                {Object.keys(searchFilters).length}
-                            </Text>
-                        </View>
-                    )}
-                </TouchableOpacity>
-
                 {/* Clear All Filters Button */}
                 {hasActiveFilters && (
                     <TouchableOpacity

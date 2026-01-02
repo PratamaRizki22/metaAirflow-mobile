@@ -9,6 +9,8 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
+    // Add retry configuration
+    validateStatus: (status) => status < 500, // Don't throw for 4xx errors
 });
 
 // Request interceptor - untuk menambahkan token ke setiap request
@@ -56,7 +58,8 @@ api.interceptors.response.use(
         const originalRequest = error.config;
 
         // If error is 401 and we haven't tried to refresh yet
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // blocking infinite loop if refresh-token itself returns 401
+        if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('refresh-token')) {
             if (isRefreshing) {
                 // If already refreshing, queue this request
                 return new Promise((resolve, reject) => {

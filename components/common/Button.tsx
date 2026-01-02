@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
 
 interface ButtonProps {
@@ -60,6 +61,51 @@ export function Button({
         lg: 'text-lg',
     };
 
+    const content = (
+        <>
+            {loading ? (
+                <ActivityIndicator color={variant === 'outline' ? '#10A0F7' : '#FFFFFF'} />
+            ) : (
+                <Text className={`${textColorStyles[variant]} ${textSizeStyles[size]} font-semibold`}>
+                    {children}
+                </Text>
+            )}
+        </>
+    );
+
+    if (variant === 'primary' && !disabled && !loading) {
+        return (
+            <TouchableOpacity
+                onPress={onPress}
+                disabled={disabled || loading}
+                className={`${fullWidth ? 'w-full' : ''} ${className}`}
+                style={{
+                    borderRadius: 9999, // rounded-full equivalent
+                    overflow: 'hidden', // IMPORTANT: clip children
+                    shadowColor: '#10A0F7',
+                    shadowOffset: { width: 4, height: 4 },
+                    shadowOpacity: 0.4,
+                    shadowRadius: 12,
+                    elevation: 5,
+                }}
+            >
+                <LinearGradient
+                    colors={['#10A0F7', '#01E8AD']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    className={`
+                        ${sizeStyles[size]}
+                        ${fullWidth ? 'w-full' : ''}
+                        items-center
+                        justify-center
+                    `}
+                >
+                    {content}
+                </LinearGradient>
+            </TouchableOpacity>
+        );
+    }
+
     return (
         <TouchableOpacity
             onPress={onPress}
@@ -68,26 +114,21 @@ export function Button({
                 ${variantStyles[variant]}
                 ${sizeStyles[size]}
                 ${fullWidth ? 'w-full' : ''}
-                rounded-xl
+                rounded-full
                 items-center
                 justify-center
                 ${className}
             `}
             style={{
-                shadowColor: variant === 'primary' || variant === 'danger' ? '#000' : 'transparent',
+                borderRadius: 9999, // rounded-full equivalent
+                shadowColor: variant === 'danger' ? '#ef4444' : '#000',
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.1,
                 shadowRadius: 4,
-                elevation: variant === 'primary' || variant === 'danger' ? 2 : 0,
+                elevation: variant === 'danger' ? 2 : 0,
             }}
         >
-            {loading ? (
-                <ActivityIndicator color={variant === 'outline' ? '#00D9A3' : '#FFFFFF'} />
-            ) : (
-                <Text className={`${textColorStyles[variant]} ${textSizeStyles[size]} font-semibold`}>
-                    {children}
-                </Text>
-            )}
+            {content}
         </TouchableOpacity>
     );
 }

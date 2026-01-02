@@ -222,8 +222,8 @@ export function RegisterScreen({ email, onRegisterSuccess, onBack }: RegisterScr
                                     <View className="relative">
                                         <TextInput
                                             className={`bg-white border ${fieldErrors.phone ? 'border-red-500' : 'border-[#94a3b8]'
-                                                } rounded-md pl-16 pr-4 py-3 text-[#64748b]`}
-                                            placeholder="812-2182-1821"
+                                                } rounded-md px-4 py-3 text-[#64748b]`}
+                                            placeholder="+62 812 3456 7890"
                                             placeholderTextColor="#64748b"
                                             value={phone}
                                             onChangeText={(text) => {
@@ -233,9 +233,6 @@ export function RegisterScreen({ email, onRegisterSuccess, onBack }: RegisterScr
                                             keyboardType="phone-pad"
                                             editable={!isLoading}
                                         />
-                                        <View className="absolute left-0 top-0 bottom-0 w-10 bg-[#cbd5e199] items-center justify-center rounded-l-md">
-                                            <Text className="text-sm text-[#64748b]">+60</Text>
-                                        </View>
                                     </View>
                                 </View>
 

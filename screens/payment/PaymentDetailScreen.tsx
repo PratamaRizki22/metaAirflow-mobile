@@ -42,7 +42,7 @@ const STATUS_CONFIG = {
 };
 
 export default function PaymentDetailScreen({ route, navigation }: any) {
-    const { paymentId } = route.params;
+    const { paymentId } = route.params || {};
     const { bgColor, textColor, cardBg, isDark } = useThemeColors();
     const [payment, setPayment] = useState<Payment | null>(null);
     const [loading, setLoading] = useState(true);
@@ -50,6 +50,11 @@ export default function PaymentDetailScreen({ route, navigation }: any) {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        if (!paymentId) {
+            setError('Payment ID is required');
+            setLoading(false);
+            return;
+        }
         loadPaymentDetails();
     }, [paymentId]);
 
@@ -57,9 +62,12 @@ export default function PaymentDetailScreen({ route, navigation }: any) {
         try {
             setLoading(true);
             setError(null);
+            console.log('Loading payment details for ID:', paymentId);
             const response = await stripeService.getPaymentDetails(paymentId);
+            console.log('Payment details response:', response);
             setPayment(response);
         } catch (err: any) {
+            console.error('Payment details error:', err);
             setError(err.message || 'Failed to load payment details');
         } finally {
             setLoading(false);

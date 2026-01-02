@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
+import { View, ActivityIndicator, Text } from 'react-native';
 import { useThemeColors } from '../../hooks';
+import { Button } from './Button';
 
 interface LoadingStateProps {
     message?: string;
@@ -49,12 +50,14 @@ export function EmptyState({ icon, title, message, actionLabel, onAction }: Empt
                 <Text className={`mt-2 text-center ${secondaryTextColor}`}>{message}</Text>
             )}
             {actionLabel && onAction && (
-                <TouchableOpacity
-                    onPress={onAction}
-                    className="mt-6 bg-primary px-6 py-3 rounded-xl"
-                >
-                    <Text className="text-white font-semibold">{actionLabel}</Text>
-                </TouchableOpacity>
+                <View className="mt-6">
+                    <Button
+                        onPress={onAction}
+                        variant="primary"
+                    >
+                        {actionLabel}
+                    </Button>
+                </View>
             )}
         </View>
     );
@@ -79,7 +82,6 @@ export function ErrorState({
 }: ErrorStateProps) {
     const { bgColor, textColor, secondaryTextColor } = useThemeColors();
     const Ionicons = require('@expo/vector-icons').Ionicons;
-    const { TouchableOpacity } = require('react-native');
 
     return (
         <View className={`flex-1 ${bgColor} items-center justify-center px-6`}>
@@ -87,12 +89,14 @@ export function ErrorState({
             <Text className={`text-xl font-bold mt-4 text-center ${textColor}`}>{title}</Text>
             <Text className={`mt-2 text-center ${secondaryTextColor}`}>{message}</Text>
             {onAction && (
-                <TouchableOpacity
-                    onPress={onAction}
-                    className="mt-6 bg-primary px-6 py-3 rounded-xl"
-                >
-                    <Text className="text-white font-semibold">{actionLabel}</Text>
-                </TouchableOpacity>
+                <View className="mt-6">
+                    <Button
+                        onPress={onAction}
+                        variant="primary"
+                    >
+                        {actionLabel}
+                    </Button>
+                </View>
             )}
         </View>
     );

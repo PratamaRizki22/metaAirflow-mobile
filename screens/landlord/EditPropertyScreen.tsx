@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, ScrollView, Alert, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TextInput, ScrollView, Alert, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import MapLibreGL from '@maplibre/maplibre-react-native';
 import { MAPTILER_API_KEY } from '@env';
 import { propertyService, uploadService } from '../../services';
-import { ImagePickerSection, FormInput, Toast } from '../../components/common';
+import { ImagePickerSection, FormInput, Toast, Button } from '../../components/common';
 import { useToast } from '../../hooks/useToast';
 
 export default function EditPropertyScreen({ route, navigation }: any) {
@@ -319,7 +319,7 @@ export default function EditPropertyScreen({ route, navigation }: any) {
 
                 {/* Price */}
                 <FormInput
-                    label="Monthly Price (IDR)"
+                    label="Monthly Price (MYR)"
                     required
                     placeholder="e.g., 5000000"
                     value={formData.price}
@@ -424,19 +424,23 @@ export default function EditPropertyScreen({ route, navigation }: any) {
 
                 {/* Submit Button */}
                 <Button
-                    title={updating ? 'Updating...' : 'Update Property'}
                     onPress={handleSubmit}
                     disabled={updating}
-                    color="#34C759"
-                />
+                    variant="primary"
+                    fullWidth
+                >
+                    {updating ? 'Updating...' : 'Update Property'}
+                </Button>
 
                 <View style={{ height: 20 }} />
 
                 <Button
-                    title="Cancel"
                     onPress={() => navigation.goBack()}
-                    color="#999"
-                />
+                    variant="outline"
+                    fullWidth
+                >
+                    Cancel
+                </Button>
 
                 <View style={{ height: 40 }} />
             </ScrollView>

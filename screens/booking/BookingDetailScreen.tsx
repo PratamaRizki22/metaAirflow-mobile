@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking, Modal, TextInput, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { bookingService, reviewService, stripeService, agreementService } from '../../services';
 import { useToast } from '../../hooks/useToast';
-import { Toast } from '../../components/common';
+import { Toast, Button } from '../../components/common';
 import { LinearGradient } from 'expo-linear-gradient';
 import { RefundModal } from '../../components/booking/RefundModal';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -18,6 +19,7 @@ export default function BookingDetailScreen({ route, navigation }: any) {
     const [refundEligibility, setRefundEligibility] = useState<{ eligible: boolean; daysRemaining: number }>({ eligible: false, daysRemaining: 0 });
     const { toast, showToast, hideToast } = useToast();
     const { isDark } = useTheme();
+    const insets = useSafeAreaInsets();
 
     // AI Chatbot states
     const [showAIChatbot, setShowAIChatbot] = useState(false);
@@ -365,15 +367,15 @@ For full agreement details, please refer to the PDF document.`;
                     </Text>
 
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                        <Text>Rp {booking.property?.price?.toLocaleString()} x {nights} nights</Text>
-                        <Text>Rp {(booking.property?.price * nights)?.toLocaleString()}</Text>
+                        <Text>RM {booking.property?.price?.toLocaleString()} x {nights} nights</Text>
+                        <Text>RM {(booking.property?.price * nights)?.toLocaleString()}</Text>
                     </View>
 
                     <View style={{ borderTopWidth: 1, borderColor: '#E5E5E5', marginTop: 8, paddingTop: 8 }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                             <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Total</Text>
                             <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007AFF' }}>
-                                Rp {booking.totalPrice?.toLocaleString()}
+                                RM {booking.totalPrice?.toLocaleString()}
                             </Text>
                         </View>
                     </View>
@@ -453,32 +455,17 @@ For full agreement details, please refer to the PDF document.`;
                 {/* Write Review Button (for completed bookings) */}
                 {booking.status === 'COMPLETED' && canReview && (
                     <View style={{ marginTop: 16 }}>
-                        <TouchableOpacity
+                        <Button
                             onPress={() => navigation.navigate('WriteReview', {
                                 leaseId: bookingId,
                                 propertyId: booking.property.id,
                                 propertyTitle: booking.property.title
                             })}
-                            activeOpacity={0.8}
+                            variant="primary"
+                            fullWidth
                         >
-                            <LinearGradient
-                                colors={['#00D9A3', '#00B87C']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={{
-                                    padding: 16,
-                                    borderRadius: 12,
-                                    flexDirection: 'row',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}
-                            >
-                                <Ionicons name="star" size={20} color="white" />
-                                <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 8, fontSize: 16 }}>
-                                    Write a Review
-                                </Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
+                            Write a Review
+                        </Button>
                     </View>
                 )}
 
@@ -502,32 +489,17 @@ For full agreement details, please refer to the PDF document.`;
                 {/* Pay Now Button (for APPROVED bookings not yet paid) */}
                 {booking.status === 'APPROVED' && booking.paymentStatus === 'pending' && !booking.isOwner && (
                     <View style={{ marginTop: 16 }}>
-                        <TouchableOpacity
+                        <Button
                             onPress={() => navigation.navigate('Payment', {
                                 bookingId: booking.id,
                                 amount: booking.totalPrice,
                                 propertyTitle: booking.property?.title
                             })}
-                            activeOpacity={0.8}
+                            variant="primary"
+                            fullWidth
                         >
-                            <LinearGradient
-                                colors={['#6366F1', '#4F46E5']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={{
-                                    padding: 16,
-                                    borderRadius: 12,
-                                    flexDirection: 'row',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}
-                            >
-                                <Ionicons name="card" size={20} color="white" />
-                                <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 8, fontSize: 16 }}>
-                                    Pay Now - RM {booking.totalPrice?.toLocaleString()}
-                                </Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
+                            Pay Now - RM {booking.totalPrice?.toLocaleString()}
+                        </Button>
                     </View>
                 )}
 
@@ -691,41 +663,97 @@ For full agreement details, please refer to the PDF document.`;
             >
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                    style={{ flex: 1, backgroundColor: isDark ? '#1F2937' : '#F5F5F5' }}
+                    style={{ flex: 1, backgroundColor: isDark ? '#0F172A' : '#F8FAFC' }}
                 >
                     <View style={{ flex: 1 }}>
-                        {/* Header */}
-                        <View style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: 16,
-                            borderBottomWidth: 1,
-                            borderBottomColor: isDark ? '#374151' : '#E5E5E5',
-                            backgroundColor: isDark ? '#111827' : 'white'
-                        }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Ionicons name="chatbubbles" size={24} color="#10B981" />
-                                <Text style={{
-                                    fontSize: 18,
-                                    fontWeight: 'bold',
-                                    marginLeft: 8,
-                                    color: isDark ? 'white' : 'black'
-                                }}>
-                                    AI Agreement Assistant
-                                </Text>
+                        {/* Gradient Header */}
+                        <LinearGradient
+                            colors={['#10B981', '#059669']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={{
+                                paddingTop: insets.top + 16,
+                                paddingHorizontal: 20,
+                                paddingBottom: 20,
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 8,
+                                elevation: 4,
+                            }}
+                        >
+                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                                    <View style={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: 20,
+                                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        marginRight: 12
+                                    }}>
+                                        <Ionicons name="sparkles" size={22} color="#FFF" />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{
+                                            fontSize: 20,
+                                            fontWeight: 'bold',
+                                            fontFamily: 'VisbyRound-Bold',
+                                            color: 'white',
+                                            marginBottom: 2
+                                        }}>
+                                            AI Assistant
+                                        </Text>
+                                        <Text style={{
+                                            fontSize: 13,
+                                            fontFamily: 'VisbyRound-Regular',
+                                            color: 'rgba(255, 255, 255, 0.9)'
+                                        }}>
+                                            Ask me anything about your agreement
+                                        </Text>
+                                    </View>
+                                </View>
+                                <TouchableOpacity
+                                    onPress={() => setShowAIChatbot(false)}
+                                    style={{
+                                        width: 36,
+                                        height: 36,
+                                        borderRadius: 18,
+                                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                >
+                                    <Ionicons name="close" size={22} color="white" />
+                                </TouchableOpacity>
                             </View>
-                            <TouchableOpacity onPress={() => setShowAIChatbot(false)} style={{ padding: 8 }}>
-                                <Ionicons name="close" size={24} color={isDark ? 'white' : 'black'} />
-                            </TouchableOpacity>
-                        </View>
+                        </LinearGradient>
 
                         {/* Loading Indicator */}
                         {aiAnalysisLoading && (
-                            <View style={{ padding: 16, alignItems: 'center' }}>
+                            <View style={{
+                                padding: 24,
+                                alignItems: 'center',
+                                backgroundColor: isDark ? '#1E293B' : 'white',
+                                marginHorizontal: 16,
+                                marginTop: 16,
+                                borderRadius: 16,
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.05,
+                                shadowRadius: 8,
+                                elevation: 2,
+                            }}>
                                 <ActivityIndicator size="large" color="#10B981" />
-                                <Text style={{ marginTop: 8, color: isDark ? '#9CA3AF' : '#666' }}>
-                                    Analyzing agreement...
+                                <Text style={{
+                                    marginTop: 12,
+                                    color: isDark ? '#94A3B8' : '#64748B',
+                                    fontSize: 15,
+                                    fontWeight: '500',
+                                    fontFamily: 'VisbyRound-Medium'
+                                }}>
+                                    Analyzing your agreement...
                                 </Text>
                             </View>
                         )}
@@ -734,28 +762,53 @@ For full agreement details, please refer to the PDF document.`;
                         <FlatList
                             data={chatHistory}
                             keyExtractor={(_, index) => index.toString()}
-                            contentContainerStyle={{ padding: 16 }}
+                            contentContainerStyle={{
+                                padding: 16,
+                                paddingBottom: 8
+                            }}
                             renderItem={({ item }) => (
                                 <View style={{
-                                    marginBottom: 16,
+                                    marginBottom: 12,
                                     flexDirection: 'row',
                                     justifyContent: item.role === 'user' ? 'flex-end' : 'flex-start'
                                 }}>
+                                    {item.role === 'bot' && (
+                                        <View style={{
+                                            width: 32,
+                                            height: 32,
+                                            borderRadius: 16,
+                                            backgroundColor: '#10B981',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            marginRight: 8,
+                                            marginTop: 4
+                                        }}>
+                                            <Ionicons name="sparkles" size={16} color="white" />
+                                        </View>
+                                    )}
                                     <View style={{
-                                        maxWidth: '80%',
-                                        borderRadius: 16,
-                                        padding: 12,
+                                        maxWidth: '75%',
+                                        borderRadius: 20,
+                                        padding: 14,
                                         backgroundColor: item.role === 'user'
                                             ? '#10B981'
-                                            : (isDark ? '#374151' : 'white'),
-                                        borderWidth: item.role === 'bot' ? 1 : 0,
-                                        borderColor: isDark ? '#4B5563' : '#E5E5E5',
-                                        ...(item.role === 'user' ? { borderTopRightRadius: 4 } : { borderTopLeftRadius: 4 })
+                                            : (isDark ? '#1E293B' : 'white'),
+                                        shadowColor: '#000',
+                                        shadowOffset: { width: 0, height: 1 },
+                                        shadowOpacity: item.role === 'user' ? 0.2 : 0.05,
+                                        shadowRadius: 4,
+                                        elevation: 2,
+                                        ...(item.role === 'user' ? {
+                                            borderTopRightRadius: 6,
+                                        } : {
+                                            borderTopLeftRadius: 6,
+                                        })
                                     }}>
                                         <Text style={{
-                                            color: item.role === 'user' ? 'white' : (isDark ? 'white' : 'black'),
+                                            color: item.role === 'user' ? 'white' : (isDark ? '#F1F5F9' : '#1E293B'),
                                             fontSize: 15,
-                                            lineHeight: 22
+                                            lineHeight: 22,
+                                            fontFamily: 'VisbyRound-Regular'
                                         }}>
                                             {item.content}
                                         </Text>
@@ -766,26 +819,37 @@ For full agreement details, please refer to the PDF document.`;
 
                         {/* Input Area */}
                         <View style={{
-                            padding: 16,
+                            paddingHorizontal: 16,
+                            paddingTop: 12,
+                            paddingBottom: Math.max(insets.bottom + 8, 20),
+                            backgroundColor: isDark ? '#0F172A' : '#F8FAFC',
                             borderTopWidth: 1,
-                            borderTopColor: isDark ? '#374151' : '#E5E5E5',
-                            backgroundColor: isDark ? '#111827' : 'white',
-                            paddingBottom: Platform.OS === 'ios' ? 32 : 16
+                            borderTopColor: isDark ? '#1E293B' : '#E2E8F0',
                         }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <View style={{
+                                flexDirection: 'row',
+                                alignItems: 'flex-end',
+                                backgroundColor: isDark ? '#1E293B' : 'white',
+                                borderRadius: 24,
+                                paddingHorizontal: 16,
+                                paddingVertical: 8,
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.08,
+                                shadowRadius: 8,
+                                elevation: 3,
+                            }}>
                                 <TextInput
                                     style={{
                                         flex: 1,
-                                        backgroundColor: isDark ? '#374151' : '#F3F4F6',
-                                        borderRadius: 24,
-                                        paddingHorizontal: 16,
-                                        paddingVertical: 12,
-                                        marginRight: 8,
-                                        color: isDark ? 'white' : 'black',
-                                        fontSize: 15
+                                        color: isDark ? '#F1F5F9' : '#1E293B',
+                                        fontSize: 15,
+                                        maxHeight: 100,
+                                        paddingVertical: 8,
+                                        paddingRight: 8
                                     }}
                                     placeholder="Ask about your agreement..."
-                                    placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
+                                    placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
                                     value={chatQuery}
                                     onChangeText={setChatQuery}
                                     onSubmitEditing={handleAskAI}
@@ -796,18 +860,19 @@ For full agreement details, please refer to the PDF document.`;
                                     onPress={handleAskAI}
                                     disabled={chatLoading || !chatQuery.trim()}
                                     style={{
-                                        width: 48,
-                                        height: 48,
-                                        borderRadius: 24,
-                                        backgroundColor: (chatLoading || !chatQuery.trim()) ? '#9CA3AF' : '#10B981',
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: 20,
+                                        backgroundColor: (chatLoading || !chatQuery.trim()) ? '#94A3B8' : '#10B981',
                                         alignItems: 'center',
-                                        justifyContent: 'center'
+                                        justifyContent: 'center',
+                                        marginLeft: 8
                                     }}
                                 >
                                     {chatLoading ? (
                                         <ActivityIndicator color="white" size="small" />
                                     ) : (
-                                        <Ionicons name="send" size={20} color="white" />
+                                        <Ionicons name="send" size={18} color="white" />
                                     )}
                                 </TouchableOpacity>
                             </View>

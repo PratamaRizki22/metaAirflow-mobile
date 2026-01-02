@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { bookingService, reviewService, propertyService } from '../../services';
 import { useThemeColors } from '../../hooks';
 import { ReviewCard } from '../../components/review';
-import { LoadingState } from '../../components/common';
+import { LoadingState, TabBarBottomSpacer } from '../../components/common';
 import { BookingCard } from '../../components/booking';
 
 export function LandlordTodayScreen({ navigation }: any) {
@@ -23,6 +23,18 @@ export function LandlordTodayScreen({ navigation }: any) {
     const [refreshing, setRefreshing] = useState(false);
 
     const { bgColor, textColor, cardBg, isDark } = useThemeColors();
+
+    // Component lifecycle logging for memory management verification
+    useEffect(() => {
+        console.log('🟢 [LANDLORD MODE] LandlordTodayScreen MOUNTED - Memory allocated');
+
+        return () => {
+            console.log('🔴 [LANDLORD MODE] LandlordTodayScreen UNMOUNTED - Memory released');
+            console.log('   → Bookings data cleared from memory');
+            console.log('   → Stats data cleared from memory');
+            console.log('   → Reviews data cleared from memory');
+        };
+    }, []);
 
     useFocusEffect(
         useCallback(() => {
@@ -131,7 +143,10 @@ export function LandlordTodayScreen({ navigation }: any) {
         >
             <View className="px-6 pt-16 pb-6">
                 {/* Header */}
-                <Text className={`text-3xl font-bold mb-2 ${textColor}`}>
+                <Text
+                    className={`text-3xl mb-2 ${textColor}`}
+                    style={{ fontFamily: 'VisbyRound-Bold' }}
+                >
                     Today
                 </Text>
                 <Text className="text-text-secondary-light dark:text-text-secondary-dark mb-6">
@@ -149,7 +164,10 @@ export function LandlordTodayScreen({ navigation }: any) {
                         <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm mb-1">
                             Pending
                         </Text>
-                        <Text className={`text-2xl font-bold ${textColor}`}>
+                        <Text
+                            className={`text-2xl ${textColor}`}
+                            style={{ fontFamily: 'VisbyRound-Bold' }}
+                        >
                             {stats.pending}
                         </Text>
                     </View>
@@ -157,7 +175,10 @@ export function LandlordTodayScreen({ navigation }: any) {
                         <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm mb-1">
                             Approved
                         </Text>
-                        <Text className={`text-2xl font-bold ${textColor}`}>
+                        <Text
+                            className={`text-2xl ${textColor}`}
+                            style={{ fontFamily: 'VisbyRound-Bold' }}
+                        >
                             {stats.approved}
                         </Text>
                     </View>
@@ -166,12 +187,15 @@ export function LandlordTodayScreen({ navigation }: any) {
                 {/* Monthly Revenue Card */}
                 <View className={`${cardBg} p-4 rounded-2xl mb-6 border ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
                     <View className="flex-row items-center mb-2">
-                        <Ionicons name="cash-outline" size={20} color="#00D9A3" />
+                        <Ionicons name="cash-outline" size={20} color="#10A0F7" />
                         <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm ml-2">
                             Pendapatan Bulan Ini
                         </Text>
                     </View>
-                    <Text className={`text-3xl font-bold ${textColor}`}>
+                    <Text
+                        className={`text-3xl ${textColor}`}
+                        style={{ fontFamily: 'VisbyRound-Bold' }}
+                    >
                         RM {stats.revenue.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Text>
                     <Text className="text-text-secondary-light dark:text-text-secondary-dark text-xs mt-1">
@@ -180,7 +204,10 @@ export function LandlordTodayScreen({ navigation }: any) {
                 </View>
 
                 {/* Today's Bookings */}
-                <Text className={`text-xl font-bold mb-4 ${textColor}`}>
+                <Text
+                    className={`text-xl mb-4 ${textColor}`}
+                    style={{ fontFamily: 'VisbyRound-Bold' }}
+                >
                     Booking Hari Ini
                 </Text>
 
@@ -189,7 +216,7 @@ export function LandlordTodayScreen({ navigation }: any) {
                         <Ionicons
                             name="calendar-outline"
                             size={48}
-                            color={isDark ? '#9CA3AF' : '#6B7280'}
+                            color="#10A0F7"
                         />
                         <Text className="text-text-secondary-light dark:text-text-secondary-dark mt-4 text-center">
                             Tidak ada booking baru hari ini
@@ -237,6 +264,8 @@ export function LandlordTodayScreen({ navigation }: any) {
                     </View>
                 )}
 
+                {/* Bottom Padding */}
+                <TabBarBottomSpacer />
             </View>
         </ScrollView>
     );

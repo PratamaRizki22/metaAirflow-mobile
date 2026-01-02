@@ -151,7 +151,7 @@ export default function ExploreScreen({ navigation }: any) {
                             {item.city}, {item.state}
                         </Text>
                         <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007AFF' }}>
-                            Rp {item.price.toLocaleString()}/month
+                            RM {item.price.toLocaleString()}/month
                         </Text>
                         <Text style={{ color: '#666', marginTop: 5 }}>
                             {item.bedrooms} beds • {item.bathrooms} baths • {item.areaSqm} m²

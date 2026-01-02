@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useThemeColors } from '../../hooks';
+import { TabBarBottomSpacer } from '../../components/common';
 import { messageService, Conversation as ServiceConversation } from '../../services';
 
 interface Conversation {
@@ -141,7 +142,7 @@ export function MessagesScreen({ navigation }: any) {
 
                         {/* CTA Button */}
                         <TouchableOpacity
-                            onPress={() => navigation.navigate('Home')}
+                            onPress={() => navigation.navigate('Search')}
                             className="bg-primary px-8 py-4 rounded-xl"
                         >
                             <Text className="text-white font-semibold text-base">
@@ -269,6 +270,9 @@ export function MessagesScreen({ navigation }: any) {
                         ))}
                     </View>
                 )}
+
+                {/* Bottom Padding */}
+                <TabBarBottomSpacer />
             </View>
         </ScrollView>
     );

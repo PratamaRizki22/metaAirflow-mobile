@@ -5,7 +5,7 @@ import { useMode } from '../contexts/ModeContext';
 import { useAuth } from '../contexts/AuthContext';
 
 // Tenant Mode Screens
-import { HomeScreen } from '../screens/tabs/HomeScreen';
+import { SearchScreen } from '../screens/tabs/SearchScreen';
 import { MessagesScreen } from '../screens/tabs/MessagesScreen';
 import MyTripsScreen from '../screens/tenant/MyTripsScreen';
 import { FavoritesScreen } from '../screens/tabs/FavoritesScreen';
@@ -81,10 +81,10 @@ export function MainTabNavigator() {
             }}
         >
             <Tab.Screen
-                name="Home"
-                component={HomeScreen}
+                name="Search"
+                component={SearchScreen}
                 options={{
-                    tabBarLabel: 'Home',
+                    tabBarLabel: 'Search',
                 }}
             />
             <Tab.Screen

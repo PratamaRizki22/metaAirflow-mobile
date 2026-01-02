@@ -12,14 +12,15 @@ module.exports = {
       },
       colors: {
         // Primary Brand Colors
+        // Primary Brand Colors (New Blue-Green Gradient Theme)
         primary: {
-          DEFAULT: '#00D9A3', // Modern Green (Light Mode)
-          dark: '#00D9A3',    // Modern Green (Dark Mode)
-          hover: '#00B87C',   // Dark Green
-          'hover-dark': '#00F5B8', // Bright Green
+          DEFAULT: '#10A0F7', // Dominant Blue
+          dark: '#10A0F7',
+          hover: '#0E8AD6',
+          'hover-dark': '#40B9F9',
           gradient: {
-            start: '#00D9A3',
-            end: '#00B87C',
+            start: '#10A0F7',
+            end: '#01E8AD',
           },
         },
         secondary: {
@@ -62,8 +63,8 @@ module.exports = {
           light: '#E5E7EB',
           dark: '#334155',
           focus: {
-            light: '#00D9A3',
-            dark: '#00D9A3',
+            light: '#10A0F7',
+            dark: '#10A0F7',
           },
         },
 

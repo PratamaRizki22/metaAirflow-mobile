@@ -8,3 +8,4 @@ export {
 } from './FilterBottomSheet';
 export { SortDropdown } from './SortDropdown';
 export { FilterBar } from './FilterBar';
+export { RecentSearchesCard } from './RecentSearchesCard';

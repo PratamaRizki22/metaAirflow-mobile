@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeColors } from '../../hooks';
 import { StarRating } from '../../components/review';
+import { Button } from '../../components/common';
 import { reviewService } from '../../services';
 
 export default function WriteReviewScreen({ route, navigation }: any) {
@@ -142,32 +143,25 @@ export default function WriteReviewScreen({ route, navigation }: any) {
                     </View>
 
                     {/* Submit Button */}
-                    <TouchableOpacity
-                        onPress={handleSubmit}
-                        disabled={submitting || rating === 0}
-                        activeOpacity={0.8}
-                        className="mb-3"
-                    >
-                        <LinearGradient
-                            colors={rating === 0 ? ['#9CA3AF', '#9CA3AF'] : ['#00D9A3', '#00B87C']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            className="py-4 rounded-xl items-center"
+                    <View className="mb-3">
+                        <Button
+                            onPress={handleSubmit}
+                            disabled={submitting || rating === 0}
+                            loading={submitting}
+                            variant="primary"
+                            fullWidth
                         >
-                            <Text className="text-white text-lg font-bold">
-                                {submitting ? 'Submitting...' : 'Submit Review'}
-                            </Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
+                            Submit Review
+                        </Button>
+                    </View>
 
-                    <TouchableOpacity
+                    <Button
                         onPress={() => navigation.goBack()}
-                        className={`py-4 rounded-xl items-center border ${borderColor}`}
+                        variant="outline"
+                        fullWidth
                     >
-                        <Text className="text-text-secondary-light dark:text-text-secondary-dark">
-                            Cancel
-                        </Text>
-                    </TouchableOpacity>
+                        Cancel
+                    </Button>
                 </View>
             </ScrollView>
         </KeyboardAvoidingView>

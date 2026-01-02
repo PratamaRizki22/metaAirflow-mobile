@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, TouchableOpacity, Text, Dimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
     useSharedValue,
@@ -7,7 +8,7 @@ import Animated, {
     withSpring,
 } from 'react-native-reanimated';
 import { useTheme } from '../../contexts/ThemeContext';
-import { HomeIcon, MessagesIcon, TripsIcon, FavoritesIcon, ProfileIcon, AddIcon } from './TabIcons';
+import { HomeIcon, MessagesIcon, TripsIcon, FavoritesIcon, ProfileIcon, AddIcon, SearchIcon } from './TabIcons';
 
 const { width } = Dimensions.get('window');
 
@@ -65,12 +66,11 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
         };
     });
 
+
     const getIcon = (routeName: string, isFocused: boolean) => {
         const color = isFocused
             ? '#FFFFFF'
-            : isDark
-                ? '#00D9A3'
-                : '#00B87C';
+            : '#01E8AD'; // Gradient cyan for inactive icons
 
         const iconProps = { width: 22, height: 22, color };
 
@@ -78,6 +78,8 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
             // Tenant Mode Tabs
             case 'Home':
                 return <HomeIcon {...iconProps} />;
+            case 'Search':
+                return <SearchIcon {...iconProps} />;
             case 'Messages':
                 return <MessagesIcon {...iconProps} />;
             case 'Trips':
@@ -107,9 +109,9 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
     };
 
     const bgColor = isDark ? '#1E293B' : '#FFFFFF';
-    const indicatorColor = isDark ? '#00D9A3' : '#00B87C';
+    const indicatorColor = isDark ? '#00D9A3' : '#00B87C'; // Not used anymore (gradient indicator)
     const textColorActive = '#FFFFFF';
-    const textColorInactive = isDark ? '#00D9A3' : '#00B87C';
+    const textColorInactive = '#01E8AD'; // Gradient cyan for inactive text
 
     return (
         <View
@@ -142,14 +144,25 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
                             left: 16, // Match container's paddingHorizontal
                             width: indicatorWidth,
                             height: tabBarHeight - 12,
-                            backgroundColor: indicatorColor,
                             borderRadius: 100, // More rounded pill shape
                             top: 6,
                             zIndex: 0, // Below the Add button (zIndex: 2)
+                            overflow: 'hidden', // Clip gradient
                         },
                         animatedIndicatorStyle,
                     ]}
-                />
+                >
+                    <LinearGradient
+                        colors={['#10A0F7', '#01E8AD']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={{
+                            flex: 1,
+                            width: '100%',
+                            height: '100%',
+                        }}
+                    />
+                </Animated.View>
             )}
 
             {/* Tab Items */}

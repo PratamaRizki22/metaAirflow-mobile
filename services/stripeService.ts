@@ -136,12 +136,21 @@ class StripeService {
      */
     async getPaymentDetails(paymentId: string): Promise<Payment> {
         try {
+            console.log('Fetching payment details for ID:', paymentId);
             const response = await api.get(`/v1/m/payments/${paymentId}`);
+            console.log('Payment details API response:', response.data);
 
             // Backend returns { success: true, data: {...} }
-            return response.data.data || response.data;
+            const paymentData = response.data.data || response.data;
+            
+            if (!paymentData) {
+                throw new Error('Payment data not found in response');
+            }
+            
+            return paymentData;
         } catch (error: any) {
-            const message = error.response?.data?.message || 'Failed to get payment details';
+            console.error('Payment details API error:', error.response?.data || error.message);
+            const message = error.response?.data?.message || error.message || 'Failed to get payment details';
             throw new Error(message);
         }
     }

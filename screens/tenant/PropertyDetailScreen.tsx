@@ -12,24 +12,29 @@ import {
     Image,
     FlatList,
     Dimensions,
+    Linking,
+    Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import MapLibreGL from '@maplibre/maplibre-react-native';
+import * as Location from 'expo-location';
 import { MAPTILER_API_KEY } from '@env';
 import { propertyService, favoriteService, bookingService, reviewService } from '../../services';
 import { useAuth } from '../../contexts/AuthContext';
+import { useFavorites } from '../../contexts/FavoritesContext';
 import { useThemeColors } from '../../hooks';
 import { LoadingState, ErrorState, Button } from '../../components/common';
 
 export default function PropertyDetailScreen({ route, navigation }: any) {
     const { propertyId } = route.params;
     const { isLoggedIn } = useAuth();
+    const { isFavorited: isInFavorites, toggleFavorite } = useFavorites();
 
     const [property, setProperty] = useState<any>(null);
-    const [isFavorited, setIsFavorited] = useState(false);
+
     const [loading, setLoading] = useState(true);
     const [showRatingModal, setShowRatingModal] = useState(false);
     const [rating, setRating] = useState(5);
@@ -39,6 +44,11 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
 
     const [hasCompletedBooking, setHasCompletedBooking] = useState(false);
     const [propertyRating, setPropertyRating] = useState<any>(null);
+
+    // Location popup state
+    const [showLocationPopup, setShowLocationPopup] = useState(false);
+    const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+    const [distance, setDistance] = useState<number | null>(null);
 
     const flatListRef = useRef<FlatList>(null);
     const { width: screenWidth } = Dimensions.get('window');
@@ -56,6 +66,78 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
         isDark
     } = useThemeColors();
 
+    // Calculate distance between two coordinates (Haversine formula)
+    const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+        const R = 6371; // Radius of Earth in kilometers
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c; // Distance in km
+    };
+
+    // Get user's current location
+    const getUserLocation = async () => {
+        try {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission denied', 'Location permission is required to show distance');
+                return;
+            }
+
+            const location = await Location.getCurrentPositionAsync({});
+            setUserLocation({
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude
+            });
+
+            // Calculate distance
+            if (property?.latitude && property?.longitude) {
+                const dist = calculateDistance(
+                    location.coords.latitude,
+                    location.coords.longitude,
+                    property.latitude,
+                    property.longitude
+                );
+                setDistance(dist);
+            }
+        } catch (error) {
+            console.error('Error getting location:', error);
+        }
+    };
+
+    // Open Google Maps with directions
+    const openDirections = () => {
+        if (!property?.latitude || !property?.longitude) {
+            Alert.alert('Error', 'Property location not available');
+            return;
+        }
+
+        const destination = `${property.latitude},${property.longitude}`;
+        const label = encodeURIComponent(property.title || 'Property');
+
+        let url = '';
+        if (Platform.OS === 'ios') {
+            url = `maps://app?daddr=${destination}&q=${label}`;
+        } else {
+            url = `google.navigation:q=${destination}`;
+        }
+
+        Linking.canOpenURL(url).then((supported) => {
+            if (supported) {
+                Linking.openURL(url);
+            } else {
+                // Fallback to browser
+                const browserUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}&destination_place_id=${label}`;
+                Linking.openURL(browserUrl);
+            }
+        });
+    };
+
+
     useEffect(() => {
         loadPropertyDetail();
     }, [propertyId]);
@@ -71,15 +153,8 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
             setProperty(response.data);
 
             // Check if favorited (only if logged in and propertyId is valid)
+            // Note: Using FavoritesContext instead of API call
             if (isLoggedIn && propertyId && typeof propertyId === 'string') {
-                try {
-                    const favStatus = await favoriteService.isFavorited(propertyId);
-                    setIsFavorited(favStatus);
-                } catch (favError) {
-                    // Silently fail - favorite status is not critical
-                    console.log('Failed to check favorite status:', favError);
-                }
-
                 // Check if user has completed booking
                 try {
                     const bookingsResponse = await bookingService.getBookings(1, 100, 'COMPLETED');
@@ -116,6 +191,8 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
 
 
     const handleToggleFavorite = async () => {
+        console.log('Toggle favorite clicked, isLoggedIn:', isLoggedIn);
+        
         if (!isLoggedIn) {
             Alert.alert(
                 'Login Required',
@@ -129,11 +206,12 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
         }
 
         try {
-            const result = await favoriteService.toggleFavorite(propertyId);
-            setIsFavorited(result.isFavorited);
-            Alert.alert('Success', result.message);
+            console.log('Calling toggleFavorite from context for propertyId:', propertyId);
+            await toggleFavorite(propertyId);
+            console.log('Toggle favorite success');
         } catch (error: any) {
-            Alert.alert('Error', error.message);
+            console.error('Toggle favorite error:', error);
+            Alert.alert('Error', error.message || 'Failed to update favorite');
         }
     };
 
@@ -260,7 +338,10 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                         />
 
                         {/* Image Counter */}
-                        <View className="absolute top-4 right-4 bg-black/60 px-3 py-1.5 rounded-full">
+                        <View
+                            className="absolute right-4 bg-black/60 px-3 py-1.5 rounded-full"
+                            style={{ top: insets.top + 16 }}
+                        >
                             <Text className="text-white text-sm font-semibold">
                                 {currentImageIndex + 1} / {property.images.length}
                             </Text>
@@ -269,7 +350,8 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                         {/* Back Button */}
                         <TouchableOpacity
                             onPress={() => navigation.goBack()}
-                            className="absolute top-4 left-4 w-10 h-10 bg-black/60 rounded-full items-center justify-center"
+                            className="absolute left-4 w-10 h-10 bg-black/60 rounded-full items-center justify-center"
+                            style={{ top: insets.top + 16 }}
                         >
                             <Ionicons name="arrow-back" size={24} color="#FFF" />
                         </TouchableOpacity>
@@ -300,7 +382,8 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                         {/* Back Button */}
                         <TouchableOpacity
                             onPress={() => navigation.goBack()}
-                            className="absolute top-4 left-4 w-10 h-10 bg-black/60 rounded-full items-center justify-center"
+                            className="absolute left-4 w-10 h-10 bg-black/60 rounded-full items-center justify-center"
+                            style={{ top: insets.top + 16 }}
                         >
                             <Ionicons name="arrow-back" size={24} color="#FFF" />
                         </TouchableOpacity>
@@ -377,8 +460,24 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                                     <MapLibreGL.PointAnnotation
                                         id="property-location"
                                         coordinate={[property.longitude, property.latitude]}
+                                        onSelected={() => {
+                                            setShowLocationPopup(true);
+                                            getUserLocation();
+                                        }}
                                     >
-                                        <View className="bg-primary w-6 h-6 rounded-full border-2 border-white" />
+                                        <View style={{
+                                            width: 24,
+                                            height: 24,
+                                            backgroundColor: '#00D9A3',
+                                            borderRadius: 12,
+                                            borderWidth: 3,
+                                            borderColor: 'white',
+                                            shadowColor: '#000',
+                                            shadowOffset: { width: 0, height: 2 },
+                                            shadowOpacity: 0.3,
+                                            shadowRadius: 4,
+                                            elevation: 5
+                                        }} />
                                     </MapLibreGL.PointAnnotation>
                                 </MapLibreGL.MapView>
                             </View>
@@ -613,13 +712,13 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                     {/* Favorite Button */}
                     <TouchableOpacity
                         onPress={handleToggleFavorite}
-                        className={`w-14 h-14 rounded-2xl items-center justify-center border-2 ${isFavorited ? 'border-red-500 bg-red-500/10' : `border-gray-300 ${cardBg}`
+                        className={`w-14 h-14 rounded-2xl items-center justify-center border-2 ${isInFavorites(propertyId) ? 'border-red-500 bg-red-500/10' : `border-gray-300 ${cardBg}`
                             }`}
                     >
                         <Ionicons
-                            name={isFavorited ? 'heart' : 'heart-outline'}
+                            name={isInFavorites(propertyId) ? 'heart' : 'heart-outline'}
                             size={24}
-                            color={isFavorited ? '#EF4444' : '#9CA3AF'}
+                            color={isInFavorites(propertyId) ? '#EF4444' : '#9CA3AF'}
                         />
                     </TouchableOpacity>
 
@@ -634,6 +733,84 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                     </Button>
                 </View>
             </View>
+
+            {/* Location Popup Modal */}
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={showLocationPopup}
+                onRequestClose={() => setShowLocationPopup(false)}
+            >
+                <Pressable
+                    className="flex-1 justify-end bg-black/50"
+                    onPress={() => setShowLocationPopup(false)}
+                >
+                    <Pressable
+                        onPress={(e) => e.stopPropagation()}
+                        className={`${cardBg} rounded-t-3xl p-6 border-t ${borderColor}`}
+                    >
+                        {/* Header */}
+                        <View className="flex-row items-center justify-between mb-4">
+                            <View className="flex-row items-center">
+                                <View className="w-10 h-10 bg-primary/20 rounded-full items-center justify-center mr-3">
+                                    <Ionicons name="location" size={24} color="#00D9A3" />
+                                </View>
+                                <View>
+                                    <Text className={`text-lg font-bold ${textColor}`}>Property Location</Text>
+                                    <Text className={`text-sm ${secondaryTextColor}`}>
+                                        {property?.city}, {property?.state}
+                                    </Text>
+                                </View>
+                            </View>
+                            <TouchableOpacity
+                                onPress={() => setShowLocationPopup(false)}
+                                className="w-8 h-8 items-center justify-center"
+                            >
+                                <Ionicons name="close" size={24} color={isDark ? '#9CA3AF' : '#6B7280'} />
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Distance Info */}
+                        {distance !== null && (
+                            <View className={`${isDark ? 'bg-gray-800' : 'bg-gray-100'} p-4 rounded-xl mb-4`}>
+                                <View className="flex-row items-center justify-between">
+                                    <View className="flex-row items-center">
+                                        <Ionicons name="navigate" size={20} color="#00D9A3" />
+                                        <Text className={`ml-2 text-sm ${secondaryTextColor}`}>Distance from you</Text>
+                                    </View>
+                                    <Text className={`text-lg font-bold ${textColor}`}>
+                                        {distance < 1
+                                            ? `${(distance * 1000).toFixed(0)} m`
+                                            : `${distance.toFixed(1)} km`
+                                        }
+                                    </Text>
+                                </View>
+                            </View>
+                        )}
+
+                        {/* Address */}
+                        <View className="mb-4">
+                            <Text className={`text-sm ${secondaryTextColor} mb-1`}>Full Address</Text>
+                            <Text className={`text-base ${textColor}`}>
+                                {[property?.address, property?.city, property?.state, property?.zipCode]
+                                    .filter(Boolean)
+                                    .join(', ')}
+                            </Text>
+                        </View>
+
+                        {/* Get Directions Button */}
+                        <Button
+                            onPress={openDirections}
+                            variant="primary"
+                            size="lg"
+                            className="flex-row items-center justify-center"
+                        >
+                            <Ionicons name="navigate" size={20} color="white" style={{ marginRight: 8 }} />
+                            <Text className="text-white font-bold">Get Directions</Text>
+                        </Button>
+                    </Pressable>
+                </Pressable>
+            </Modal>
         </View>
     );
 }

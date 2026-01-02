@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from './api';
-import { handleServiceError, logError } from '../utils/errorUtils';
 import { BaseService } from './BaseService';
 import {
     RegisterRequest,
@@ -28,7 +27,6 @@ class AuthService extends BaseService {
 
             return response.data;
         } catch (error: any) {
-            logError('Registration', error);
             throw this.handleError(error);
         }
     }
@@ -50,7 +48,6 @@ class AuthService extends BaseService {
 
             return response.data;
         } catch (error: any) {
-            logError('Login', error);
             throw this.handleError(error);
         }
     }
@@ -71,7 +68,6 @@ class AuthService extends BaseService {
 
             throw new Error('Failed to check email');
         } catch (error: any) {
-            logError('Check Email', error);
             throw this.handleError(error);
         }
     }

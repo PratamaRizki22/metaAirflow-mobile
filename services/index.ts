@@ -1,5 +1,6 @@
 export { default as authService } from './authService';
 export { default as favoriteService } from './favoriteService';
+export { default as collectionService } from './collectionService';
 export { default as bookingService } from './bookingService';
 export { default as propertyService } from './propertyService';
 export { default as uploadService } from './uploadService';

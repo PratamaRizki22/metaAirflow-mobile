@@ -106,7 +106,11 @@ export function AdvancedSearchModal({
                     </TouchableOpacity>
                 </View>
 
-                <ScrollView className="flex-1 px-6 py-4">
+                <ScrollView
+                    className="flex-1 px-6 py-4"
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingBottom: 100 }}
+                >
                     {/* Location */}
                     <View className="mb-6">
                         <View className="flex-row items-center mb-3">

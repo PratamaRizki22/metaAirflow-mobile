@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { authService, uploadService } from '../../services';
 import { useThemeColors } from '../../hooks';
+import { Button } from '../../components/common';
 
 export default function EditProfileScreen({ navigation }: any) {
     const { user, refreshProfile } = useAuth();
@@ -240,36 +241,27 @@ export default function EditProfileScreen({ navigation }: any) {
                 </View>
 
                 {/* Submit Button */}
-                <TouchableOpacity
-                    onPress={handleSubmit}
-                    disabled={loading}
-                    className={`bg-primary rounded-xl py-4 mb-3 ${loading ? 'opacity-50' : ''}`}
-                    style={{
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 4,
-                        elevation: 3,
-                    }}
-                >
-                    {loading ? (
-                        <ActivityIndicator color="white" />
-                    ) : (
-                        <Text className="text-white text-center font-semibold text-base">
-                            UPDATE PROFILE
-                        </Text>
-                    )}
-                </TouchableOpacity>
+                {/* Submit Button */}
+                <View className="mb-3">
+                    <Button
+                        onPress={handleSubmit}
+                        loading={loading}
+                        variant="primary"
+                        fullWidth
+                    >
+                        UPDATE PROFILE
+                    </Button>
+                </View>
 
                 {/* Cancel Button */}
-                <TouchableOpacity
+                <Button
                     onPress={() => navigation.goBack()}
-                    className={`${isDark ? 'bg-gray-800' : 'bg-gray-200'} rounded-xl py-4`}
+                    variant="secondary"
+                    fullWidth
+                    className={isDark ? 'bg-gray-800' : 'bg-gray-200'}
                 >
-                    <Text className={`text-center font-semibold text-base ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                        CANCEL
-                    </Text>
-                </TouchableOpacity>
+                    <Text className={isDark ? 'text-gray-300' : 'text-gray-700'}>CANCEL</Text>
+                </Button>
 
                 {/* Bottom Spacing */}
                 <View className="h-8" />

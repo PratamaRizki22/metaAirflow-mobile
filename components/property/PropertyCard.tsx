@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Dimensions, StyleProp, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -24,31 +24,29 @@ export interface Property {
 interface PropertyCardProps {
     property: Property;
     onPress?: () => void;
-    onFavoriteToggle?: (propertyId: string, currentState: boolean) => void;
+    onFavoriteToggle?: (propertyId: string) => void;
     variant?: 'default' | 'compact';
+    style?: StyleProp<ViewStyle>;
 }
 
 export const PropertyCard = React.memo(function PropertyCard({
     property,
     onPress,
     onFavoriteToggle,
-    variant = 'default'
+    variant = 'default',
+    style
 }: PropertyCardProps) {
     const { isDark } = useTheme();
 
     const handleFavoritePress = (e: any) => {
         e.stopPropagation(); // Prevent card press
         if (onFavoriteToggle) {
-            onFavoriteToggle(property.id, property.isFavorited || false);
+            onFavoriteToggle(property.id);
         }
     };
 
     const formatPrice = (price: number) => {
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0,
-        }).format(price);
+        return `RM ${price.toLocaleString('en-MY')}`;
     };
 
     const getTypeColor = (type: string) => {
@@ -75,7 +73,7 @@ export const PropertyCard = React.memo(function PropertyCard({
         return (
             <TouchableOpacity
                 onPress={onPress}
-                style={{ width: 200 }}
+                style={[{ width: 200 }, style]}
                 activeOpacity={0.7}
             >
                 <View
@@ -145,7 +143,7 @@ export const PropertyCard = React.memo(function PropertyCard({
     return (
         <TouchableOpacity
             onPress={onPress}
-            style={{ width: CARD_WIDTH }}
+            style={[{ width: CARD_WIDTH }, style]}
             activeOpacity={0.7}
         >
             <View

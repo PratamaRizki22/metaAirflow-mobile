@@ -132,17 +132,26 @@ class PropertyService extends BaseService {
 
                 if (filters) {
                     Object.entries(filters).forEach(([key, value]) => {
-                        if (value !== undefined && value !== null) {
-                            url += `&${key}=${value}`;
+                        if (value !== undefined && value !== null && value !== '') {
+                            url += `&${key}=${encodeURIComponent(value)}`;
                         }
                     });
                 }
 
+                console.log('API Request URL:', url);
                 const response = await api.get<PropertiesResponse>(url);
+                console.log('API Response Status:', response.status);
+                console.log('API Response Data:', {
+                    success: response.data?.success,
+                    propertiesCount: response.data?.data?.properties?.length || 0,
+                    totalCount: response.data?.data?.pagination?.total || 0
+                });
+                
                 return response.data;
             } catch (error: any) {
                 lastError = error;
                 attemptsLeft--;
+                console.error(`API attempt ${retries - attemptsLeft + 1} failed:`, error.response?.data || error.message);
 
                 if (attemptsLeft === 0) {
                     console.error('Fetch properties error:', error.response?.data || error.message);
