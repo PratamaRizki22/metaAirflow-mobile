@@ -21,6 +21,7 @@ interface EmailEntryScreenProps {
     onEmailNotRegistered: (email: string) => void;
     onEmailRegistered: (email: string) => void;
     onGoogleSignIn: () => void;
+    onForgotPassword?: () => void;
     onClose?: () => void;
 }
 
@@ -28,6 +29,7 @@ export function EmailEntryScreen({
     onEmailNotRegistered,
     onEmailRegistered,
     onGoogleSignIn,
+    onForgotPassword,
     onClose,
 }: EmailEntryScreenProps) {
     const [email, setEmail] = useState('');
@@ -134,11 +136,21 @@ export function EmailEntryScreen({
                             </View>
 
                             {/* Forgot Password */}
-                            <TouchableOpacity className="mb-6">
-                                <Text className="text-sm text-[#10A0F7] underline">
-                                    Forgot Password?
-                                </Text>
-                            </TouchableOpacity>
+                            {onForgotPassword && (
+                                <TouchableOpacity
+                                    className="mb-6"
+                                    onPress={() => {
+                                        console.log('Forgot Password button pressed');
+                                        onForgotPassword?.();
+                                    }}
+                                    activeOpacity={0.7}
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                >
+                                    <Text className="text-sm text-[#10A0F7] underline">
+                                        Forgot Password?
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
 
                             {/* Next Button */}
                             <TouchableOpacity

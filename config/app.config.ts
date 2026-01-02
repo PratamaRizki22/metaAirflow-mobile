@@ -23,7 +23,7 @@ const ENV = __DEV__ ? 'development' : 'production';
 const API_CONFIG = {
     development: {
         // DEVELOPMENT: Hardcoded, gampang diganti tanpa rebuild
-        baseURL: 'http://192.168.1.14:3000/api',
+        baseURL: 'https://rentverse-api.loseyourip.com/api',
         timeout: 12000,
     },
     production: {

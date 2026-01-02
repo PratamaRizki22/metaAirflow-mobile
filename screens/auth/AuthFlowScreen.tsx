@@ -7,13 +7,14 @@ import { useToast } from '../../hooks/useToast';
 import { EmailEntryScreen } from './EmailEntryScreen';
 import { PasswordEntryScreen } from './PasswordEntryScreen';
 import { RegisterScreen } from './RegisterScreen';
+import { ForgotPasswordScreen } from './ForgotPasswordScreen';
 
 interface AuthFlowScreenProps {
     onAuthSuccess: () => void;
     onClose: () => void;
 }
 
-type AuthStep = 'email' | 'password' | 'register';
+type AuthStep = 'email' | 'password' | 'register' | 'forgot-password';
 
 export function AuthFlowScreen({ onAuthSuccess, onClose }: AuthFlowScreenProps) {
     const { refreshProfile } = useAuth();
@@ -34,6 +35,10 @@ export function AuthFlowScreen({ onAuthSuccess, onClose }: AuthFlowScreenProps) 
     const handleBackToEmail = () => {
         setCurrentStep('email');
         setEmail('');
+    };
+
+    const handleForgotPassword = () => {
+        setCurrentStep('forgot-password');
     };
 
     const handleGoogleSignIn = async () => {
@@ -86,12 +91,13 @@ export function AuthFlowScreen({ onAuthSuccess, onClose }: AuthFlowScreenProps) 
     // Render based on current step
     if (currentStep === 'email') {
         return (
-                <EmailEntryScreen
-                    onEmailNotRegistered={handleEmailNotRegistered}
-                    onEmailRegistered={handleEmailRegistered}
-                    onGoogleSignIn={handleGoogleSignIn}
-                    onClose={onClose}
-                />
+            <EmailEntryScreen
+                onEmailNotRegistered={handleEmailNotRegistered}
+                onEmailRegistered={handleEmailRegistered}
+                onGoogleSignIn={handleGoogleSignIn}
+                onForgotPassword={handleForgotPassword}
+                onClose={onClose}
+            />
         );
     }
 
@@ -111,6 +117,15 @@ export function AuthFlowScreen({ onAuthSuccess, onClose }: AuthFlowScreenProps) 
                 email={email}
                 onRegisterSuccess={onAuthSuccess}
                 onBack={handleBackToEmail}
+            />
+        );
+    }
+
+    if (currentStep === 'forgot-password') {
+        return (
+            <ForgotPasswordScreen
+                onBack={handleBackToEmail}
+                onClose={onClose}
             />
         );
     }
