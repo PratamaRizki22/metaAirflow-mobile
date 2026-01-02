@@ -41,6 +41,8 @@ export default function CreatePropertyScreen({ navigation }: any) {
     const [searchLocation, setSearchLocation] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [searchingLocation, setSearchingLocation] = useState(false);
+    const [markerCoordinate, setMarkerCoordinate] = useState([101.6869, 3.1390]);
+    const [showPropertyTypeDropdown, setShowPropertyTypeDropdown] = useState(false);
 
     // Amenities state
     const [amenities, setAmenities] = useState<any[]>([]);
@@ -87,13 +89,21 @@ export default function CreatePropertyScreen({ navigation }: any) {
 
     const handleMapPress = (feature: any) => {
         const coordinates = feature.geometry.coordinates;
+        console.log('Map pressed at:', coordinates);
+        
+        const newLng = coordinates[0];
+        const newLat = coordinates[1];
+        
+        setMarkerCoordinate([newLng, newLat]);
         setFormData(prev => ({
             ...prev,
-            longitude: coordinates[0],
-            latitude: coordinates[1],
+            longitude: newLng,
+            latitude: newLat,
         }));
+        
+        console.log('Marker updated to:', [newLng, newLat]);
         showToast(
-            `Location updated: ${coordinates[1].toFixed(4)}, ${coordinates[0].toFixed(4)}`,
+            `Location updated: ${newLat.toFixed(4)}, ${newLng.toFixed(4)}`,
             'success'
         );
     };
@@ -126,6 +136,7 @@ export default function CreatePropertyScreen({ navigation }: any) {
             longitude: lng,
             latitude: lat,
         }));
+        setMarkerCoordinate([lng, lat]);
         setSearchLocation(result.place_name || '');
         setSearchResults([]);
         showToast('Location selected', 'success');
@@ -445,7 +456,6 @@ export default function CreatePropertyScreen({ navigation }: any) {
                             color={isDark ? '#94A3B8' : '#6B7280'}
                         />
                     </TouchableOpacity>
-
                     {showMap && (
                         <View className="mt-3 h-64 rounded-xl overflow-hidden">
                             <MapLibreGL.MapView
@@ -460,19 +470,57 @@ export default function CreatePropertyScreen({ navigation }: any) {
                                     <MapLibreGL.RasterLayer id="maptiler-layer" sourceID="maptiler-source" />
                                 </MapLibreGL.RasterSource>
                                 <MapLibreGL.Camera
-                                    key={`${formData.longitude}-${formData.latitude}`}
-                                    centerCoordinate={[formData.longitude, formData.latitude]}
+                                    key={`camera-${markerCoordinate[0]}-${markerCoordinate[1]}`}
+                                    centerCoordinate={markerCoordinate}
                                     zoomLevel={15}
                                     animationDuration={500}
                                 />
                                 <MapLibreGL.PointAnnotation
+                                    key={`marker-${markerCoordinate[0]}-${markerCoordinate[1]}`}
                                     id="property-location"
-                                    coordinate={[formData.longitude, formData.latitude]}
+                                    coordinate={markerCoordinate}
                                 >
-                                    <View className="items-center justify-center">
-                                        <View className="bg-red-500 w-8 h-8 rounded-full border-3 border-white items-center justify-center shadow-lg" style={{ elevation: 5 }}>
-                                            <Ionicons name="location" size={20} color="white" />
+                                    <View style={{
+                                        width: 50,
+                                        height: 50,
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}>
+                                        <View style={{
+                                            width: 40,
+                                            height: 40,
+                                            backgroundColor: '#EF4444',
+                                            borderRadius: 20,
+                                            borderWidth: 4,
+                                            borderColor: 'white',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            shadowColor: '#000',
+                                            shadowOffset: { width: 0, height: 2 },
+                                            shadowOpacity: 0.3,
+                                            shadowRadius: 4,
+                                            elevation: 5,
+                                        }}>
+                                            <View style={{
+                                                width: 10,
+                                                height: 10,
+                                                backgroundColor: 'white',
+                                                borderRadius: 5,
+                                            }} />
                                         </View>
+                                        <View style={{
+                                            width: 0,
+                                            height: 0,
+                                            backgroundColor: 'transparent',
+                                            borderStyle: 'solid',
+                                            borderLeftWidth: 8,
+                                            borderRightWidth: 8,
+                                            borderTopWidth: 10,
+                                            borderLeftColor: 'transparent',
+                                            borderRightColor: 'transparent',
+                                            borderTopColor: '#EF4444',
+                                            marginTop: -2,
+                                        }} />
                                     </View>
                                 </MapLibreGL.PointAnnotation>
                             </MapLibreGL.MapView>
@@ -565,23 +613,47 @@ export default function CreatePropertyScreen({ navigation }: any) {
                     <Text className={`text-base font-semibold mb-3 ${textColor}`}>
                         Property Type <Text className="text-red-500">*</Text>
                     </Text>
-                    <View className="gap-2">
-                        {propertyTypes.map((type) => (
-                            <TouchableOpacity
-                                key={type.id}
-                                onPress={() => setFormData({ ...formData, propertyTypeId: type.id })}
-                                className={`p-4 rounded-xl border-2 ${formData.propertyTypeId === type.id
-                                    ? 'border-primary bg-primary/10'
-                                    : `border-gray-300 ${cardBg}`
-                                    }`}
-                            >
-                                <Text className={`font-semibold ${formData.propertyTypeId === type.id ? 'text-primary' : textColor
+                    <TouchableOpacity
+                        onPress={() => setShowPropertyTypeDropdown(!showPropertyTypeDropdown)}
+                        className={`${cardBg} border ${borderColor} rounded-xl p-4 flex-row items-center justify-between`}
+                    >
+                        <Text className={formData.propertyTypeId ? textColor : secondaryTextColor}>
+                            {formData.propertyTypeId 
+                                ? propertyTypes.find(t => t.id === formData.propertyTypeId)?.name 
+                                : 'Select property type'}
+                        </Text>
+                        <Ionicons 
+                            name={showPropertyTypeDropdown ? 'chevron-up' : 'chevron-down'} 
+                            size={20} 
+                            color={isDark ? '#94A3B8' : '#6B7280'} 
+                        />
+                    </TouchableOpacity>
+                    
+                    {showPropertyTypeDropdown && (
+                        <View className={`${cardBg} border ${borderColor} rounded-xl mt-2 overflow-hidden`}>
+                            {propertyTypes.map((type, index) => (
+                                <TouchableOpacity
+                                    key={type.id}
+                                    onPress={() => {
+                                        setFormData({ ...formData, propertyTypeId: type.id });
+                                        setShowPropertyTypeDropdown(false);
+                                    }}
+                                    className={`p-4 flex-row items-center justify-between ${
+                                        index > 0 ? `border-t ${borderColor}` : ''
+                                    } ${formData.propertyTypeId === type.id ? 'bg-primary/10' : ''}`}
+                                >
+                                    <Text className={`font-medium ${
+                                        formData.propertyTypeId === type.id ? 'text-primary' : textColor
                                     }`}>
-                                    {type.name}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
+                                        {type.name}
+                                    </Text>
+                                    {formData.propertyTypeId === type.id && (
+                                        <Ionicons name="checkmark-circle" size={20} color="#6366F1" />
+                                    )}
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    )}
                 </View>
 
                 {/* Amenities Selection */}

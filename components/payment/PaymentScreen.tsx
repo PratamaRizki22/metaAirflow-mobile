@@ -34,6 +34,7 @@ export function PaymentScreen({
     const { bgColor, textColor, cardBg } = useThemeColors();
     const [loading, setLoading] = useState(false);
     const [ready, setReady] = useState(false);
+    const [paymentIntentId, setPaymentIntentId] = useState<string>('');
     const { toast, showToast, hideToast } = useToast();
 
     // Initialize Payment Sheet when component mounts
@@ -52,6 +53,9 @@ export function PaymentScreen({
                 customer,
                 publishableKey
             } = await stripeService.getPaymentSheetParams(bookingId);
+
+            // Save payment intent ID for confirmation later
+            setPaymentIntentId(paymentIntent);
 
             // 2. Initialize the Payment Sheet
             const { error } = await initPaymentSheet({
@@ -134,8 +138,8 @@ export function PaymentScreen({
             } else {
                 // Payment successful - confirm with backend
                 try {
-                    console.log('Confirming payment with backend:', { bookingId, paymentIntent: paymentSheetParams?.paymentIntent });
-                    await stripeService.confirmPayment(bookingId, paymentSheetParams?.paymentIntent || '');
+                    console.log('Confirming payment with backend:', { bookingId, paymentIntentId });
+                    await stripeService.confirmPayment(bookingId, paymentIntentId);
                     showToast('Payment successful! Your booking is confirmed', 'success');
                     setTimeout(() => onSuccess(), 1500);
                 } catch (confirmError: any) {
