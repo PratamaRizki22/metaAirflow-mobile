@@ -38,6 +38,9 @@ export default function CreatePropertyScreen({ navigation }: any) {
     const [uploadingImages, setUploadingImages] = useState(false);
     const [showMap, setShowMap] = useState(false);
     const [showPricePrediction, setShowPricePrediction] = useState(false);
+    const [searchLocation, setSearchLocation] = useState('');
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [searchingLocation, setSearchingLocation] = useState(false);
 
     // Amenities state
     const [amenities, setAmenities] = useState<any[]>([]);
@@ -93,6 +96,39 @@ export default function CreatePropertyScreen({ navigation }: any) {
             `Location updated: ${coordinates[1].toFixed(4)}, ${coordinates[0].toFixed(4)}`,
             'success'
         );
+    };
+
+    const searchLocationByQuery = async (query: string) => {
+        if (!query || query.length < 3) {
+            setSearchResults([]);
+            return;
+        }
+
+        try {
+            setSearchingLocation(true);
+            const response = await fetch(
+                `https://api.maptiler.com/geocoding/${encodeURIComponent(query)}.json?key=${MAPTILER_API_KEY}&limit=5`
+            );
+            const data = await response.json();
+            setSearchResults(data.features || []);
+        } catch (error) {
+            console.error('Location search error:', error);
+            showToast('Failed to search location', 'error');
+        } finally {
+            setSearchingLocation(false);
+        }
+    };
+
+    const selectSearchResult = (result: any) => {
+        const [lng, lat] = result.center;
+        setFormData(prev => ({
+            ...prev,
+            longitude: lng,
+            latitude: lat,
+        }));
+        setSearchLocation(result.place_name || '');
+        setSearchResults([]);
+        showToast('Location selected', 'success');
     };
 
 
@@ -352,6 +388,45 @@ export default function CreatePropertyScreen({ navigation }: any) {
                     <Text className={`text-base font-semibold mb-2 ${textColor}`}>
                         Location on Map <Text className="text-red-500">*</Text>
                     </Text>
+                    
+                    {/* Search Location Input */}
+                    <View className="mb-3">
+                        <View className={`${cardBg} border ${borderColor} rounded-xl flex-row items-center px-4`}>
+                            <Ionicons name="search" size={20} color={isDark ? '#94A3B8' : '#6B7280'} />
+                            <TextInput
+                                placeholder="Search location..."
+                                placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
+                                value={searchLocation}
+                                onChangeText={(text) => {
+                                    setSearchLocation(text);
+                                    searchLocationByQuery(text);
+                                }}
+                                className={`flex-1 py-3 px-3 ${textColor}`}
+                            />
+                            {searchingLocation && (
+                                <ActivityIndicator size="small" color={isDark ? '#94A3B8' : '#6B7280'} />
+                            )}
+                        </View>
+                        
+                        {/* Search Results */}
+                        {searchResults.length > 0 && (
+                            <View className={`${cardBg} border ${borderColor} rounded-xl mt-2 overflow-hidden`}>
+                                {searchResults.map((result, index) => (
+                                    <TouchableOpacity
+                                        key={index}
+                                        onPress={() => selectSearchResult(result)}
+                                        className={`p-3 flex-row items-center ${index > 0 ? `border-t ${borderColor}` : ''}`}
+                                    >
+                                        <Ionicons name="location-outline" size={20} color={isDark ? '#94A3B8' : '#6B7280'} />
+                                        <Text className={`flex-1 ml-3 ${textColor}`} numberOfLines={2}>
+                                            {result.place_name}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
+                    </View>
+
                     <TouchableOpacity
                         onPress={() => setShowMap(!showMap)}
                         className={`${cardBg} border ${borderColor} rounded-xl p-4 flex-row items-center justify-between`}
@@ -385,16 +460,19 @@ export default function CreatePropertyScreen({ navigation }: any) {
                                     <MapLibreGL.RasterLayer id="maptiler-layer" sourceID="maptiler-source" />
                                 </MapLibreGL.RasterSource>
                                 <MapLibreGL.Camera
+                                    key={`${formData.longitude}-${formData.latitude}`}
                                     centerCoordinate={[formData.longitude, formData.latitude]}
                                     zoomLevel={15}
-                                    animationDuration={1000}
+                                    animationDuration={500}
                                 />
                                 <MapLibreGL.PointAnnotation
                                     id="property-location"
                                     coordinate={[formData.longitude, formData.latitude]}
                                 >
-                                    <View className="bg-red-500 w-6 h-6 rounded-full border-2 border-white items-center justify-center">
-                                        <View className="bg-white w-2 h-2 rounded-full" />
+                                    <View className="items-center justify-center">
+                                        <View className="bg-red-500 w-8 h-8 rounded-full border-3 border-white items-center justify-center shadow-lg" style={{ elevation: 5 }}>
+                                            <Ionicons name="location" size={20} color="white" />
+                                        </View>
                                     </View>
                                 </MapLibreGL.PointAnnotation>
                             </MapLibreGL.MapView>
@@ -581,65 +659,6 @@ export default function CreatePropertyScreen({ navigation }: any) {
                             </View>
                         </LinearGradient>
                     </TouchableOpacity>
-
-                    {/* Divider */}
-                    <View className="flex-row items-center my-4">
-                        <View className={`flex-1 h-px ${isDark ? 'bg-gray-700' : 'bg-gray-300'}`} />
-                        <Text className={`mx-3 text-xs ${secondaryTextColor}`}>OR</Text>
-                        <View className={`flex-1 h-px ${isDark ? 'bg-gray-700' : 'bg-gray-300'}`} />
-                    </View>
-
-                    {/* SECONDARY: Manual Text Input (Collapsed by default) */}
-                    <View className={`${cardBg} border ${borderColor} rounded-xl p-4`}>
-                        <View className="flex-row items-center mb-3">
-                            <Ionicons
-                                name="create-outline"
-                                size={18}
-                                color={isDark ? '#9CA3AF' : '#6B7280'}
-                            />
-                            <Text className={`ml-2 text-sm font-medium ${secondaryTextColor}`}>
-                                Write Manually (Not Recommended)
-                            </Text>
-                        </View>
-
-                        <FormInput
-                            label=""
-                            placeholder="1. Pay rent on time&#10;2. No smoking&#10;3. Keep quiet after 10 PM..."
-                            value={formData.description}
-                            onChangeText={(text) => setFormData({ ...formData, description: text })}
-                            multiline
-                            numberOfLines={6}
-                            containerStyle={{ marginBottom: 0 }}
-                        />
-
-                        {/* Info Box */}
-                        <View className="mt-3 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
-                            <View className="flex-row">
-                                <Ionicons name="information-circle" size={16} color="#F59E0B" />
-                                <Text className="ml-2 text-xs text-amber-700 dark:text-amber-400 flex-1">
-                                    Tip: Uploading a PDF is more professional and legally binding. Manual text is best for simple house rules only.
-                                </Text>
-                            </View>
-                        </View>
-                    </View>
-
-                    {/* Analyze Button */}
-                    {formData.description.length > 50 && (
-                        <TouchableOpacity
-                            onPress={handleAnalyzeAgreement}
-                            disabled={analyzing}
-                            className="flex-row items-center justify-center bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-xl mt-3 border border-indigo-100 dark:border-indigo-800"
-                        >
-                            {analyzing ? (
-                                <ActivityIndicator size="small" color="#6366F1" />
-                            ) : (
-                                <Ionicons name="sparkles" size={18} color="#6366F1" />
-                            )}
-                            <Text className="text-indigo-600 dark:text-indigo-400 font-semibold ml-2">
-                                {analyzing ? 'Analyzing...' : 'Analyze Risk & Clauses with AI'}
-                            </Text>
-                        </TouchableOpacity>
-                    )}
                 </View>
 
                 {/* Furnished */}
