@@ -196,6 +196,61 @@ class AuthService extends BaseService {
     }
 
     /**
+     * Request password reset email
+     */
+    async forgotPassword(email: string): Promise<{ message: string }> {
+        try {
+            console.log('🔐 [AuthService] Forgot password request started');
+            console.log('📧 [AuthService] Email:', email);
+            console.log('🌐 [AuthService] API endpoint: /v1/m/auth/forgot-password');
+            console.log('🌐 [AuthService] Base URL:', api.defaults.baseURL);
+
+            const response = await api.post<{ success: boolean; message: string }>(
+                '/v1/m/auth/forgot-password',
+                { email }
+            );
+
+            console.log('✅ [AuthService] Response received:', response.data);
+
+            if (response.data.success) {
+                console.log('✅ [AuthService] Password reset email sent successfully');
+                return { message: response.data.message };
+            }
+
+            console.error('❌ [AuthService] Request succeeded but success flag is false');
+            throw new Error('Failed to send password reset email');
+        } catch (error: any) {
+            console.error('❌ [AuthService] Forgot password error caught');
+            console.error('❌ [AuthService] Error:', error);
+            console.error('❌ [AuthService] Response data:', error.response?.data);
+            console.error('❌ [AuthService] Response status:', error.response?.status);
+            console.error('❌ [AuthService] Error message:', error.message);
+            throw this.handleError(error);
+        }
+    }
+
+    /**
+     * Reset password using token
+     */
+    async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+        try {
+            const response = await api.post<{ success: boolean; message: string }>(
+                '/v1/m/auth/reset-password',
+                { token, newPassword }
+            );
+
+            if (response.data.success) {
+                return { message: response.data.message };
+            }
+
+            throw new Error('Failed to reset password');
+        } catch (error: any) {
+            console.error('Reset password error:', error.response?.data || error.message);
+            throw this.handleError(error);
+        }
+    }
+
+    /**
      * Get current user from storage
      */
     async getCurrentUser(): Promise<User | null> {
