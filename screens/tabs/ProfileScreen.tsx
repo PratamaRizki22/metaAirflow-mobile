@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Modal, ViewStyle, RefreshControl, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Modal, ViewStyle, RefreshControl, Alert, ImageBackground } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMode } from '../../contexts/ModeContext';
@@ -8,22 +9,43 @@ import { AuthFlowScreen } from '../auth/AuthFlowScreen';
 import { useThemeColors } from '../../hooks';
 
 type Language = 'id' | 'en';
-type ThemeOption = 'light' | 'dark';
 
-// Reusable card style
-const CARD_STYLE: ViewStyle = {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-};
+// MenuItem Component with icon and chevron
+interface MenuItemProps {
+    icon: keyof typeof Ionicons.glyphMap;
+    title: string;
+    subtitle?: string;
+    onPress: () => void;
+    showChevron?: boolean;
+    iconColor?: string;
+    textColor?: string;
+}
 
-// Radio Button Component
-const RadioButton = ({ selected }: { selected: boolean }) => (
-    <View className={`w-6 h-6 rounded-full border-2 ${selected ? 'border-primary bg-primary' : 'border-gray-300'}`}>
-        {selected && <View className="w-3 h-3 rounded-full bg-white m-auto" />}
-    </View>
+const MenuItem = ({ icon, title, subtitle, onPress, showChevron = true, iconColor, textColor }: MenuItemProps) => (
+    <TouchableOpacity
+        onPress={onPress}
+        className="flex-row items-center justify-between py-4"
+        activeOpacity={0.7}
+    >
+        <View className="flex-row items-center flex-1">
+            <View className="w-10 h-10 items-center justify-center mr-3">
+                <Ionicons name={icon} size={24} color={iconColor || '#6B7280'} />
+            </View>
+            <View className="flex-1">
+                <Text className="text-base font-medium" style={{ color: textColor || '#1F2937' }}>
+                    {title}
+                </Text>
+                {subtitle && (
+                    <Text className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>
+                        {subtitle}
+                    </Text>
+                )}
+            </View>
+        </View>
+        {showChevron && (
+            <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
+        )}
+    </TouchableOpacity>
 );
 
 export function ProfileScreen({ navigation }: any) {
@@ -64,7 +86,6 @@ export function ProfileScreen({ navigation }: any) {
         );
     };
 
-
     const languages = [
         { code: 'id' as Language, name: 'Bahasa Indonesia', flag: '🇮🇩' },
         { code: 'en' as Language, name: 'English', flag: '🇬🇧' },
@@ -78,16 +99,16 @@ export function ProfileScreen({ navigation }: any) {
         return isDark ? darkColor : lightColor;
     };
 
-    const surfaceColor = getColor('#FFFFFF', '#1E293B');
     const textPrimaryColor = getColor('#1F2937', '#F1F5F9');
     const textSecondaryColor = getColor('#6B7280', '#CBD5E1');
-    const iconColor = isDark ? '#00D9A3' : '#00B87C';
+    const iconColor = '#00B87C';
     const selectedLangData = languages.find(l => l.code === selectedLanguage);
 
     return (
-        <View className={`flex-1 ${bgColor}`}>
+        <View className="flex-1 bg-gray-50">
             <ScrollView
-                className="flex-1 px-6 pt-16"
+                className="flex-1"
+                contentContainerStyle={{ paddingBottom: 100 }}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
@@ -95,292 +116,325 @@ export function ProfileScreen({ navigation }: any) {
                         tintColor={iconColor}
                         colors={[iconColor]}
                     />
-                }
-            >
-                <Text className={`text-3xl font-bold mb-2 ${textColor}`}>
-                    Profile
-                </Text>
-                <Text className="text-text-secondary-light dark:text-text-secondary-dark mb-6">
-                    Manage your account and preferences
-                </Text>
+                }>
+                {/* Header with Background Image */}
+                <View style={{ height: 250, marginBottom: -80 }}>
+                    <ImageBackground
+                        source={require('../../assets/profile-hero.png')}
+                        style={{ flex: 1 }}
+                        resizeMode="cover"
+                        borderBottomLeftRadius={35}
+                        borderBottomRightRadius={35}
+                    >
+                        <View className="flex-1 items-center justify-top pt-12">
+                            <Text className="text-white text-2xl font-bold">Profile</Text>
+                        </View>
+                    </ImageBackground>
+                </View>
 
-                {/* Authentication Section */}
-                <View className="mb-6">
+                {/* Profile Picture and Info - Overlapping the hero */}
+                <View className="items-center mb-6" style={{ zIndex: 10 }}>
+                    {/* Profile Picture */}
+                    <View className="w-28 h-28 rounded-full bg-white items-center justify-center mb-3"
+                        style={{
+                            borderWidth: 4,
+                            borderColor: 'white',
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.15,
+                            shadowRadius: 8,
+                            elevation: 8,
+                        }}
+                    >
+                        {isLoggedIn ? (
+                            <View className="w-full h-full rounded-full bg-primary items-center justify-center">
+                                <Text className="text-white text-4xl font-bold">
+                                    {user?.firstName?.[0] || user?.name?.[0] || 'U'}
+                                </Text>
+                            </View>
+                        ) : (
+                            <Ionicons name="person-circle" size={100} color="#E5E7EB" />
+                        )}
+                    </View>
+
+                    {/* User Name and Role */}
                     {isLoggedIn ? (
                         <>
-                            <Text className={`text-lg font-semibold mb-3 ${textColor}`}>
-                                Account
+                            <Text className="text-3xl font-bold text-gray-900 mb-1">
+                                {user?.name || `${user?.firstName} ${user?.lastName}`}
                             </Text>
-                            <View
-                                className="p-4 rounded-2xl mb-3"
-                                style={{ backgroundColor: surfaceColor, ...CARD_STYLE }}
-                            >
-                                <View className="flex-row items-center mb-3">
-                                    <View className="w-16 h-16 rounded-full bg-primary items-center justify-center mr-4">
-                                        <Text className="text-white text-2xl font-bold">
-                                            {user?.firstName?.[0] || user?.name?.[0] || 'U'}
-                                        </Text>
-                                    </View>
-                                    <View className="flex-1">
-                                        <Text className="text-lg font-semibold" style={{ color: textPrimaryColor }}>
-                                            {user?.name || `${user?.firstName} ${user?.lastName}`}
-                                        </Text>
-                                        <Text className="text-sm" style={{ color: textSecondaryColor }}>
-                                            {user?.email}
-                                        </Text>
-                                    </View>
-                                </View>
-
-                                {/* Edit Profile Button */}
-                                <TouchableOpacity
-                                    onPress={() => navigation.navigate('EditProfile')}
-                                    className="bg-primary rounded-xl py-3 mb-2"
-                                >
-                                    <Text className="text-white text-center font-semibold">
-                                        Edit Profile
-                                    </Text>
-                                </TouchableOpacity>
-
-                                {/* Logout Button */}
-                                <TouchableOpacity
-                                    onPress={handleLogout}
-                                    className="bg-error-light rounded-xl py-3"
-                                >
-                                    <Text className="text-white text-center font-semibold">
-                                        Logout
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
+                            <Text className="text-xl text-gray-500">
+                                {user?.isLandlord ? 'Landlord' : 'Guest'}
+                            </Text>
                         </>
                     ) : (
                         <>
-                            <Text className={`text-lg font-semibold mb-3 ${textColor}`}>
-                                Get Started
-                            </Text>
-                            <View
-                                className="p-4 rounded-2xl mb-3"
-                                style={{ backgroundColor: surfaceColor, ...CARD_STYLE }}
-                            >
-                                <Text className="text-base mb-4" style={{ color: textSecondaryColor }}>
-                                    Sign in to save favorites, post properties, and more
-                                </Text>
-                                <TouchableOpacity
-                                    onPress={() => setShowAuthModal(true)}
-                                    className="bg-primary rounded-xl py-3 mb-3"
-                                >
-                                    <Text className="text-white text-center font-semibold">
-                                        Create Account
-                                    </Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    onPress={() => setShowAuthModal(true)}
-                                    className="border-2 border-primary rounded-xl py-3"
-                                >
-                                    <Text className="text-primary text-center font-semibold">
-                                        Sign In
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
+                            <Text className="text-xl font-bold text-gray-900 mb-1">Guest</Text>
+                            <Text className="text-sm text-gray-500">Sign in to continue</Text>
                         </>
                     )}
                 </View>
 
-                {/* Payment History - Only show for Tenant Mode */}
-                {isLoggedIn && isTenantMode && (
-                    <View className="mb-6">
-                        <Text className={`text-lg font-semibold mb-3 ${textColor}`}>
-                            Payments
-                        </Text>
-                        <TouchableOpacity
-                            onPress={() => (navigation as any).navigate('PaymentHistory')}
-                            className="flex-row items-center justify-between p-4 rounded-2xl"
-                            style={{ backgroundColor: surfaceColor, ...CARD_STYLE }}
-                        >
-                            <View className="flex-row items-center">
-                                <Ionicons name="receipt-outline" size={22} color={iconColor} style={{ marginRight: 12 }} />
-                                <View>
-                                    <Text className="text-base font-medium" style={{ color: textPrimaryColor }}>
-                                        Payment History
+                <View
+                    className="flex-1"
+                >
+                    {/* Content Container */}
+                    <View className="px-5">
+                        {/* New to Rentverse Card - Only show if logged in and in guest/tenant mode */}
+                        {isLoggedIn && isTenantMode && (
+                            <View className="bg-white rounded-2xl p-4 mb-5 flex-row items-center"
+                                style={{
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 2 },
+                                    shadowOpacity: 0.08,
+                                    shadowRadius: 4,
+                                    elevation: 2,
+                                }}
+                            >
+                                <View className="w-12 h-12 rounded-full items-center justify-center mr-3"
+                                    style={{ backgroundColor: '#E0F2FE' }}
+                                >
+                                    <Ionicons name="sparkles-outline" size={24} color="#0EA5E9" />
+                                </View>
+                                <View className="flex-1">
+                                    <Text className="text-base font-semibold text-gray-900 mb-0.5">
+                                        New to Rentverse?
                                     </Text>
-                                    <Text className="text-xs" style={{ color: textSecondaryColor }}>
-                                        View all your transactions
+                                    <Text className="text-xs text-gray-500">
+                                        Discover tips and best practices shared by top-rated hosts
                                     </Text>
                                 </View>
                             </View>
-                            <Ionicons name="chevron-forward" size={20} color={textSecondaryColor} />
-                        </TouchableOpacity>
-                    </View>
-                )}
-
-                {/* Become a Host Section - Only show if logged in and not landlord */}
-                {isLoggedIn && !user?.isLandlord && (
-                    <View className="mb-6">
-                        <View
-                            className="p-4 rounded-2xl"
-                            style={{ backgroundColor: surfaceColor, ...CARD_STYLE }}
-                        >
-                            <Text className={`text-lg font-semibold mb-2 ${textColor}`}>
-                                Menjadi Tuan Rumah
-                            </Text>
-                            <Text className="text-text-secondary-light dark:text-text-secondary-dark mb-3">
-                                Mulai menyewakan properti Anda dan dapatkan penghasilan tambahan
-                            </Text>
-                            <TouchableOpacity
-                                onPress={() => (navigation as any).navigate('BecomeHost')}
-                                className="bg-primary rounded-xl py-3"
-                            >
-                                <Text className="text-white text-center font-semibold">
-                                    Mulai Sekarang
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                )}
-
-                {/* Hosting Dashboard Link - Only show if landlord */}
-                {isLoggedIn && canSwitchMode && (
-                    <View className="mb-6">
-                        <Text className={`text-lg font-semibold mb-3 ${textColor}`}>
-                            Hosting
-                        </Text>
-
-                        {/* Current Mode Indicator */}
-                        <View className="mb-3 p-3 rounded-xl" style={{ backgroundColor: isDark ? '#1F2937' : '#F3F4F6' }}>
-                            <View className="flex-row items-center">
-                                <Text className="text-sm" style={{ color: textSecondaryColor }}>
-                                    Mode Saat Ini:{' '}
-                                </Text>
-                                <Ionicons
-                                    name={isTenantMode ? 'home' : 'business'}
-                                    size={16}
-                                    color={textPrimaryColor}
-                                />
-                                <Text className="font-semibold text-sm ml-1" style={{ color: textPrimaryColor }}>
-                                    {isTenantMode ? 'Tenant' : 'Landlord'}
-                                </Text>
-                            </View>
-                        </View>
-
-
-                        {/* Analytics Link - Only for Landlord Mode */}
-                        {!isTenantMode && (
-                            <TouchableOpacity
-                                onPress={() => (navigation as any).navigate('Analytics')}
-                                className="flex-row items-center justify-between p-4 rounded-2xl mb-3"
-                                style={{ backgroundColor: surfaceColor, ...CARD_STYLE }}
-                            >
-                                <View className="flex-row items-center">
-                                    <Ionicons name="stats-chart" size={22} color={iconColor} style={{ marginRight: 12 }} />
-                                    <Text className="text-base font-medium" style={{ color: textPrimaryColor }}>
-                                        Analytics & Statistics
-                                    </Text>
-                                </View>
-                                <Ionicons name="chevron-forward" size={20} color={textSecondaryColor} />
-                            </TouchableOpacity>
                         )}
 
-
-                        {/* Switch Mode Button */}
-                        <TouchableOpacity
-                            onPress={async () => {
-                                await switchMode();
-                                // Mode switch will automatically update the tab navigator
-                                // No need to navigate manually
-                            }}
-                            className="p-4 rounded-2xl"
+                        {/* Menu Items Container */}
+                        <View className="bg-white rounded-2xl px-4 mb-5"
                             style={{
-                                backgroundColor: isDark ? '#1E40AF' : '#3B82F6',
-                                ...CARD_STYLE
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.08,
+                                shadowRadius: 4,
+                                elevation: 2,
                             }}
                         >
-                            <View className="flex-row items-center justify-between">
-                                <View className="flex-1">
-                                    <View className="flex-row items-center mb-1">
+                            {isLoggedIn ? (
+                                <>
+                                    <MenuItem
+                                        icon="settings-outline"
+                                        title="Account settings"
+                                        onPress={() => navigation.navigate('EditProfile')}
+                                        iconColor="#6B7280"
+                                        textColor="#1F2937"
+                                    />
+                                    <View className="h-px bg-gray-100" />
+
+                                    {/* Agent-specific menu items */}
+                                    {isLandlordMode && (
+                                        <>
+                                            <MenuItem
+                                                icon="home-outline"
+                                                title="Hosting Resources"
+                                                onPress={() => { }}
+                                                iconColor="#6B7280"
+                                                textColor="#1F2937"
+                                            />
+                                            <View className="h-px bg-gray-100" />
+                                        </>
+                                    )}
+
+                                    <MenuItem
+                                        icon="help-circle-outline"
+                                        title="Get help"
+                                        onPress={() => { }}
+                                        iconColor="#6B7280"
+                                        textColor="#1F2937"
+                                    />
+                                    <View className="h-px bg-gray-100" />
+
+                                    {/* Agent-specific menu items */}
+                                    {isLandlordMode && (
+                                        <>
+                                            <MenuItem
+                                                icon="add-circle-outline"
+                                                title="Create a new listing"
+                                                onPress={() => { }}
+                                                iconColor="#6B7280"
+                                                textColor="#1F2937"
+                                            />
+                                            <View className="h-px bg-gray-100" />
+                                        </>
+                                    )}
+
+                                    <MenuItem
+                                        icon="document-text-outline"
+                                        title="Terms of Service"
+                                        onPress={() => { }}
+                                        iconColor="#6B7280"
+                                        textColor="#1F2937"
+                                    />
+                                    <View className="h-px bg-gray-100" />
+
+                                    <MenuItem
+                                        icon="lock-closed-outline"
+                                        title="Privacy Policy"
+                                        onPress={() => { }}
+                                        iconColor="#6B7280"
+                                        textColor="#1F2937"
+                                    />
+                                    <View className="h-px bg-gray-100" />
+
+                                    <MenuItem
+                                        icon="code-slash-outline"
+                                        title="Open Source Licenses"
+                                        onPress={() => { }}
+                                        iconColor="#6B7280"
+                                        textColor="#1F2937"
+                                    />
+                                    <View className="h-px bg-gray-100" />
+
+                                    <MenuItem
+                                        icon="log-out-outline"
+                                        title="Log Out"
+                                        onPress={handleLogout}
+                                        iconColor="#6B7280"
+                                        textColor="#1F2937"
+                                    />
+                                </>
+                            ) : (
+                                <>
+                                    <MenuItem
+                                        icon="help-circle-outline"
+                                        title="Get help"
+                                        onPress={() => { }}
+                                        iconColor="#6B7280"
+                                        textColor="#1F2937"
+                                    />
+                                    <View className="h-px bg-gray-100" />
+
+                                    <MenuItem
+                                        icon="document-text-outline"
+                                        title="Terms of Service"
+                                        onPress={() => { }}
+                                        iconColor="#6B7280"
+                                        textColor="#1F2937"
+                                    />
+                                    <View className="h-px bg-gray-100" />
+
+                                    <MenuItem
+                                        icon="lock-closed-outline"
+                                        title="Privacy Policy"
+                                        onPress={() => { }}
+                                        iconColor="#6B7280"
+                                        textColor="#1F2937"
+                                    />
+                                    <View className="h-px bg-gray-100" />
+
+                                    <MenuItem
+                                        icon="code-slash-outline"
+                                        title="Open Source Licenses"
+                                        onPress={() => { }}
+                                        iconColor="#6B7280"
+                                        textColor="#1F2937"
+                                    />
+                                </>
+                            )}
+                        </View>
+
+                        {/* Switch Mode Button - placed below menu items */}
+                        {isLoggedIn && (
+                            <TouchableOpacity
+                                onPress={async () => {
+                                    await switchMode();
+                                }}
+                                className="rounded-full mt-5 mb-5"
+                                activeOpacity={0.8}
+                                style={{ overflow: 'hidden' }}
+                            >
+                                <LinearGradient
+                                    colors={['#10A0F7', '#01E8AD']}
+                                    start={{ x: 0, y: 1 }}
+                                    end={{ x: 1, y: 0 }}
+                                    className="py-4 flex-row items-center justify-center"
+                                    style={{
+                                        shadowColor: '#10A0F7',
+                                        shadowOffset: { width: 0, height: 4 },
+                                        shadowOpacity: 0.3,
+                                        shadowRadius: 8,
+                                        elevation: 8,
+                                    }}
+                                >
+                                    <Ionicons name="swap-horizontal" size={20} color="white" style={{ marginRight: 8 }} />
+                                    <Text className="text-white font-semibold text-base">
+                                        Switch to {isTenantMode ? 'agent' : 'guest'}
+                                    </Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                </View>
+
+
+                <Modal
+                    visible={showLanguageModal}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => setShowLanguageModal(false)}
+                >
+                    <TouchableOpacity
+                        activeOpacity={1}
+                        onPress={() => setShowLanguageModal(false)}
+                        className="flex-1 bg-black/50 justify-center items-center"
+                    >
+                        <View className="w-80 rounded-3xl p-6 bg-white">
+                            <Text className="text-xl font-bold mb-6 text-center text-gray-900">
+                                Select Language
+                            </Text>
+
+                            {languages.map((lang) => (
+                                <TouchableOpacity
+                                    key={lang.code}
+                                    onPress={() => {
+                                        setSelectedLanguage(lang.code);
+                                        setShowLanguageModal(false);
+                                    }}
+                                    className={`flex-row items-center justify-between p-4 rounded-2xl mb-3 ${selectedLanguage === lang.code ? 'bg-primary' : 'bg-gray-50'
+                                        }`}
+                                >
+                                    <View className="flex-row items-center">
                                         <Ionicons
-                                            name="swap-horizontal"
-                                            size={22}
-                                            color="#FFFFFF"
+                                            name="globe-outline"
+                                            size={28}
+                                            color={selectedLanguage === lang.code ? '#FFFFFF' : iconColor}
                                             style={{ marginRight: 12 }}
                                         />
-                                        <Text className="text-white text-base font-semibold">
-                                            Beralih ke Mode {isTenantMode ? 'Landlord' : 'Tenant'}
+                                        <Text className={`text-base font-medium ${selectedLanguage === lang.code ? 'text-white' : 'text-gray-900'
+                                            }`}>
+                                            {lang.name}
                                         </Text>
                                     </View>
-                                    <Text className="text-white/80 text-sm ml-8">
-                                        {isTenantMode
-                                            ? 'Kelola properti yang Anda sewakan'
-                                            : 'Cari properti untuk disewa'}
-                                    </Text>
-                                </View>
-                                <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-                            </View>
-                        </TouchableOpacity>
-                    </View>
-                )}
-
-                {/* Theme Settings */}
-                <View className="mb-6">
-                    <Text className={`text-lg font-semibold mb-3 ${textColor}`}>
-                        Theme
-                    </Text>
-
-                    <View className="gap-3">
-                        {/* Dark Mode */}
-                        <TouchableOpacity
-                            onPress={() => setTheme('dark')}
-                            className="flex-row items-center justify-between p-4 rounded-2xl"
-                            style={{ backgroundColor: surfaceColor, ...CARD_STYLE }}
-                        >
-                            <View className="flex-row items-center">
-                                <Ionicons name="moon" size={22} color={iconColor} style={{ marginRight: 12 }} />
-                                <Text className="text-base font-medium" style={{ color: textPrimaryColor }}>
-                                    Dark
-                                </Text>
-                            </View>
-                            <RadioButton selected={theme === 'dark'} />
-                        </TouchableOpacity>
-
-                        {/* Light Mode */}
-                        <TouchableOpacity
-                            onPress={() => setTheme('light')}
-                            className="flex-row items-center justify-between p-4 rounded-2xl"
-                            style={{ backgroundColor: surfaceColor, ...CARD_STYLE }}
-                        >
-                            <View className="flex-row items-center">
-                                <Ionicons name="sunny" size={22} color={iconColor} style={{ marginRight: 12 }} />
-                                <Text className="text-base font-medium" style={{ color: textPrimaryColor }}>
-                                    Light
-                                </Text>
-                            </View>
-                            <RadioButton selected={theme === 'light'} />
-                        </TouchableOpacity>
-
-                    </View>
-                </View>
-
-                {/* Language Settings */}
-                <View className="mb-6">
-                    <Text className={`text-lg font-semibold mb-3 ${textColor}`}>
-                        Language
-                    </Text>
-
-                    <TouchableOpacity
-                        onPress={() => setShowLanguageModal(true)}
-                        className="flex-row items-center justify-between p-4 rounded-2xl"
-                        style={{ backgroundColor: surfaceColor, ...CARD_STYLE }}
-                    >
-                        <View className="flex-row items-center">
-                            <Ionicons name="globe-outline" size={22} color={iconColor} style={{ marginRight: 12 }} />
-                            <Text className="text-base font-medium" style={{ color: textPrimaryColor }}>
-                                {selectedLangData?.name}
-                            </Text>
+                                    {selectedLanguage === lang.code && (
+                                        <Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
+                                    )}
+                                </TouchableOpacity>
+                            ))}
                         </View>
-                        <Ionicons name="chevron-forward" size={20} color={textSecondaryColor} />
                     </TouchableOpacity>
-                </View>
+                </Modal>
 
-                {/* Bottom padding for tab bar */}
-                <View style={{ height: 100 }} />
+                {/* Auth Flow Modal */}
+                <Modal
+                    visible={showAuthModal}
+                    animationType="slide"
+                    presentationStyle="pageSheet"
+                    onRequestClose={() => setShowAuthModal(false)}
+                >
+                    <AuthFlowScreen
+                        onAuthSuccess={() => {
+                            setShowAuthModal(false);
+                        }}
+                        onClose={() => setShowAuthModal(false)}
+                    />
+                </Modal>
             </ScrollView>
 
             {/* Language Modal */}
@@ -395,9 +449,9 @@ export function ProfileScreen({ navigation }: any) {
                     onPress={() => setShowLanguageModal(false)}
                     className="flex-1 bg-black/50 justify-center items-center"
                 >
-                    <View className={`w-80 rounded-3xl p-6 ${isDark ? 'bg-[#1E293B]' : 'bg-white'}`}>
-                        <Text className={`text-xl font-bold mb-6 text-center ${isDark ? 'text-[#F1F5F9]' : 'text-[#1F2937]'}`}>
-                            Pilih Bahasa
+                    <View className="w-80 rounded-3xl p-6 bg-white">
+                        <Text className="text-xl font-bold mb-6 text-center text-gray-900">
+                            Select Language
                         </Text>
 
                         {languages.map((lang) => (
@@ -407,9 +461,7 @@ export function ProfileScreen({ navigation }: any) {
                                     setSelectedLanguage(lang.code);
                                     setShowLanguageModal(false);
                                 }}
-                                className={`flex-row items-center justify-between p-4 rounded-2xl mb-3 ${selectedLanguage === lang.code
-                                    ? 'bg-primary'
-                                    : isDark ? 'bg-[#0F172A]' : 'bg-[#F9FAFB]'
+                                className={`flex-row items-center justify-between p-4 rounded-2xl mb-3 ${selectedLanguage === lang.code ? 'bg-primary' : 'bg-gray-50'
                                     }`}
                             >
                                 <View className="flex-row items-center">
@@ -419,9 +471,7 @@ export function ProfileScreen({ navigation }: any) {
                                         color={selectedLanguage === lang.code ? '#FFFFFF' : iconColor}
                                         style={{ marginRight: 12 }}
                                     />
-                                    <Text className={`text-base font-medium ${selectedLanguage === lang.code
-                                        ? 'text-white'
-                                        : isDark ? 'text-[#F1F5F9]' : 'text-[#1F2937]'
+                                    <Text className={`text-base font-medium ${selectedLanguage === lang.code ? 'text-white' : 'text-gray-900'
                                         }`}>
                                         {lang.name}
                                     </Text>
