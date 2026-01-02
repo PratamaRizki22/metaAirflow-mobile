@@ -40,6 +40,17 @@ export default function BookingDetailScreen({ route, navigation }: any) {
         try {
             setLoading(true);
             const response = await bookingService.getBookingById(bookingId);
+            
+            console.log('📋 Booking detail loaded:', {
+                id: response.data.id,
+                startDate: response.data.startDate,
+                endDate: response.data.endDate,
+                checkInDate: response.data.checkInDate,
+                checkOutDate: response.data.checkOutDate,
+                totalPrice: response.data.totalPrice,
+                status: response.data.status,
+            });
+            
             setBooking(response.data);
 
             // Check if user can review (for completed bookings)
@@ -57,6 +68,7 @@ export default function BookingDetailScreen({ route, navigation }: any) {
                 checkRefundEligibility(response.data);
             }
         } catch (error: any) {
+            console.error('❌ Load booking detail error:', error);
             Alert.alert('Error', error.message);
             navigation.goBack();
         } finally {
@@ -208,13 +220,16 @@ export default function BookingDetailScreen({ route, navigation }: any) {
                 // Download and extract text from PDF
                 // Note: In production, you might want to do this on backend
                 // For now, we'll use property description as placeholder
+                const checkIn = new Date(booking.startDate || booking.checkInDate);
+                const checkOut = new Date(booking.endDate || booking.checkOutDate);
+                
                 const placeholderText = `Rental Agreement for ${booking.property?.title}
                 
 Property: ${booking.property?.title}
 Location: ${booking.property?.address}, ${booking.property?.city}
-Check-in: ${new Date(booking.checkInDate).toLocaleDateString()}
-Check-out: ${new Date(booking.checkOutDate).toLocaleDateString()}
-Total Price: RM ${booking.totalPrice}
+Check-in: ${!isNaN(checkIn.getTime()) ? checkIn.toLocaleDateString() : 'Invalid Date'}
+Check-out: ${!isNaN(checkOut.getTime()) ? checkOut.toLocaleDateString() : 'Invalid Date'}
+Total Price: RM ${booking.totalPrice || '0'}
 
 Terms and Conditions:
 1. Payment must be made in full before check-in
@@ -283,18 +298,31 @@ For full agreement details, please refer to the PDF document.`;
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'PENDING': return '#FF9500';
-            case 'APPROVED': return '#34C759';
-            case 'REJECTED': return '#FF3B30';
+            case 'PENDING': return '#F59E0B';
+            case 'APPROVED': return '#10B981';
+            case 'REJECTED': return '#EF4444';
             case 'CANCELLED': return '#8E8E93';
             case 'COMPLETED': return '#007AFF';
             default: return '#8E8E93';
         }
     };
 
-    const checkInDate = new Date(booking.checkInDate);
-    const checkOutDate = new Date(booking.checkOutDate);
-    const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+    // Handle different field names from backend (startDate/endDate or checkInDate/checkOutDate)
+    const checkInDate = new Date(booking.startDate || booking.checkInDate);
+    const checkOutDate = new Date(booking.endDate || booking.checkOutDate);
+    
+    // Validate dates
+    const isValidCheckIn = !isNaN(checkInDate.getTime());
+    const isValidCheckOut = !isNaN(checkOutDate.getTime());
+    
+    const nights = isValidCheckIn && isValidCheckOut 
+        ? Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
+
+    // Calculate price per night if we have valid data
+    const pricePerNight = nights > 0 && booking.totalPrice 
+        ? Number(booking.totalPrice) / nights 
+        : Number(booking.property?.pricePerNight || 0);
 
     return (
         <ScrollView style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
@@ -338,21 +366,27 @@ For full agreement details, please refer to the PDF document.`;
                     <View style={{ marginBottom: 12 }}>
                         <Text style={{ color: '#666', marginBottom: 4 }}>Check-in</Text>
                         <Text style={{ fontSize: 16, fontWeight: '600' }}>
-                            {checkInDate.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+                            {isValidCheckIn 
+                                ? checkInDate.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
+                                : 'Invalid Date'
+                            }
                         </Text>
                     </View>
 
                     <View style={{ marginBottom: 12 }}>
                         <Text style={{ color: '#666', marginBottom: 4 }}>Check-out</Text>
                         <Text style={{ fontSize: 16, fontWeight: '600' }}>
-                            {checkOutDate.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+                            {isValidCheckOut
+                                ? checkOutDate.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
+                                : 'Invalid Date'
+                            }
                         </Text>
                     </View>
 
                     <View style={{ marginBottom: 12 }}>
                         <Text style={{ color: '#666', marginBottom: 4 }}>Duration</Text>
                         <Text style={{ fontSize: 16, fontWeight: '600' }}>
-                            {nights} night{nights > 1 ? 's' : ''}
+                            {nights > 0 ? `${nights} night${nights > 1 ? 's' : ''}` : 'Invalid duration'}
                         </Text>
                     </View>
 
@@ -371,15 +405,25 @@ For full agreement details, please refer to the PDF document.`;
                     </Text>
 
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                        <Text>RM {booking.property?.price?.toLocaleString()} x {nights} nights</Text>
-                        <Text>RM {(booking.property?.price * nights)?.toLocaleString()}</Text>
+                        <Text>
+                            RM {pricePerNight > 0 ? pricePerNight.toLocaleString('en-MY', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : '0'} x {nights > 0 ? nights : 'NaN'} nights
+                        </Text>
+                        <Text>
+                            RM {nights > 0 && pricePerNight > 0 
+                                ? (pricePerNight * nights).toLocaleString('en-MY', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+                                : 'NaN'
+                            }
+                        </Text>
                     </View>
 
                     <View style={{ borderTopWidth: 1, borderColor: '#E5E5E5', marginTop: 8, paddingTop: 8 }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                             <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Total</Text>
                             <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007AFF' }}>
-                                RM {booking.totalPrice?.toLocaleString()}
+                                RM {booking.totalPrice 
+                                    ? Number(booking.totalPrice).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                                    : '0.00'
+                                }
                             </Text>
                         </View>
                     </View>
