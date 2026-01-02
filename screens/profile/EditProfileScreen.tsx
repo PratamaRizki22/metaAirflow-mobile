@@ -234,7 +234,7 @@ export default function EditProfileScreen({ navigation }: any) {
                     <TextInput
                         placeholder="YYYY-MM-DD (e.g., 1990-01-15)"
                         placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                        value={formData.dateOfBirth}
+                        value={formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString().split('T')[0] : ''}
                         onChangeText={(text) => setFormData({ ...formData, dateOfBirth: text })}
                         className={`${inputBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
                     />
