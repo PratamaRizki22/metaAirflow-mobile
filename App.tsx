@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { NavigationContainer } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { OnboardingProvider, useOnboarding } from './contexts/OnboardingContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -134,23 +135,25 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder'}>
-        <ThemeProvider>
-          <AuthProvider>
-            <ModeProvider>
-              <OnboardingProvider>
-                <NotificationProvider>
-                  <FavoritesProvider>
-                    <SearchProvider>
-                      <AppContent />
-                    </SearchProvider>
-                  </FavoritesProvider>
-                </NotificationProvider>
-              </OnboardingProvider>
-            </ModeProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </StripeProvider>
+      <SafeAreaProvider>
+        <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder'}>
+          <ThemeProvider>
+            <AuthProvider>
+              <ModeProvider>
+                <OnboardingProvider>
+                  <NotificationProvider>
+                    <FavoritesProvider>
+                      <SearchProvider>
+                        <AppContent />
+                      </SearchProvider>
+                    </FavoritesProvider>
+                  </NotificationProvider>
+                </OnboardingProvider>
+              </ModeProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </StripeProvider>
+      </SafeAreaProvider>
     </ErrorBoundary>
   );
 }
