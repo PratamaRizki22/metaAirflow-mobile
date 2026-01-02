@@ -10,8 +10,20 @@ export function useNetwork() {
     const [isInternetReachable, setIsInternetReachable] = useState<boolean | null>(true);
 
     useEffect(() => {
+        // Get initial state
+        NetInfo.fetch().then(state => {
+            console.log('Initial network state:', state);
+            setIsConnected(state.isConnected);
+            setIsInternetReachable(state.isInternetReachable);
+        });
+
         // Subscribe to network state updates
         const unsubscribe = NetInfo.addEventListener(state => {
+            console.log('Network state changed:', {
+                isConnected: state.isConnected,
+                isInternetReachable: state.isInternetReachable,
+                type: state.type
+            });
             setIsConnected(state.isConnected);
             setIsInternetReachable(state.isInternetReachable);
         });
@@ -20,9 +32,13 @@ export function useNetwork() {
         return () => unsubscribe();
     }, []);
 
+    const isOffline = isConnected === false || isInternetReachable === false;
+    
+    console.log('useNetwork state:', { isConnected, isInternetReachable, isOffline });
+
     return {
         isConnected,
         isInternetReachable,
-        isOffline: isConnected === false || isInternetReachable === false,
+        isOffline,
     };
 }
