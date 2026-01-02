@@ -4,6 +4,7 @@ export { default as collectionService } from './collectionService';
 export { default as bookingService } from './bookingService';
 export { default as propertyService } from './propertyService';
 export { default as uploadService } from './uploadService';
+export { userService, type LandlordProfile, type LandlordProperty, type LandlordTestimonial } from './userService';
 export { default as messageService, Message, Conversation } from './messageService';
 export { default as reviewService } from './reviewService';
 export { default as agreementService } from './agreementService';

@@ -13,6 +13,8 @@ import AnalyticsScreen from '../screens/hosting/AnalyticsScreen';
 import ManagePropertiesScreen from '../screens/landlord/ManagePropertiesScreen';
 import CreatePropertyScreen from '../screens/landlord/CreatePropertyScreen';
 import EditPropertyScreen from '../screens/landlord/EditPropertyScreen';
+import LandlordProfileScreen from '../screens/landlord/LandlordProfileScreen';
+import LandlordPropertiesScreen from '../screens/landlord/LandlordPropertiesScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import PaymentHistoryScreen from '../screens/profile/PaymentHistoryScreen';
 import PaymentDetailScreen from '../screens/payment/PaymentDetailScreen';
@@ -123,6 +125,16 @@ export function RootNavigator() {
                     name="EditProperty"
                     component={EditPropertyScreen}
                     options={{ title: 'Edit Property' }}
+                />
+                <Stack.Screen
+                    name="LandlordProfile"
+                    component={LandlordProfileScreen}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="LandlordProperties"
+                    component={LandlordPropertiesScreen}
+                    options={{ headerShown: false }}
                 />
 
                 {/* Booking Screens */}

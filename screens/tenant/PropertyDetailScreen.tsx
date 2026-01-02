@@ -544,19 +544,24 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                             className={`${cardBg} p-5 rounded-2xl mb-6 border ${borderColor}`}
                         >
                             <Text className={`text-xl font-bold mb-3 ${textColor}`}>Property Owner</Text>
-                            <View className="flex-row items-center">
+                            <TouchableOpacity
+                                onPress={() => navigation.navigate('LandlordProfile', { landlordId: property.owner.id })}
+                                className="flex-row items-center"
+                                activeOpacity={0.7}
+                            >
                                 <View className="w-12 h-12 bg-primary rounded-full items-center justify-center">
                                     <Text className="text-white text-xl font-bold">
                                         {property.owner.firstName?.[0]}{property.owner.lastName?.[0]}
                                     </Text>
                                 </View>
-                                <View className="ml-3">
+                                <View className="ml-3 flex-1">
                                     <Text className={`text-lg font-semibold ${textColor}`}>
                                         {property.owner.firstName} {property.owner.lastName}
                                     </Text>
                                     <Text className={`${secondaryTextColor}`}>Property Owner</Text>
                                 </View>
-                            </View>
+                                <Ionicons name="chevron-forward" size={24} color="#9CA3AF" />
+                            </TouchableOpacity>
                         </Animated.View>
                     )}
 
