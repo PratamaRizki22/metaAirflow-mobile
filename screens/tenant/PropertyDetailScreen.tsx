@@ -14,6 +14,7 @@ import {
     Dimensions,
     Linking,
     Platform,
+    StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -445,14 +446,10 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                             <View className="h-48 rounded-xl overflow-hidden">
                                 <MapLibreGL.MapView
                                     style={{ flex: 1 }}
+                                    mapStyle={`https://api.maptiler.com/maps/streets/style.json?key=${MAPTILER_API_KEY || 'CNmR4fJvRK89a2UaoY91'}`}
+                                    logoEnabled={false}
+                                    attributionEnabled={false}
                                 >
-                                    <MapLibreGL.RasterSource
-                                        id="maptiler-source"
-                                        tileUrlTemplates={[`https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${MAPTILER_API_KEY || 'CNmR4fJvRK89a2UaoY91'}`]}
-                                        tileSize={256}
-                                    >
-                                        <MapLibreGL.RasterLayer id="maptiler-layer" sourceID="maptiler-source" />
-                                    </MapLibreGL.RasterSource>
                                     <MapLibreGL.Camera
                                         centerCoordinate={[property.longitude, property.latitude]}
                                         zoomLevel={15}
@@ -465,21 +462,10 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                                             getUserLocation();
                                         }}
                                     >
-                                        <View style={{
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                        }}>
-                                            <Ionicons
-                                                name="location"
-                                                size={40}
-                                                color="#EF4444"
-                                                style={{
-                                                    shadowColor: '#000',
-                                                    shadowOffset: { width: 0, height: 2 },
-                                                    shadowOpacity: 0.5,
-                                                    shadowRadius: 4,
-                                                }}
-                                            />
+                                        <View style={styles.markerContainer}>
+                                            <Text style={styles.markerText}>
+                                                📍 Location
+                                            </Text>
                                         </View>
                                     </MapLibreGL.PointAnnotation>
                                 </MapLibreGL.MapView>
@@ -817,3 +803,28 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    markerContainer: {
+        backgroundColor: '#FFFFFF',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+        borderWidth: 1.5,
+        borderColor: '#E5E7EB',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 70,
+    },
+    markerText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#111827',
+        textAlign: 'center',
+    },
+});

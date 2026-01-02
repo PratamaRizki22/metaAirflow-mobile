@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, ScrollView, Alert, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, ScrollView, Alert, TouchableOpacity, Image, ActivityIndicator, StyleSheet } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -460,15 +460,11 @@ export default function CreatePropertyScreen({ navigation }: any) {
                         <View className="mt-3 h-64 rounded-xl overflow-hidden">
                             <MapLibreGL.MapView
                                 style={{ flex: 1 }}
+                                mapStyle={`https://api.maptiler.com/maps/streets/style.json?key=${MAPTILER_API_KEY}`}
+                                logoEnabled={false}
+                                attributionEnabled={false}
                                 onPress={handleMapPress}
                             >
-                                <MapLibreGL.RasterSource
-                                    id="maptiler-source"
-                                    tileUrlTemplates={[`https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${MAPTILER_API_KEY}`]}
-                                    tileSize={256}
-                                >
-                                    <MapLibreGL.RasterLayer id="maptiler-layer" sourceID="maptiler-source" />
-                                </MapLibreGL.RasterSource>
                                 <MapLibreGL.Camera
                                     key={`camera-${markerCoordinate[0]}-${markerCoordinate[1]}`}
                                     centerCoordinate={markerCoordinate}
@@ -480,47 +476,10 @@ export default function CreatePropertyScreen({ navigation }: any) {
                                     id="property-location"
                                     coordinate={markerCoordinate}
                                 >
-                                    <View style={{
-                                        width: 50,
-                                        height: 50,
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                    }}>
-                                        <View style={{
-                                            width: 40,
-                                            height: 40,
-                                            backgroundColor: '#EF4444',
-                                            borderRadius: 20,
-                                            borderWidth: 4,
-                                            borderColor: 'white',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            shadowColor: '#000',
-                                            shadowOffset: { width: 0, height: 2 },
-                                            shadowOpacity: 0.3,
-                                            shadowRadius: 4,
-                                            elevation: 5,
-                                        }}>
-                                            <View style={{
-                                                width: 10,
-                                                height: 10,
-                                                backgroundColor: 'white',
-                                                borderRadius: 5,
-                                            }} />
-                                        </View>
-                                        <View style={{
-                                            width: 0,
-                                            height: 0,
-                                            backgroundColor: 'transparent',
-                                            borderStyle: 'solid',
-                                            borderLeftWidth: 8,
-                                            borderRightWidth: 8,
-                                            borderTopWidth: 10,
-                                            borderLeftColor: 'transparent',
-                                            borderRightColor: 'transparent',
-                                            borderTopColor: '#EF4444',
-                                            marginTop: -2,
-                                        }} />
+                                    <View style={styles.markerContainer}>
+                                        <Text style={styles.markerText}>
+                                            📍 Location
+                                        </Text>
                                     </View>
                                 </MapLibreGL.PointAnnotation>
                             </MapLibreGL.MapView>
@@ -833,3 +792,28 @@ export default function CreatePropertyScreen({ navigation }: any) {
         </ScrollView >
     );
 }
+
+const styles = StyleSheet.create({
+    markerContainer: {
+        backgroundColor: '#FFFFFF',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+        borderWidth: 1.5,
+        borderColor: '#E5E7EB',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 70,
+    },
+    markerText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#111827',
+        textAlign: 'center',
+    },
+});
