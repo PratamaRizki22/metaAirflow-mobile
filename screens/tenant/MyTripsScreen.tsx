@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, RefreshControl, Alert, Image } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from '@react-navigation/native';
 import { bookingService } from '../../services';
 import { useThemeColors } from '../../hooks';
 import { useAuth } from '../../contexts/AuthContext';
@@ -20,22 +21,36 @@ export default function MyTripsScreen({ navigation }: any) {
     const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'COMPLETED'>('ALL');
     const { toast, showToast, hideToast } = useToast();
 
-    useEffect(() => {
-        if (isLoggedIn) {
-            loadBookings();
-        } else {
-            setLoading(false);
-        }
-    }, [filter, isLoggedIn]);
+    // Load bookings when screen gains focus
+    useFocusEffect(
+        useCallback(() => {
+            console.log('🔄 MyTripsScreen focused - isLoggedIn:', isLoggedIn);
+            if (isLoggedIn) {
+                loadBookings();
+            } else {
+                console.log('⚠️  User not logged in - skipping booking load');
+                setLoading(false);
+            }
+        }, [filter, isLoggedIn])
+    );
 
     const loadBookings = async () => {
         try {
             setLoading(true);
             const status = filter === 'ALL' ? undefined : filter;
+            console.log('📱 Loading bookings with filter:', filter, 'status:', status);
             const response = await bookingService.getBookings(1, 20, status as any, 'tenant');
+            console.log('📱 Bookings response:', response);
+            console.log('📱 Bookings loaded successfully:', response.data.bookings.length, 'bookings');
+            
+            if (response.data.bookings.length === 0) {
+                console.log('⚠️  No bookings found - checking if user is logged in and has made bookings');
+            }
+            
             setBookings(response.data.bookings);
         } catch (error: any) {
-            console.error('Load bookings error:', error);
+            console.error('🔴 Load bookings error:', error);
+            console.error('🔴 Error details:', error.response?.data || error.message);
             setBookings([]);
         } finally {
             setLoading(false);

@@ -27,8 +27,8 @@ export function LandlordBookingsScreen({ navigation }: any) {
     const loadBookings = async () => {
         try {
             setLoading(true);
-            // Get bookings as owner
-            const response = await bookingService.getBookings(1, 50, undefined, 'owner');
+            // Get bookings as landlord (property owner)
+            const response = await bookingService.getBookings(1, 50, undefined, 'landlord');
             setBookings(response.data.bookings);
         } catch (error: any) {
             showToast(error.message || 'Failed to load bookings', 'error');

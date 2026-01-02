@@ -20,9 +20,15 @@ api.interceptors.request.use(
             const token = await AsyncStorage.getItem('authToken');
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
+                // Log untuk debugging (only log first 20 chars untuk security)
+                if (__DEV__) {
+                    console.log('🔑 Token attached:', token.substring(0, 20) + '...');
+                }
+            } else {
+                console.warn('⚠️  No auth token found in storage');
             }
         } catch (error) {
-            console.error('Error getting token from storage:', error);
+            console.error('❌ Error getting token from storage:', error);
         }
         return config;
     },

@@ -114,6 +114,7 @@ class StripeService {
      */
     async getPaymentHistory(params?: PaymentHistoryParams): Promise<PaymentHistoryResponse> {
         try {
+            console.log('🔍 Fetching payment history with params:', params);
             const queryParams = new URLSearchParams();
 
             if (params?.page) queryParams.append('page', params.page.toString());
@@ -121,11 +122,27 @@ class StripeService {
             if (params?.status) queryParams.append('status', params.status);
 
             const url = `/v1/m/payments/history${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+            console.log('📡 Payment history URL:', url);
+            
             const response = await api.get(url);
+            console.log('✅ Payment history response status:', response.status);
+            console.log('📦 Payment history response data:', JSON.stringify(response.data, null, 2));
 
             // Backend returns { success: true, data: {...} }
-            return response.data.data || response.data;
+            const result = response.data.data || response.data;
+            console.log('🎯 Processed payment history:', {
+                paymentsCount: result.payments?.length || 0,
+                pagination: result.pagination
+            });
+            
+            return result;
         } catch (error: any) {
+            console.error('❌ Payment history error:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status,
+                url: error.config?.url
+            });
             const message = error.response?.data?.message || 'Failed to get payment history';
             throw new Error(message);
         }

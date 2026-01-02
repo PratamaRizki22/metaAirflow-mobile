@@ -8,10 +8,16 @@ export default function PaymentScreenWrapper({ route, navigation }: any) {
     const { bgColor } = useThemeColors();
 
     const handleSuccess = () => {
-        // Navigate to booking success/confirmation screen
-        navigation.replace('MyTrips', {
-            screen: 'MyTrips',
-            params: { refresh: true }
+        // Navigate back to MainTabs and focus on Trips tab
+        navigation.reset({
+            index: 0,
+            routes: [{
+                name: 'MainTabs',
+                state: {
+                    routes: [{ name: 'Trips' }],
+                    index: 0,
+                }
+            }]
         });
     };
 

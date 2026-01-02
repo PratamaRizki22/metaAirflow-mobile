@@ -57,7 +57,7 @@ class BookingService extends BaseService {
         page: number = 1,
         limit: number = 10,
         status?: BookingStatus,
-        role?: 'tenant' | 'owner'
+        role?: 'tenant' | 'landlord'
     ): Promise<BookingsResponse> {
         try {
             const params: Record<string, any> = { page, limit };
@@ -67,10 +67,33 @@ class BookingService extends BaseService {
             const queryString = this.buildQueryString(params);
             const url = `/v1/m/bookings?${queryString}`;
 
+            console.log('🔵 Booking API Request:', url);
+            console.log('🔵 Request params:', params);
+            
             const response = await api.get<BookingsResponse>(url);
+            
+            console.log('🟢 Booking API Full Response:', JSON.stringify(response.data, null, 2));
+            console.log('🟢 Response structure check:', {
+                hasSuccess: 'success' in response.data,
+                hasData: 'data' in response.data,
+                successValue: response.data?.success,
+                dataType: typeof response.data?.data,
+                bookingsIsArray: Array.isArray(response.data?.data?.bookings),
+                bookingsCount: response.data?.data?.bookings?.length,
+                hasPagination: 'pagination' in (response.data?.data || {}),
+            });
+            
+            // Validate response structure
+            if (!response.data || !response.data.data || !response.data.data.bookings) {
+                console.error('❌ Invalid response structure:', response.data);
+                throw new Error('Invalid response format from server');
+            }
+            
             return response.data;
         } catch (error: any) {
-            console.error('Get bookings error:', error.response?.data || error.message);
+            console.error('🔴 Get bookings error:', error.response?.data || error.message);
+            console.error('🔴 Error status:', error.response?.status);
+            console.error('🔴 Full error:', error);
             throw this.handleError(error);
         }
     }
@@ -111,13 +134,16 @@ class BookingService extends BaseService {
      */
     async cancelBooking(bookingId: string, reason?: string): Promise<{ success: boolean; message: string }> {
         try {
+            console.log('📤 Cancelling booking:', bookingId, 'Reason:', reason);
             const response = await api.post<{ success: boolean; message: string }>(
                 `/v1/m/bookings/${bookingId}/cancel`,
                 reason ? { reason } : {}
             );
+            console.log('📥 Cancel response:', response.data);
             return response.data;
         } catch (error: any) {
-            console.error('Cancel booking error:', error.response?.data || error.message);
+            console.error('🔴 Cancel booking error:', error.response?.data || error.message);
+            console.error('🔴 Error status:', error.response?.status);
             throw this.handleError(error);
         }
     }
@@ -189,10 +215,10 @@ class BookingService extends BaseService {
     }
 
     /**
-     * Get bookings as owner (bookings on my properties)
+     * Get bookings as landlord (bookings on my properties)
      */
     async getOwnerBookings(page: number = 1, limit: number = 10, status?: BookingStatus): Promise<BookingsResponse> {
-        return this.getBookings(page, limit, status, 'owner');
+        return this.getBookings(page, limit, status, 'landlord');
     }
 
     /**

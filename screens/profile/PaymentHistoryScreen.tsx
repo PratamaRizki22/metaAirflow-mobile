@@ -59,18 +59,29 @@ export default function PaymentHistoryScreen({ navigation }: any) {
 
     const fetchPayments = useCallback(async (page = 1, status?: PaymentStatus | 'all') => {
         try {
+            console.log('🚀 Starting payment history fetch:', { page, status });
             setError(null);
             const params: any = { page, limit: 10 };
             if (status && status !== 'all') {
                 params.status = status;
             }
 
+            console.log('📞 Calling stripeService.getPaymentHistory with params:', params);
             const response = await stripeService.getPaymentHistory(params);
+            console.log('✅ Payment history fetched successfully:', {
+                paymentsCount: response.payments?.length || 0,
+                pagination: response.pagination
+            });
+            
             setPayments(response.payments);
             setPagination(response.pagination);
         } catch (err: any) {
+            console.error('❌ Payment history error in screen:', {
+                message: err.message,
+                stack: err.stack,
+                error: err
+            });
             setError(err.message || 'Failed to load payment history');
-            console.error('Payment history error:', err);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -93,7 +104,13 @@ export default function PaymentHistoryScreen({ navigation }: any) {
     };
 
     const handlePaymentPress = (payment: Payment) => {
-        navigation.navigate('PaymentDetail', { paymentId: payment.id });
+        console.log('Navigating to payment detail with ID:', payment.id);
+        console.log('Payment object:', payment);
+        // Pass payment object directly to avoid network error
+        navigation.navigate('PaymentDetail', { 
+            paymentId: payment.id,
+            paymentData: payment 
+        });
     };
 
     const renderFilterChip = (filter: PaymentStatus | 'all', label: string) => {

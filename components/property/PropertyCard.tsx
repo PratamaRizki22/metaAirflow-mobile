@@ -162,7 +162,7 @@ export const PropertyCard = React.memo(function PropertyCard({
                             <View className="flex-row items-center mt-1">
                                 <Ionicons name="star" size={12} color="#F59E0B" />
                                 <Text className={`text-xs ml-1 font-bold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                                    {property.rating ? property.rating.toFixed(1) : 'New'}
+                                    {property.rating !== undefined ? property.rating.toFixed(1) : '0.0'}
                                 </Text>
                             </View>
                         )}
@@ -281,7 +281,7 @@ export const PropertyCard = React.memo(function PropertyCard({
                             <View className="flex-row items-center bg-white/90 dark:bg-black/60 px-2 py-1 rounded-lg backdrop-blur-sm">
                                 <Ionicons name="star" size={14} color="#F59E0B" />
                                 <Text className={`text-xs ml-1 font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                    {property.rating ? property.rating.toFixed(1) : 'New'}
+                                    {property.rating !== undefined ? property.rating.toFixed(1) : '0.0'}
                                 </Text>
                             </View>
                         </View>

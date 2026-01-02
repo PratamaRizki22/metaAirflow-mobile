@@ -104,12 +104,16 @@ export default function BookingDetailScreen({ route, navigation }: any) {
                     onPress: async () => {
                         try {
                             setActionLoading(true);
+                            console.log('🔴 Cancelling booking:', bookingId);
                             await bookingService.cancelBooking(bookingId);
+                            console.log('✅ Booking cancelled successfully');
                             Alert.alert('Success', 'Booking cancelled successfully', [
                                 { text: 'OK', onPress: () => navigation.goBack() }
                             ]);
                         } catch (error: any) {
-                            Alert.alert('Error', error.message);
+                            console.error('❌ Cancel booking error:', error);
+                            console.error('❌ Error details:', error.response?.data);
+                            Alert.alert('Error', error.message || 'Failed to cancel booking');
                         } finally {
                             setActionLoading(false);
                         }
@@ -451,7 +455,8 @@ For full agreement details, please refer to the PDF document.`;
                             </TouchableOpacity>
                         )}
                     </View>
-                )}\n
+                )}
+
                 {/* Write Review Button (for completed bookings) */}
                 {booking.status === 'COMPLETED' && canReview && (
                     <View style={{ marginTop: 16 }}>

@@ -42,32 +42,48 @@ const STATUS_CONFIG = {
 };
 
 export default function PaymentDetailScreen({ route, navigation }: any) {
-    const { paymentId } = route.params || {};
+    const { paymentId, paymentData } = route.params || {};
     const { bgColor, textColor, cardBg, isDark } = useThemeColors();
-    const [payment, setPayment] = useState<Payment | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [payment, setPayment] = useState<Payment | null>(paymentData || null);
+    const [loading, setLoading] = useState(!paymentData);
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        // If payment data already provided, no need to fetch
+        if (paymentData) {
+            console.log('✅ Using payment data from navigation params');
+            setPayment(paymentData);
+            setLoading(false);
+            return;
+        }
+        
         if (!paymentId) {
             setError('Payment ID is required');
             setLoading(false);
             return;
         }
+        
+        // Only fetch if no payment data provided
         loadPaymentDetails();
-    }, [paymentId]);
+    }, [paymentId, paymentData]);
 
     const loadPaymentDetails = async () => {
         try {
             setLoading(true);
             setError(null);
             console.log('Loading payment details for ID:', paymentId);
+            
+            if (!paymentId) {
+                throw new Error('Payment ID is missing');
+            }
+            
             const response = await stripeService.getPaymentDetails(paymentId);
-            console.log('Payment details response:', response);
+            console.log('Payment details loaded:', response);
             setPayment(response);
         } catch (err: any) {
             console.error('Payment details error:', err);
+            console.error('Error response:', err.response);
             setError(err.message || 'Failed to load payment details');
         } finally {
             setLoading(false);

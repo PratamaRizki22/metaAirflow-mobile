@@ -46,8 +46,8 @@ export function LandlordTodayScreen({ navigation }: any) {
     const loadTodayData = async () => {
         try {
             setLoading(true);
-            // Get all bookings as owner (increase limit to get more data)
-            const response = await bookingService.getBookings(1, 100, undefined, 'owner');
+            // Get all bookings as landlord (property owner) - increase limit to get more data
+            const response = await bookingService.getBookings(1, 100, undefined, 'landlord');
 
             // Filter today's bookings
             const today = new Date().toDateString();
