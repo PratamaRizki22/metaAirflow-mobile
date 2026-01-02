@@ -109,9 +109,6 @@ export function Toast({
                 end={{ x: 1, y: 1 }}
                 style={[styles.gradient, { borderColor: config.borderColor }]}
             >
-                <View style={[styles.iconContainer, { backgroundColor: config.color + '20' }]}>
-                    <Ionicons name={config.icon} size={22} color={config.color} />
-                </View>
                 <Text style={styles.message} numberOfLines={2}>
                     {message}
                 </Text>
@@ -159,7 +156,7 @@ const styles = StyleSheet.create({
         flex: 1,
         color: '#FFFFFF',
         fontSize: 15,
-        fontWeight: '600',
+        fontFamily: 'VisbyRound-Medium',
         lineHeight: 20,
         letterSpacing: 0.2,
     },

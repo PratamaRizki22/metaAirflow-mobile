@@ -132,9 +132,17 @@ export function PaymentScreen({
                         showToast(error.message || 'Payment error occurred', 'error');
                 }
             } else {
-                // Payment successful!
-                showToast('Payment successful! 🎉 Your booking is confirmed', 'success');
-                setTimeout(() => onSuccess(), 1500);
+                // Payment successful - confirm with backend
+                try {
+                    console.log('Confirming payment with backend:', { bookingId, paymentIntent: paymentSheetParams?.paymentIntent });
+                    await stripeService.confirmPayment(bookingId, paymentSheetParams?.paymentIntent || '');
+                    showToast('Payment successful! Your booking is confirmed', 'success');
+                    setTimeout(() => onSuccess(), 1500);
+                } catch (confirmError: any) {
+                    console.error('Payment confirmation error:', confirmError);
+                    showToast('Payment processed but confirmation failed. Please contact support.', 'warning');
+                    setTimeout(() => onSuccess(), 2000);
+                }
             }
         } catch (error: any) {
             console.error('Payment error:', error);
