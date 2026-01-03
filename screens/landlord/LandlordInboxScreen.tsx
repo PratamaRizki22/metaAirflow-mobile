@@ -81,7 +81,7 @@ export function LandlordInboxScreen({ navigation }: any) {
                     Inbox
                 </Text>
                 <Text className="text-text-secondary-light dark:text-text-secondary-dark mb-6">
-                    Pesan dari tenant Anda
+                    Messages from your tenants
                 </Text>
 
                 {conversations.length === 0 ? (
@@ -93,10 +93,10 @@ export function LandlordInboxScreen({ navigation }: any) {
                             color={isDark ? '#9CA3AF' : '#6B7280'}
                         />
                         <Text className={`text-lg font-semibold mt-6 ${textColor}`}>
-                            Belum Ada Pesan
+                            No Messages Yet
                         </Text>
                         <Text className="text-text-secondary-light dark:text-text-secondary-dark mt-2 text-center">
-                            Pesan dari tenant akan muncul di sini
+                            Messages from tenants will appear here
                         </Text>
                     </View>
                 ) : (

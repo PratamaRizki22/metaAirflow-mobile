@@ -290,10 +290,42 @@ class PropertyService extends BaseService {
             const response = await api.get<PropertiesResponse>(
                 `/v1/m/properties/my-properties?page=${page}&limit=${limit}`
             );
+            
+            // Check if response is successful
+            if (!response.data.success) {
+                // Backend returned error with success: false
+                console.warn('Backend returned error:', response.data);
+                // Return empty properties instead of throwing
+                return {
+                    success: true,
+                    data: {
+                        properties: [],
+                        pagination: {
+                            page: 1,
+                            limit: limit,
+                            total: 0,
+                            totalPages: 0
+                        }
+                    }
+                };
+            }
+            
             return response.data;
         } catch (error: any) {
             console.error('Get my properties error:', error.response?.data || error.message);
-            throw this.handleError(error);
+            // Return empty properties instead of throwing
+            return {
+                success: true,
+                data: {
+                    properties: [],
+                    pagination: {
+                        page: 1,
+                        limit: limit,
+                        total: 0,
+                        totalPages: 0
+                    }
+                }
+            };
         }
     }
 

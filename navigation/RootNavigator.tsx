@@ -16,6 +16,7 @@ import EditPropertyScreen from '../screens/landlord/EditPropertyScreen';
 import LandlordProfileScreen from '../screens/landlord/LandlordProfileScreen';
 import LandlordPropertiesScreen from '../screens/landlord/LandlordPropertiesScreen';
 import RefundRequestsScreen from '../screens/landlord/RefundRequestsScreen';
+import StripeConnectScreen from '../screens/landlord/StripeConnectScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import GetHelpScreen from '../screens/profile/GetHelpScreen';
 import TermsOfServiceScreen from '../screens/profile/TermsOfServiceScreen';
@@ -145,6 +146,11 @@ export function RootNavigator() {
                 <Stack.Screen
                     name="RefundRequests"
                     component={RefundRequestsScreen}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="StripeConnect"
+                    component={StripeConnectScreen}
                     options={{ headerShown: false }}
                 />
 

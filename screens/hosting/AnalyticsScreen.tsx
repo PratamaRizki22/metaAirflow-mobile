@@ -36,7 +36,7 @@ export default function AnalyticsScreen({ navigation }: any) {
 
             // Load properties
             const propertiesResponse = await propertyService.getMyProperties(1, 100);
-            const properties = propertiesResponse.data.properties;
+            const properties = propertiesResponse?.data?.properties || [];
             const activeProperties = properties.filter((p: any) => p.status === 'APPROVED' && p.isAvailable);
 
             // Load all bookings

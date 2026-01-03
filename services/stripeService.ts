@@ -318,6 +318,80 @@ class StripeService {
             throw new Error(message);
         }
     }
+
+    /**
+     * Get landlord revenue statistics from actual Stripe payments
+     */
+    async getLandlordRevenue(startDate?: string, endDate?: string): Promise<any> {
+        try {
+            const queryParams = new URLSearchParams();
+            if (startDate) queryParams.append('startDate', startDate);
+            if (endDate) queryParams.append('endDate', endDate);
+
+            const url = `/v1/m/payments/landlord/revenue${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+            const response = await api.get(url);
+
+            return response.data.data || response.data;
+        } catch (error: any) {
+            const message = error.response?.data?.message || 'Failed to get revenue statistics';
+            throw new Error(message);
+        }
+    }
+
+    /**
+     * Get landlord payout summary
+     */
+    async getLandlordPayoutSummary(): Promise<any> {
+        try {
+            const response = await api.get('/v1/m/payments/landlord/payout');
+            return response.data.data || response.data;
+        } catch (error: any) {
+            const message = error.response?.data?.message || 'Failed to get payout summary';
+            throw new Error(message);
+        }
+    }
+
+    /**
+     * Create Stripe Connect account for landlord
+     */
+    async createConnectAccount(email?: string, country?: string): Promise<any> {
+        try {
+            const response = await api.post('/v1/m/payments/connect/create', {
+                email,
+                country: country || 'MY',
+            });
+            return response.data.data || response.data;
+        } catch (error: any) {
+            const message = error.response?.data?.message || 'Failed to create Connect account';
+            throw new Error(message);
+        }
+    }
+
+    /**
+     * Get Stripe Connect account status
+     */
+    async getConnectAccountStatus(): Promise<any> {
+        try {
+            const response = await api.get('/v1/m/payments/connect/status');
+            return response.data.data || response.data;
+        } catch (error: any) {
+            const message = error.response?.data?.message || 'Failed to get account status';
+            throw new Error(message);
+        }
+    }
+
+    /**
+     * Create Stripe dashboard link
+     */
+    async createDashboardLink(): Promise<any> {
+        try {
+            const response = await api.post('/v1/m/payments/connect/dashboard');
+            return response.data.data || response.data;
+        } catch (error: any) {
+            const message = error.response?.data?.message || 'Failed to create dashboard link';
+            throw new Error(message);
+        }
+    }
 }
 
 export const stripeService = new StripeService();

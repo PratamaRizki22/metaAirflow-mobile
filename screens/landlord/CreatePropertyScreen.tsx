@@ -333,7 +333,29 @@ export default function CreatePropertyScreen({ navigation }: any) {
                 navigation.navigate('ManageProperties');
             }, 1500);
         } catch (error: any) {
-            showToast(error.message || 'Failed to create property', 'error');
+            // Check if error is due to missing Stripe Connect
+            if (error.response?.status === 403 && error.response?.data?.requiresStripeConnect) {
+                Alert.alert(
+                    'Stripe Account Required',
+                    'You need to connect your Stripe account before creating properties. This allows you to receive payments from tenants.',
+                    [
+                        {
+                            text: 'Cancel',
+                            style: 'cancel',
+                            onPress: () => setLoading(false)
+                        },
+                        {
+                            text: 'Connect Stripe',
+                            onPress: () => {
+                                setLoading(false);
+                                navigation.navigate('StripeConnect');
+                            }
+                        }
+                    ]
+                );
+            } else {
+                showToast(error.message || 'Failed to create property', 'error');
+            }
         } finally {
             setLoading(false);
         }

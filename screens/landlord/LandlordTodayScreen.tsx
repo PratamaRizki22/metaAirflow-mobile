@@ -5,6 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { bookingService, reviewService, propertyService } from '../../services';
+import { stripeService } from '../../services/stripeService';
 import { useThemeColors } from '../../hooks';
 import { ReviewCard } from '../../components/review';
 import { LoadingState, TabBarBottomSpacer } from '../../components/common';
@@ -62,19 +63,35 @@ export function LandlordTodayScreen({ navigation }: any) {
             const pending = response.data.bookings.filter((b: any) => b.status === 'PENDING').length;
             const approved = response.data.bookings.filter((b: any) => b.status === 'APPROVED').length;
 
-            // Calculate monthly revenue from approved and completed bookings
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
-
-            const monthlyRevenue = response.data.bookings
-                .filter((b: any) => {
-                    const bookingDate = new Date(b.createdAt);
-                    const isCurrentMonth = bookingDate.getMonth() === currentMonth &&
-                        bookingDate.getFullYear() === currentYear;
-                    const isPaid = b.status === 'APPROVED' || b.status === 'COMPLETED';
-                    return isCurrentMonth && isPaid;
-                })
-                .reduce((sum: number, b: any) => sum + (b.totalPrice || 0), 0);
+            // Get actual revenue from Stripe payments (current month)
+            let monthlyRevenue = 0;
+            try {
+                const currentDate = new Date();
+                const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+                const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59);
+                
+                const revenueData = await stripeService.getLandlordRevenue(
+                    startOfMonth.toISOString(),
+                    endOfMonth.toISOString()
+                );
+                
+                monthlyRevenue = revenueData.currentMonthRevenue || 0;
+                console.log('💰 Actual Stripe revenue for current month:', monthlyRevenue);
+            } catch (error) {
+                console.error('Error fetching Stripe revenue, falling back to booking total:', error);
+                // Fallback: calculate from bookings if Stripe data not available
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+                monthlyRevenue = response.data.bookings
+                    .filter((b: any) => {
+                        const bookingDate = new Date(b.createdAt);
+                        const isCurrentMonth = bookingDate.getMonth() === currentMonth &&
+                            bookingDate.getFullYear() === currentYear;
+                        const isPaid = b.status === 'APPROVED' || b.status === 'COMPLETED';
+                        return isCurrentMonth && isPaid;
+                    })
+                    .reduce((sum: number, b: any) => sum + (b.totalPrice || 0), 0);
+            }
 
             setStats({ pending, approved, revenue: monthlyRevenue });
         } catch (error: any) {
@@ -92,13 +109,15 @@ export function LandlordTodayScreen({ navigation }: any) {
         try {
             // Get landlord's properties
             const propertiesResponse = await propertyService.getMyProperties(1, 10);
-            const properties = propertiesResponse?.data?.properties || [];
-
-            if (!properties || properties.length === 0) {
-                console.log('No properties found for landlord');
+            
+            // Check if response has the expected structure
+            if (!propertiesResponse?.data?.properties) {
+                console.warn('No properties found in response:', propertiesResponse);
                 setRecentReviews([]);
                 return;
             }
+            
+            const properties = propertiesResponse.data.properties;
 
             // Get recent reviews for each property
             const allReviews: any[] = [];
@@ -123,6 +142,7 @@ export function LandlordTodayScreen({ navigation }: any) {
             setRecentReviews(sortedReviews.slice(0, 5));
         } catch (error) {
             console.error('Error loading recent reviews:', error);
+            setRecentReviews([]);
         }
     };
 
@@ -192,11 +212,20 @@ export function LandlordTodayScreen({ navigation }: any) {
 
                 {/* Monthly Revenue Card */}
                 <View className={`${cardBg} p-4 rounded-2xl mb-6 border ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
-                    <View className="flex-row items-center mb-2">
-                        <Ionicons name="cash-outline" size={20} color="#10A0F7" />
-                        <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm ml-2">
-                            Pendapatan Bulan Ini
-                        </Text>
+                    <View className="flex-row items-center justify-between mb-2">
+                        <View className="flex-row items-center">
+                            <Ionicons name="cash-outline" size={20} color="#10A0F7" />
+                            <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm ml-2">
+                                Monthly Revenue
+                            </Text>
+                        </View>
+                        <TouchableOpacity 
+                            onPress={() => navigation.navigate('StripeConnect')}
+                            className="flex-row items-center bg-primary/10 px-3 py-1 rounded-full"
+                        >
+                            <Ionicons name="card-outline" size={14} color="#10A0F7" />
+                            <Text className="text-primary text-xs ml-1 font-semibold">Stripe</Text>
+                        </TouchableOpacity>
                     </View>
                     <Text
                         className={`text-3xl ${textColor}`}
@@ -205,7 +234,7 @@ export function LandlordTodayScreen({ navigation }: any) {
                         RM {stats.revenue.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Text>
                     <Text className="text-text-secondary-light dark:text-text-secondary-dark text-xs mt-1">
-                        Dari booking yang disetujui
+                        From actual Stripe payments
                     </Text>
                 </View>
 
@@ -214,7 +243,7 @@ export function LandlordTodayScreen({ navigation }: any) {
                     className={`text-xl mb-4 ${textColor}`}
                     style={{ fontFamily: 'VisbyRound-Bold' }}
                 >
-                    Booking Hari Ini
+                    Today's Bookings
                 </Text>
 
                 {todayBookings.length === 0 ? (
@@ -225,7 +254,7 @@ export function LandlordTodayScreen({ navigation }: any) {
                             color="#10A0F7"
                         />
                         <Text className="text-text-secondary-light dark:text-text-secondary-dark mt-4 text-center">
-                            Tidak ada booking baru hari ini
+                            No new bookings today
                         </Text>
                     </View>
                 ) : (

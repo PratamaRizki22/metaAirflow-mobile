@@ -17,13 +17,15 @@ export default function HostingDashboardScreen({ navigation }: any) {
 
             // Load my properties
             const propsResponse = await propertyService.getMyProperties(1, 10);
-            setProperties(propsResponse.data.properties);
+            setProperties(propsResponse?.data?.properties || []);
 
             // Load pending booking requests
             const bookingsResponse = await bookingService.getBookings(1, 10, 'PENDING', 'owner');
             setBookingRequests(bookingsResponse.data.bookings);
         } catch (error: any) {
             Alert.alert('Error', error.message);
+            setProperties([]);
+            setBookingRequests([]);
         } finally {
             setLoading(false);
         }

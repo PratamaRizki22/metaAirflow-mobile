@@ -60,7 +60,7 @@ export function LandlordBookingsScreen({ navigation }: any) {
                     Bookings
                 </Text>
                 <Text className="text-text-secondary-light dark:text-text-secondary-dark mb-4">
-                    Kelola booking request dari tenant
+                    Manage booking requests from tenants
                 </Text>
 
                 {/* Filter Tabs */}
@@ -82,7 +82,7 @@ export function LandlordBookingsScreen({ navigation }: any) {
                                     ? 'text-white'
                                     : isDark ? 'text-gray-300' : 'text-gray-700'
                                     }`}>
-                                    {status === 'all' ? 'Semua' : status}
+                                    {status === 'all' ? 'All' : status}
                                 </Text>
                             </TouchableOpacity>
                         ))}
@@ -113,12 +113,12 @@ export function LandlordBookingsScreen({ navigation }: any) {
                             color={isDark ? '#9CA3AF' : '#6B7280'}
                         />
                         <Text className={`text-lg font-semibold mt-4 ${textColor}`}>
-                            Tidak ada booking
+                            No bookings
                         </Text>
                         <Text className="text-text-secondary-light dark:text-text-secondary-dark mt-2 text-center px-8">
                             {filter === 'all'
-                                ? 'Belum ada booking request dari tenant'
-                                : `Tidak ada booking dengan status ${filter}`
+                                ? 'No booking requests from tenants yet'
+                                : `No bookings with status ${filter}`
                             }
                         </Text>
                     </View>

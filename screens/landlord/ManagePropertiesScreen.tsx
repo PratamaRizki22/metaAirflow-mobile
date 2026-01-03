@@ -25,9 +25,18 @@ export default function ManagePropertiesScreen({ navigation }: any) {
         try {
             setLoading(true);
             const response = await propertyService.getMyProperties(1, 50);
-            setProperties(response?.data?.properties || []);
+            
+            // Handle response properly
+            if (response?.data?.properties) {
+                setProperties(response.data.properties);
+            } else {
+                console.warn('No properties in response, setting empty array');
+                setProperties([]);
+            }
         } catch (error: any) {
-            showAlert('Error', error.message);
+            console.error('Error loading properties:', error);
+            setProperties([]);
+            showAlert('Error', error.message || 'Failed to load properties');
         } finally {
             setLoading(false);
         }
