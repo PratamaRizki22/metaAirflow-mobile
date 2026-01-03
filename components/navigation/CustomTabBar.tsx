@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { View, TouchableOpacity, Text, Dimensions } from 'react-native';
+import { View, TouchableOpacity, Text } from 'react-native';
+import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -8,10 +9,8 @@ import Animated, {
     withSpring,
 } from 'react-native-reanimated';
 import { useTheme } from '../../contexts/ThemeContext';
-import { HomeIcon, MessagesIcon, TripsIcon, FavoritesIcon, ProfileIcon, AddIcon, SearchIcon } from './TabIcons';
+import { HomeIcon, MessagesIcon, TripsIcon, FavoritesIcon, ProfileIcon, SearchIcon } from './TabIcons';
 import { useTabBarAnimation } from '../../contexts/TabBarAnimationContext';
-
-const { width } = Dimensions.get('window');
 
 interface CustomTabBarProps {
     state: any;
@@ -24,49 +23,9 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
     const insets = useSafeAreaInsets();
     const { tabBarOpacity, tabBarTranslateY } = useTabBarAnimation();
 
-    // Tab bar dimensions
-    const tabBarWidth = width - 32; // 16px margin on each side
-    const tabBarHeight = 67;
-    const tabCount = state.routes.length;
 
-    // Animated indicator position
-    const indicatorPosition = useSharedValue(0);
 
-    // Calculate actual tab width accounting for container padding
-    // Container has paddingHorizontal: 16, so content area = tabBarWidth - 32
-    const containerPadding = 16;
-    const contentWidth = tabBarWidth - (containerPadding * 2);
-    const actualTabWidth = contentWidth / tabCount;
 
-    // Indicator should be slightly smaller than tab width for visual spacing
-    const indicatorWidth = actualTabWidth - 8; // 4px padding on each side (wider for text)
-    const indicatorOffset = 4; // Center the indicator within the tab
-
-    useEffect(() => {
-        // Skip animation if Add tab is selected (it has its own visual treatment)
-        const currentRoute = state.routes[state.index];
-        if (currentRoute.name === 'Add') {
-            return;
-        }
-
-        // Calculate the actual position based on the current tab index
-        // Layout: [Home=0] [Messages=1] [Add=2] [Favorites=3] [Profile=4]
-        // Each tab occupies actualTabWidth, indicator aligns with the tab
-        // Start from the tab position + offset to center it
-        const targetPosition = state.index * actualTabWidth + indicatorOffset;
-
-        indicatorPosition.value = withSpring(targetPosition, {
-            damping: 40,
-            stiffness: 200,
-            overshootClamping: true,
-        });
-    }, [state.index, state.routes, actualTabWidth, indicatorOffset, indicatorPosition]);
-
-    const animatedIndicatorStyle = useAnimatedStyle(() => {
-        return {
-            transform: [{ translateX: indicatorPosition.value }],
-        };
-    });
 
     // Animation for the entire Tab Bar container
     const animatedContainerStyle = useAnimatedStyle(() => {
@@ -78,16 +37,16 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
 
     const getIcon = (routeName: string, isFocused: boolean) => {
         const color = isFocused
-            ? '#FFFFFF'
-            : '#01E8AD'; // Gradient cyan for inactive icons
+            ? '#FFFFFF' // White for active
+            : '#9CA3AF'; // Gray for inactive
 
-        const iconProps = { width: 22, height: 22, color };
+        const iconProps = { width: 24, height: 24, color };
 
         switch (routeName) {
             // Tenant Mode Tabs
             case 'Home':
                 return <HomeIcon {...iconProps} />;
-            case 'Search':
+            case 'Explore':
                 return <SearchIcon {...iconProps} />;
             case 'Messages':
                 return <MessagesIcon {...iconProps} />;
@@ -101,16 +60,10 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
             // Landlord Mode Tabs
             case 'Today':
                 return <HomeIcon {...iconProps} />;
-            case 'Inbox':
-                return <MessagesIcon {...iconProps} />;
             case 'Properties':
                 return <HomeIcon {...iconProps} />;
             case 'Bookings':
                 return <TripsIcon {...iconProps} />;
-
-            // Legacy Add button
-            case 'Add':
-                return <AddIcon width={32} height={32} color="#FFFFFF" />;
 
             default:
                 return null;
@@ -118,65 +71,28 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
     };
 
     const bgColor = isDark ? '#1E293B' : '#FFFFFF';
-    const indicatorColor = isDark ? '#00D9A3' : '#00B87C'; // Not used anymore (gradient indicator)
-    const textColorActive = '#FFFFFF';
-    const textColorInactive = '#01E8AD'; // Gradient cyan for inactive text
 
     return (
         <Animated.View
             style={[
                 {
                     position: 'absolute',
-                    bottom: insets.bottom > 0 ? insets.bottom + 14 : 35,
-                    left: 16,
-                    right: 16,
-                    height: tabBarHeight,
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 80,
                     backgroundColor: bgColor,
-                    borderRadius: 40,
                     flexDirection: 'row',
                     alignItems: 'center',
-                    paddingHorizontal: 16,
-                    // Shadow for iOS
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.15,
-                    shadowRadius: 12,
-                    // Elevation for Android
-                    elevation: 8,
+                    justifyContent: 'space-around',
+                    paddingBottom: insets.bottom > 0 ? insets.bottom : 20,
+                    paddingTop: 10,
+                    borderTopWidth: 1,
+                    borderTopColor: isDark ? '#374151' : '#E5E7EB',
                 },
                 animatedContainerStyle
             ]}
         >
-            {/* Animated Indicator - Hidden when Add tab is selected */}
-            {state.routes[state.index].name !== 'Add' && (
-                <Animated.View
-                    style={[
-                        {
-                            position: 'absolute',
-                            left: 16, // Match container's paddingHorizontal
-                            width: indicatorWidth,
-                            height: tabBarHeight - 12,
-                            borderRadius: 100, // More rounded pill shape
-                            top: 6,
-                            zIndex: 0, // Below the Add button (zIndex: 2)
-                            overflow: 'hidden', // Clip gradient
-                        },
-                        animatedIndicatorStyle,
-                    ]}
-                >
-                    <LinearGradient
-                        colors={['#10A0F7', '#01E8AD']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={{
-                            flex: 1,
-                            width: '100%',
-                            height: '100%',
-                        }}
-                    />
-                </Animated.View>
-            )}
-
             {/* Tab Items */}
             {state.routes.map((route: any, index: number) => {
                 const { options } = descriptors[route.key];
@@ -202,49 +118,6 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
                     });
                 };
 
-                // Special styling for Add button
-                const isAddButton = route.name === 'Add';
-
-                // Render Add button with special elevated design
-                if (isAddButton) {
-                    return (
-                        <TouchableOpacity
-                            key={route.key}
-                            accessibilityRole="button"
-                            accessibilityState={isFocused ? { selected: true } : {}}
-                            accessibilityLabel={options.tabBarAccessibilityLabel}
-                            testID={options.tabBarTestID}
-                            onPress={onPress}
-                            onLongPress={onLongPress}
-                            style={{
-                                flex: 1,
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                zIndex: 2,
-                                height: '100%',
-                            }}
-                        >
-                            <View
-                                style={{
-                                    width: 60,
-                                    height: 60,
-                                    borderRadius: 30,
-                                    backgroundColor: indicatorColor,
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    shadowColor: '#000',
-                                    shadowOffset: { width: 0, height: 4 },
-                                    shadowOpacity: 0.3,
-                                    shadowRadius: 8,
-                                    elevation: 8,
-                                }}
-                            >
-                                {getIcon(route.name, true)}
-                            </View>
-                        </TouchableOpacity>
-                    );
-                }
-
                 return (
                     <TouchableOpacity
                         key={route.key}
@@ -255,28 +128,60 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
                         onPress={onPress}
                         onLongPress={onLongPress}
                         style={{
-                            flex: 1,
                             alignItems: 'center',
                             justifyContent: 'center',
-                            zIndex: 1,
-                            height: '100%',
+                            flex: 1,
                         }}
                     >
-                        <View style={{ alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-                            {getIcon(route.name, isFocused)}
-                            <Text
-                                style={{
-                                    fontSize: 11,
-                                    fontWeight: '600',
-                                    color: isFocused ? textColorActive : textColorInactive,
-                                }}
-                            >
-                                {label}
-                            </Text>
+                        <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                            {isFocused ? (
+                                <MaskedView
+                                    style={{ flexDirection: 'column', alignItems: 'center' }}
+                                    maskElement={
+                                        <View style={{ flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                            {getIcon(route.name, isFocused)}
+                                            <Text
+                                                style={{
+                                                    fontSize: 12,
+                                                    fontWeight: '600',
+                                                    marginTop: 4,
+                                                }}
+                                            >
+                                                {label}
+                                            </Text>
+                                        </View>
+                                    }
+                                >
+                                    <LinearGradient
+                                        colors={['#10A0F7', '#01E8AD']}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 0 }}
+                                        style={{ flexDirection: 'column', alignItems: 'center' }}
+                                    >
+                                        {/* Render invisible duplicates to maintain layout size for the gradient to cover */}
+                                        <View style={{ opacity: 0, flexDirection: 'column', alignItems: 'center' }}>
+                                            {getIcon(route.name, isFocused)}
+                                            <Text
+                                                style={{
+                                                    fontSize: 12,
+                                                    fontWeight: '600',
+                                                    marginTop: 4,
+                                                }}
+                                            >
+                                                {label}
+                                            </Text>
+                                        </View>
+                                    </LinearGradient>
+                                </MaskedView>
+                            ) : (
+                                <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                                    {getIcon(route.name, isFocused)}
+                                </View>
+                            )}
                         </View>
                     </TouchableOpacity>
                 );
             })}
-        </Animated.View>
+        </Animated.View >
     );
 }

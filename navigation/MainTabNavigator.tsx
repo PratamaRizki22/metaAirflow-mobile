@@ -76,10 +76,10 @@ export const MainTabNavigator = () => {
                 }}
             >
                 <Tab.Screen
-                    name="Search"
+                    name="Explore"
                     component={SearchScreen}
                     options={{
-                        tabBarLabel: 'Search',
+                        tabBarLabel: 'Explore',
                     }}
                 />
                 <Tab.Screen
@@ -91,9 +91,22 @@ export const MainTabNavigator = () => {
                     listeners={({ navigation }) => ({
                         tabPress: (e) => {
                             if (!user) {
-                                // Prevent default navigation
                                 e.preventDefault();
-                                // Navigate to Login instead
+                                navigation.getParent()?.navigate('Auth');
+                            }
+                        },
+                    })}
+                />
+                <Tab.Screen
+                    name="Messages"
+                    component={MessagesScreen}
+                    options={{
+                        tabBarLabel: 'Messages',
+                    }}
+                    listeners={({ navigation }) => ({
+                        tabPress: (e) => {
+                            if (!user) {
+                                e.preventDefault();
                                 navigation.getParent()?.navigate('Auth');
                             }
                         },

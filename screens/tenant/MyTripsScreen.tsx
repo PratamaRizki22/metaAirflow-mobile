@@ -336,7 +336,7 @@ export default function MyTripsScreen({ navigation }: any) {
                         </Text>
                         {filter === 'REFUNDED' && (
                             <Button
-                                onPress={() => navigation.navigate('Search')}
+                                onPress={() => navigation.navigate('Explore')}
                                 variant="primary"
                                 className="mt-6"
                             >

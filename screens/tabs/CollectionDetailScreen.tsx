@@ -12,23 +12,23 @@ export function CollectionDetailScreen({ navigation, route }: any) {
     const { isDark } = useTheme();
     const { toggleFavorite, isFavorited } = useFavorites();
     const { collectionId, collectionName } = route.params || {};
-    
+
     const [properties, setProperties] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     const loadCollectionProperties = useCallback(async () => {
         if (!collectionId) return;
-        
+
         try {
             setLoading(true);
             // Get all favorites with collectionId filter
             const response = await favoriteService.getFavorites();
-            
+
             // Filter properties that belong to this collection
             const collectionProperties = response.data.favorites.filter(
                 (fav: any) => fav.collectionId === collectionId
             );
-            
+
             setProperties(collectionProperties);
         } catch (error) {
             console.error('Load collection properties error:', error);
@@ -90,7 +90,7 @@ export function CollectionDetailScreen({ navigation, route }: any) {
                 >
                     <Ionicons name="chevron-back" size={24} color={isDark ? '#fff' : '#000'} />
                 </TouchableOpacity>
-                
+
                 <Text className={`text-xl font-['VisbyRound-Bold'] ml-4 ${textColor} flex-1`} numberOfLines={1}>
                     {collectionName || 'Collection'} ({properties.length})
                 </Text>
@@ -105,23 +105,23 @@ export function CollectionDetailScreen({ navigation, route }: any) {
                 /* Empty State */
                 <View className="flex-1 items-center justify-center px-8">
                     <View className={`w-32 h-32 rounded-full items-center justify-center mb-6 ${isDark ? 'bg-gray-800' : 'bg-gray-100'}`}>
-                        <Ionicons 
-                            name="bookmarks-outline" 
-                            size={64} 
-                            color={isDark ? '#00D9A3' : '#00BF8F'} 
+                        <Ionicons
+                            name="bookmarks-outline"
+                            size={64}
+                            color={isDark ? '#00D9A3' : '#00BF8F'}
                         />
                     </View>
-                    
+
                     <Text className={`text-2xl font-bold text-center ${textColor}`}>
                         Collection is Empty
                     </Text>
-                    
+
                     <Text className={`text-base mt-3 text-center leading-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                         Start building your dream property collection! Tap the bookmark icon on any property to add it here.
                     </Text>
-                    
+
                     <TouchableOpacity
-                        onPress={() => navigation.navigate('Search')}
+                        onPress={() => navigation.navigate('Explore')}
                         className="mt-8 bg-primary px-8 py-4 rounded-full flex-row items-center"
                         activeOpacity={0.8}
                     >
@@ -130,12 +130,12 @@ export function CollectionDetailScreen({ navigation, route }: any) {
                             Browse Properties
                         </Text>
                     </TouchableOpacity>
-                    
+
                     <View className={`mt-8 p-4 rounded-2xl flex-row items-start ${isDark ? 'bg-gray-800/50' : 'bg-blue-50'}`}>
-                        <Ionicons 
-                            name="information-circle" 
-                            size={24} 
-                            color={isDark ? '#60A5FA' : '#3B82F6'} 
+                        <Ionicons
+                            name="information-circle"
+                            size={24}
+                            color={isDark ? '#60A5FA' : '#3B82F6'}
                             style={{ marginTop: 2 }}
                         />
                         <Text className={`ml-3 flex-1 text-sm leading-5 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -164,8 +164,8 @@ export function CollectionDetailScreen({ navigation, route }: any) {
                                 isInCollection: true,
                                 rating: item.property?.averageRating || 0,
                             }}
-                            onPress={() => navigation.navigate('PropertyDetail', { 
-                                propertyId: item.property?.id || item.propertyId 
+                            onPress={() => navigation.navigate('PropertyDetail', {
+                                propertyId: item.property?.id || item.propertyId
                             })}
                             onFavoriteToggle={handleFavoriteToggle}
                             onAddToCollection={() => handleRemoveFromCollection(item.property?.id || item.propertyId)}
@@ -177,7 +177,7 @@ export function CollectionDetailScreen({ navigation, route }: any) {
                         />
                     )}
                     showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ 
+                    contentContainerStyle={{
                         paddingBottom: 100,
                         paddingTop: 10,
                     }}

@@ -11,14 +11,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
-    useAnimatedScrollHandler,
+    useAnimatedScrollHandler, // Restore this
     interpolate,
     Extrapolate,
-    useAnimatedReaction,
     runOnJS,
     withTiming
 } from 'react-native-reanimated';
-import { useTabBarAnimation } from '../../contexts/TabBarAnimationContext';
+// import { useTabBarAnimation } from '../../contexts/TabBarAnimationContext'; // Remove unused import
 import { useFocusEffect } from '@react-navigation/native';
 
 type Language = 'id' | 'en';
@@ -73,7 +72,6 @@ export function ProfileScreen({ navigation }: any) {
 
     // Animation Shared Values
     const scrollY = useSharedValue(0);
-    const { tabBarOpacity, tabBarTranslateY } = useTabBarAnimation();
 
     const onRefresh = async () => {
         setRefreshing(true);
@@ -86,21 +84,7 @@ export function ProfileScreen({ navigation }: any) {
         }
     };
 
-    // Reset tab bar when leaving screen, handle visibility when entering
-    useFocusEffect(
-        useCallback(() => {
-            // On Focus: Initialize based on current scroll (likely 0)
-            const shouldShow = scrollY.value > 60;
-            tabBarOpacity.value = withTiming(shouldShow ? 1 : 0, { duration: 300 });
-            tabBarTranslateY.value = withTiming(shouldShow ? 0 : 100, { duration: 300 });
 
-            return () => {
-                // On Blur: Always show bar for other screens
-                tabBarOpacity.value = withTiming(1, { duration: 300 });
-                tabBarTranslateY.value = withTiming(0, { duration: 300 });
-            };
-        }, []) // Empty dependency array means this effect runs on focus/blur events stable-y
-    );
 
     // Drive animations based on scroll
     const scrollHandler = useAnimatedScrollHandler({
@@ -109,18 +93,7 @@ export function ProfileScreen({ navigation }: any) {
         },
     });
 
-    // Update global tab bar through context based on local scroll
-    useAnimatedReaction(
-        () => scrollY.value,
-        (y) => {
-            // Logic: Hide initially, show after 120px
-            const opacity = interpolate(y, [60, 100], [0, 1], Extrapolate.CLAMP);
-            const translateY = interpolate(y, [60, 100], [100, 0], Extrapolate.CLAMP);
 
-            tabBarOpacity.value = opacity;
-            tabBarTranslateY.value = translateY;
-        }
-    );
 
     const handleLogout = () => {
         Alert.alert(
@@ -175,7 +148,7 @@ export function ProfileScreen({ navigation }: any) {
         <View className="flex-1 bg-gray-50">
             <Animated.ScrollView
                 className="flex-1"
-                contentContainerStyle={{ paddingBottom: 100, minHeight: '120%' }}
+                contentContainerStyle={{ paddingBottom: 100 }}
                 onScroll={scrollHandler}
                 scrollEventThrottle={16}
                 refreshControl={
@@ -332,7 +305,7 @@ export function ProfileScreen({ navigation }: any) {
                                             <MenuItem
                                                 icon="add-circle-outline"
                                                 title="Create a new listing"
-                                                onPress={() => { }}
+                                                onPress={() => navigation.navigate('CreateProperty')}
                                                 iconColor="#6B7280"
                                                 textColor="#1F2937"
                                             />

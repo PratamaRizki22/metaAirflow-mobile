@@ -41,7 +41,8 @@ export function MessagesScreen({ navigation }: any) {
             setLoading(true);
             const response = await messageService.getConversations();
             // Convert service conversations to local format
-            const localConversations: Conversation[] = response.data.map((conv: ServiceConversation) => ({
+            const conversationsData = response.data || [];
+            const localConversations: Conversation[] = conversationsData.map((conv: ServiceConversation) => ({
                 id: conv.id,
                 propertyId: conv.propertyId,
                 propertyTitle: 'Property', // TODO: Get from property service
@@ -142,7 +143,7 @@ export function MessagesScreen({ navigation }: any) {
 
                         {/* CTA Button */}
                         <TouchableOpacity
-                            onPress={() => navigation.navigate('Search')}
+                            onPress={() => navigation.navigate('Explore')}
                             className="bg-primary px-8 py-4 rounded-xl"
                         >
                             <Text className="text-white font-semibold text-base">

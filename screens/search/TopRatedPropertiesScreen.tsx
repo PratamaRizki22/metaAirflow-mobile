@@ -98,7 +98,7 @@ export function TopRatedPropertiesScreen({ navigation }: any) {
             const response = await collectionService.getCollections();
             const collectionsData = response.data?.collections || [];
             setCollections(collectionsData);
-            
+
             const propertyIdSet = new Set<string>();
             collectionsData.forEach((collection: any) => {
                 if (collection.propertyIds && Array.isArray(collection.propertyIds)) {
@@ -138,7 +138,7 @@ export function TopRatedPropertiesScreen({ navigation }: any) {
             Alert.alert('Login Required', 'Please login to add properties to collections');
             return;
         }
-        
+
         if (propertiesInCollections.has(propertyId)) {
             Alert.alert(
                 'Remove from Collection',
@@ -150,14 +150,14 @@ export function TopRatedPropertiesScreen({ navigation }: any) {
                         style: 'destructive',
                         onPress: async () => {
                             try {
-                                const collectionsWithProperty = collections.filter(c => 
+                                const collectionsWithProperty = collections.filter(c =>
                                     c.propertyIds?.includes(propertyId)
                                 );
-                                
+
                                 for (const collection of collectionsWithProperty) {
                                     await collectionService.removePropertyFromCollection(collection.id, propertyId);
                                 }
-                                
+
                                 Alert.alert('Success', 'Property removed from collection(s)');
                                 await loadCollections();
                             } catch (error: any) {
@@ -168,7 +168,7 @@ export function TopRatedPropertiesScreen({ navigation }: any) {
                 ]
             );
         } else {
-            navigation.navigate('Search');
+            navigation.navigate('Explore');
         }
     }, [isLoggedIn, propertiesInCollections, collections, loadCollections, navigation]);
 
@@ -203,26 +203,26 @@ export function TopRatedPropertiesScreen({ navigation }: any) {
             <View style={{ paddingTop: insets.top + 16, paddingBottom: 16, paddingHorizontal: 24 }}>
                 {/* Back Button + Title Row */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                    <TouchableOpacity 
-                        onPress={() => navigation.goBack()} 
-                        style={{ 
-                            padding: 8, 
+                    <TouchableOpacity
+                        onPress={() => navigation.goBack()}
+                        style={{
+                            padding: 8,
                             marginLeft: -8,
                             marginRight: 8
                         }}
                         activeOpacity={0.7}
                     >
-                        <Ionicons 
-                            name="arrow-back" 
-                            size={24} 
-                            color={textColor === 'text-gray-900' ? '#111827' : '#FFF'} 
+                        <Ionicons
+                            name="arrow-back"
+                            size={24}
+                            color={textColor === 'text-gray-900' ? '#111827' : '#FFF'}
                         />
                     </TouchableOpacity>
                     <Text className={`text-xl font-bold ${textColor} flex-1 text-center`} style={{ marginRight: 40 }}>
                         Best Recommendations
                     </Text>
                 </View>
-                
+
                 {/* Rating Info Row */}
                 {averageRating > 0 && (
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
