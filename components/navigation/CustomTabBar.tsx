@@ -21,7 +21,7 @@ interface CustomTabBarProps {
 export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarProps) {
     const { isDark } = useTheme();
     const insets = useSafeAreaInsets();
-    const { tabBarOpacity, tabBarTranslateY } = useTabBarAnimation();
+    const { tabBarOpacity } = useTabBarAnimation();
 
 
 
@@ -31,7 +31,7 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
     const animatedContainerStyle = useAnimatedStyle(() => {
         return {
             opacity: tabBarOpacity.value,
-            transform: [{ translateY: tabBarTranslateY.value }],
+            // Remove translateY to keep tab bar fixed in position
         };
     });
 
@@ -73,16 +73,17 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
     };
 
     const bgColor = isDark ? '#1E293B' : '#FFFFFF';
+    const tabBarHeight = 60 + (insets.bottom > 0 ? insets.bottom : 20);
 
     return (
         <Animated.View
             style={[
                 {
                     position: 'absolute',
-                    bottom: 0,
+                    bottom: 10,
                     left: 0,
                     right: 0,
-                    height: 80,
+                    height: tabBarHeight,
                     backgroundColor: bgColor,
                     flexDirection: 'row',
                     alignItems: 'center',
@@ -91,6 +92,11 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
                     paddingTop: 10,
                     borderTopWidth: 1,
                     borderTopColor: isDark ? '#374151' : '#E5E7EB',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: -2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 8,
+                    elevation: 10,
                 },
                 animatedContainerStyle
             ]}
