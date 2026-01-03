@@ -38,7 +38,7 @@ import { PropertyCardSkeleton } from '../../components/common/Skeleton';
 import { IconButton, ChipButton, TabBarBottomSpacer } from '../../components/common';
 import { HomeBackground } from '../../components/common/HomeBackground';
 import { useDebounce, useThemeColors } from '../../hooks';
-import { propertyService, propertyTypeService, locationService, Location as LocationData } from '../../services';
+import { propertyService, propertyTypeService, locationService, collectionService, Location as LocationData } from '../../services';
 
 const CATEGORIES = [
     { id: 'all', label: 'All', icon: 'apps-outline' },
@@ -110,6 +110,14 @@ export function SearchScreen({ navigation }: any) {
     const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Collection modal states
+    const [showCollectionModal, setShowCollectionModal] = useState(false);
+    const [selectedPropertyForCollection, setSelectedPropertyForCollection] = useState<string | null>(null);
+    const [collections, setCollections] = useState<any[]>([]);
+    const [loadingCollections, setLoadingCollections] = useState(false);
+    const [newCollectionName, setNewCollectionName] = useState('');
+    const [showCreateCollection, setShowCreateCollection] = useState(false);
+
     // Debounce search query to reduce API calls
     const debouncedSearch = useDebounce(searchQuery, 500);
 
@@ -163,6 +171,14 @@ export function SearchScreen({ navigation }: any) {
             console.log('   → Search state cleared from memory');
         };
     }, []);
+
+    // Debug collections state
+    useEffect(() => {
+        console.log('Collections state updated:', collections.length, 'collections');
+        if (collections.length > 0) {
+            console.log('First collection:', collections[0]);
+        }
+    }, [collections]);
 
     // Load property types on mount
     const getUserLocation = async () => {
@@ -344,10 +360,72 @@ export function SearchScreen({ navigation }: any) {
         }
     }, [toggleFavorite]);
 
+    const loadCollections = useCallback(async () => {
+        if (!isLoggedIn) return;
+        setLoadingCollections(true);
+        try {
+            const response = await collectionService.getCollections();
+            console.log('Collections response:', JSON.stringify(response, null, 2));
+            const collectionsData = response.data?.collections || [];
+            console.log('Collections data:', collectionsData);
+            setCollections(collectionsData);
+        } catch (error) {
+            console.error('Failed to load collections:', error);
+        } finally {
+            setLoadingCollections(false);
+        }
+    }, [isLoggedIn]);
+
     const handleAddToCollection = useCallback((propertyId: string) => {
-        // TODO: Implement add to collection functionality
-        navigation.navigate('Collections', { propertyId });
-    }, [navigation]);
+        if (!isLoggedIn) {
+            Alert.alert('Login Required', 'Please login to add properties to collections');
+            return;
+        }
+        setSelectedPropertyForCollection(propertyId);
+        setShowCollectionModal(true);
+        loadCollections();
+    }, [isLoggedIn, loadCollections]);
+
+    const handleSelectCollection = useCallback(async (collectionId: string) => {
+        if (!selectedPropertyForCollection) {
+            console.log('No property selected for collection');
+            return;
+        }
+        console.log('Adding property to collection:', {
+            collectionId,
+            propertyId: selectedPropertyForCollection
+        });
+        try {
+            const response = await collectionService.addPropertyToCollection(collectionId, selectedPropertyForCollection);
+            console.log('Add to collection response:', response);
+            Alert.alert('Success', 'Property added to collection');
+            setShowCollectionModal(false);
+            setSelectedPropertyForCollection(null);
+            // Reload collections to update the count
+            await loadCollections();
+        } catch (error: any) {
+            console.error('Add to collection error:', error);
+            Alert.alert('Error', error.message || 'Failed to add property to collection');
+        }
+    }, [selectedPropertyForCollection, loadCollections]);
+
+    const handleCreateCollection = useCallback(async () => {
+        if (!newCollectionName.trim()) {
+            Alert.alert('Error', 'Please enter a collection name');
+            return;
+        }
+        try {
+            const response = await collectionService.createCollection(newCollectionName.trim());
+            setNewCollectionName('');
+            setShowCreateCollection(false);
+            await loadCollections();
+            if (selectedPropertyForCollection && response.data?.id) {
+                await handleSelectCollection(response.data.id);
+            }
+        } catch (error: any) {
+            Alert.alert('Error', error.message || 'Failed to create collection');
+        }
+    }, [newCollectionName, selectedPropertyForCollection, loadCollections, handleSelectCollection]);
 
     const clearAllFilters = useCallback(() => {
         setSearchFilters({});
@@ -863,6 +941,179 @@ export function SearchScreen({ navigation }: any) {
                                 </View>
                             )}
                         </ScrollView>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Collection Selection Modal */}
+            <Modal
+                visible={showCollectionModal}
+                transparent
+                animationType="slide"
+                onRequestClose={() => {
+                    setShowCollectionModal(false);
+                    setSelectedPropertyForCollection(null);
+                    setShowCreateCollection(false);
+                    setNewCollectionName('');
+                }}
+            >
+                <View className="flex-1 bg-black/50 justify-end">
+                    <View
+                        className={`rounded-t-3xl ${isDark ? 'bg-surface-dark' : 'bg-white'} px-6 py-6`}
+                        style={{
+                            maxHeight: '70%',
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: -4 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 12,
+                            elevation: 20,
+                        }}
+                    >
+                        {/* Header */}
+                        <View className="flex-row items-center justify-between mb-4">
+                            <Text className={`text-xl font-bold ${textColor}`}>
+                                {showCreateCollection ? 'Create Collection' : 'Add to Collection'}
+                            </Text>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    setShowCollectionModal(false);
+                                    setSelectedPropertyForCollection(null);
+                                    setShowCreateCollection(false);
+                                    setNewCollectionName('');
+                                }}
+                            >
+                                <Ionicons name="close" size={24} color={isDark ? '#FFF' : '#000'} />
+                            </TouchableOpacity>
+                        </View>
+
+                        {showCreateCollection ? (
+                            /* Create New Collection Form */
+                            <View className="mb-4">
+                                <Text className={`text-sm font-medium mb-2 ${secondaryTextColor}`}>
+                                    Collection Name
+                                </Text>
+                                <TextInput
+                                    value={newCollectionName}
+                                    onChangeText={setNewCollectionName}
+                                    placeholder="Enter collection name"
+                                    placeholderTextColor="#9CA3AF"
+                                    className={`px-4 py-3 rounded-xl border ${
+                                        isDark
+                                            ? 'bg-gray-800 border-gray-700 text-white'
+                                            : 'bg-gray-50 border-gray-200 text-gray-900'
+                                    }`}
+                                    autoFocus
+                                />
+                                <View className="flex-row gap-3 mt-4">
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            setShowCreateCollection(false);
+                                            setNewCollectionName('');
+                                        }}
+                                        className={`flex-1 py-3 rounded-xl border ${
+                                            isDark ? 'border-gray-700' : 'border-gray-200'
+                                        }`}
+                                    >
+                                        <Text className={`text-center font-semibold ${textColor}`}>
+                                            Cancel
+                                        </Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={handleCreateCollection}
+                                        className="flex-1 py-3 rounded-xl bg-primary"
+                                    >
+                                        <Text className="text-center font-semibold text-white">
+                                            Create
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        ) : (
+                            <>
+                                {/* Create New Collection Button */}
+                                <TouchableOpacity
+                                    onPress={() => setShowCreateCollection(true)}
+                                    className={`flex-row items-center p-4 rounded-xl mb-4 border-2 border-dashed ${
+                                        isDark ? 'border-gray-700 bg-gray-800/50' : 'border-gray-300 bg-gray-50'
+                                    }`}
+                                >
+                                    <View className="w-12 h-12 rounded-full bg-primary/10 items-center justify-center mr-3">
+                                        <Ionicons name="add" size={24} color="#00D9A3" />
+                                    </View>
+                                    <View className="flex-1">
+                                        <Text className={`text-base font-semibold ${textColor}`}>
+                                            Create New Collection
+                                        </Text>
+                                        <Text className={`text-sm ${secondaryTextColor}`}>
+                                            Organize your favorites
+                                        </Text>
+                                    </View>
+                                </TouchableOpacity>
+
+                                {/* Collections List */}
+                                {(() => {
+                                    console.log('Rendering collections list. Loading:', loadingCollections, 'Count:', collections.length);
+                                    return null;
+                                })()}
+                                {loadingCollections ? (
+                                    <View className="py-12 items-center">
+                                        <ActivityIndicator size="large" color="#00D9A3" />
+                                        <Text className={`mt-2 ${secondaryTextColor}`}>Loading collections...</Text>
+                                    </View>
+                                ) : collections.length > 0 ? (
+                                    <View style={{ maxHeight: 400 }}>
+                                        <ScrollView
+                                            showsVerticalScrollIndicator={true}
+                                            nestedScrollEnabled={true}
+                                        >
+                                            {collections.map((collection) => {
+                                                console.log('Rendering collection:', collection.name);
+                                                return (
+                                                    <TouchableOpacity
+                                                        key={collection.id}
+                                                        onPress={() => {
+                                                            console.log('Collection tapped:', collection.id);
+                                                            handleSelectCollection(collection.id);
+                                                        }}
+                                                        className={`flex-row items-center p-4 rounded-xl mb-3 ${
+                                                            isDark ? 'bg-gray-800' : 'bg-gray-50'
+                                                        }`}
+                                                        activeOpacity={0.7}
+                                                    >
+                                                        <View className="w-12 h-12 rounded-full bg-primary/10 items-center justify-center mr-3">
+                                                            <Ionicons name="folder" size={24} color="#00D9A3" />
+                                                        </View>
+                                                        <View className="flex-1">
+                                                            <Text className={`text-base font-semibold ${textColor}`}>
+                                                                {collection.name}
+                                                            </Text>
+                                                            <Text className={`text-sm ${secondaryTextColor}`}>
+                                                                {collection._count?.favorites || 0} properties
+                                                            </Text>
+                                                        </View>
+                                                        <Ionicons
+                                                            name="chevron-forward"
+                                                            size={20}
+                                                            color={isDark ? '#9CA3AF' : '#6B7280'}
+                                                        />
+                                                    </TouchableOpacity>
+                                                );
+                                            })}
+                                        </ScrollView>
+                                    </View>
+                                ) : (
+                                    <View className="items-center justify-center py-12">
+                                        <Ionicons name="folder-outline" size={64} color="#9CA3AF" />
+                                        <Text className={`text-lg font-semibold mt-4 ${textColor}`}>
+                                            No Collections Yet
+                                        </Text>
+                                        <Text className={`text-sm mt-2 ${secondaryTextColor} text-center`}>
+                                            Create a collection to organize{'\n'}your favorite properties
+                                        </Text>
+                                    </View>
+                                )}
+                            </>
+                        )}
                     </View>
                 </View>
             </Modal>

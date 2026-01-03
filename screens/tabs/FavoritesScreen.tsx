@@ -135,7 +135,7 @@ export function FavoritesScreen({ navigation }: any) {
             setCustomCollections(response.data.collections.map(c => ({
                 ...c,
                 type: 'collection',
-                count: 0, // TODO: Calculate count from favorites
+                count: c._count?.favorites || 0,
                 image: null // TODO: Get first image from collection
             })));
         } catch (error: any) {

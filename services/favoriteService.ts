@@ -71,11 +71,12 @@ class FavoriteService extends BaseService {
     /**
      * Add property to favorites
      */
-    async addToFavorites(propertyId: string): Promise<{ success: boolean; message: string }> {
+    async addToFavorites(propertyId: string, collectionId?: string): Promise<{ success: boolean; message: string }> {
         try {
-            const response = await api.post<{ success: boolean; message: string }>(
-                `/v1/m/users/favorites/${propertyId}`
-            );
+            const url = collectionId 
+                ? `/v1/m/users/favorites/${propertyId}?collectionId=${collectionId}`
+                : `/v1/m/users/favorites/${propertyId}`;
+            const response = await api.post<{ success: boolean; message: string }>(url);
             return response.data;
         } catch (error: any) {
             console.error('Add to favorites error:', error.response?.data || error.message);

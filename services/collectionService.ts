@@ -7,6 +7,9 @@ export interface Collection {
     name: string;
     createdAt: string;
     updatedAt: string;
+    _count?: {
+        favorites: number;
+    };
 }
 
 export interface CollectionsResponse {
@@ -77,6 +80,43 @@ class CollectionService extends BaseService {
             return response.data;
         } catch (error: any) {
             console.error('Delete collection error:', error.response?.data || error.message);
+            throw this.handleError(error);
+        }
+    }
+
+    /**
+     * Add property to collection
+     */
+    async addPropertyToCollection(collectionId: string, propertyId: string): Promise<{ success: boolean; message: string }> {
+        try {
+            console.log('API Call - Add to collection:', {
+                collectionId,
+                propertyId,
+                url: `/v1/m/collections/${collectionId}/properties`
+            });
+            const response = await api.post<{ success: boolean; message: string }>(
+                `/v1/m/collections/${collectionId}/properties`,
+                { propertyId }
+            );
+            console.log('API Response - Add to collection:', response.data);
+            return response.data;
+        } catch (error: any) {
+            console.error('Add property to collection error:', error.response?.data || error.message);
+            throw this.handleError(error);
+        }
+    }
+
+    /**
+     * Remove property from collection
+     */
+    async removePropertyFromCollection(collectionId: string, propertyId: string): Promise<{ success: boolean; message: string }> {
+        try {
+            const response = await api.delete<{ success: boolean; message: string }>(
+                `/v1/m/collections/${collectionId}/properties/${propertyId}`
+            );
+            return response.data;
+        } catch (error: any) {
+            console.error('Remove property from collection error:', error.response?.data || error.message);
             throw this.handleError(error);
         }
     }
