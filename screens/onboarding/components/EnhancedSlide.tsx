@@ -1,55 +1,16 @@
 import React from 'react';
-import { View, Dimensions, Image } from 'react-native';
+import { View, Dimensions, Text } from 'react-native';
 import Animated, {
     useAnimatedStyle,
     interpolate,
     Extrapolate,
     FadeInUp,
 } from 'react-native-reanimated';
-import { useTheme } from '../../../contexts/ThemeContext';
 import { EnhancedSlideProps } from '../types';
-import { StaggeredText } from './StaggeredText';
 
 const { width } = Dimensions.get('window');
 
 export function EnhancedSlide({ item, index, scrollX, currentIndex }: EnhancedSlideProps) {
-    const { isDark } = useTheme();
-    const textColor = isDark ? 'text-text-primary-dark' : 'text-text-primary-light';
-    const secondaryTextColor = isDark ? 'text-text-secondary-dark' : 'text-text-secondary-light';
-
-    const imageStyle = useAnimatedStyle(() => {
-        const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
-
-        const scale = interpolate(
-            scrollX.value * width,
-            inputRange,
-            [0.8, 1, 0.8],
-            Extrapolate.CLAMP
-        );
-
-        const translateY = interpolate(
-            scrollX.value * width,
-            inputRange,
-            [50, 0, 50],
-            Extrapolate.CLAMP
-        );
-
-        const rotateZ = interpolate(
-            scrollX.value * width,
-            inputRange,
-            [-10, 0, 10],
-            Extrapolate.CLAMP
-        );
-
-        return {
-            transform: [
-                { scale },
-                { translateY },
-                { rotateZ: `${rotateZ}deg` },
-            ],
-        };
-    });
-
     const titleStyle = useAnimatedStyle(() => {
         const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
 
@@ -73,31 +34,42 @@ export function EnhancedSlide({ item, index, scrollX, currentIndex }: EnhancedSl
         };
     });
 
+    // Split title by newline for proper rendering
+    const titleLines = item.title.split('\n');
+
     return (
-        <View style={{ width }} className="flex-1 items-center justify-center px-8">
-            <Animated.View
-                style={[imageStyle]}
-                className="h-80 w-80 items-center justify-center mb-12"
-            >
-                <Image
-                    source={item.image}
-                    style={{ width: 320, height: 320 }}
-                    resizeMode="contain"
-                />
+        <View style={{ width }} className="flex-1 items-start justify-center px-8">
+            <Animated.View style={titleStyle} className="w-full mb-4">
+                {titleLines.map((line, idx) => (
+                    <Text
+                        key={idx}
+                        className="text-5xl text-left text-white"
+                        style={{
+                            fontFamily: 'VisbyRound-DemiBold',
+                            lineHeight: 56,
+                            letterSpacing: 0,
+                            width: '100%'
+                        }}
+                        numberOfLines={1}
+                        allowFontScaling={false}
+                    >
+                        {line}
+                    </Text>
+                ))}
             </Animated.View>
 
-            <Animated.View style={titleStyle}>
-                <StaggeredText
-                    text={item.title}
-                    className={`text-3xl font-bold text-center mb-4 ${textColor}`}
-                    isActive={index === currentIndex}
-                />
-            </Animated.View>
-
-            <Animated.View style={titleStyle}>
+            <Animated.View style={titleStyle} className="w-full">
                 <Animated.Text
                     entering={FadeInUp.delay(400).springify()}
-                    className={`text-base text-center px-4 ${secondaryTextColor}`}
+                    className="text-white"
+                    style={{
+                        fontFamily: 'VisbyRound-Medium',
+                        fontSize: 16,
+                        lineHeight: 24,
+                        letterSpacing: 0,
+                        textAlign: 'justify',
+                        maxWidth: 312
+                    }}
                 >
                     {item.description}
                 </Animated.Text>

@@ -3,23 +3,20 @@ import { OnboardingSlide } from './types';
 export const ONBOARDING_SLIDES: OnboardingSlide[] = [
     {
         id: '1',
-        title: 'Welcome to Rentverse',
-        description: 'Find your dream property with ease and convenience',
-        image: require('../../assets/onboarding/Onboarding Page-1.png'),
+        title: 'All-In-One\nReal Estate\nPlatform',
+        description: 'Discover Our Exceptional Properties Crafted as Masterpieces with Lasting Values for Client',
         gradient: ['#667eea', '#764ba2'],
     },
     {
         id: '2',
-        title: 'Explore Properties',
-        description: 'Browse thousands of apartments, houses, and land listings',
-        image: require('../../assets/onboarding/Onboarding Page-2.png'),
+        title: 'Smart Search\nfor Your\nDream Home',
+        description: 'Find premium listings across the city\'s most sought-after locations',
         gradient: ['#f093fb', '#f5576c'],
     },
     {
         id: '3',
-        title: 'Easy Management',
-        description: 'List and manage your properties effortlessly',
-        image: require('../../assets/onboarding/Onboarding Page-3.png'),
+        title: 'Seamless\nAccess to\nThe Agent',
+        description: 'Experience professional consulting through direct messaging with authorized agents dedicated to your needs',
         gradient: ['#4facfe', '#00f2fe'],
     },
 ];
