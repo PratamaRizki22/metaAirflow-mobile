@@ -69,16 +69,16 @@ export function LandlordTodayScreen({ navigation }: any) {
                 const currentDate = new Date();
                 const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
                 const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59);
-                
+
                 const revenueData = await stripeService.getLandlordRevenue(
                     startOfMonth.toISOString(),
                     endOfMonth.toISOString()
                 );
-                
+
                 monthlyRevenue = revenueData.currentMonthRevenue || 0;
                 console.log('💰 Actual Stripe revenue for current month:', monthlyRevenue);
             } catch (error) {
-                console.error('Error fetching Stripe revenue, falling back to booking total:', error);
+                console.log('Error fetching Stripe revenue, falling back to booking total:', (error as any).message);
                 // Fallback: calculate from bookings if Stripe data not available
                 const currentMonth = new Date().getMonth();
                 const currentYear = new Date().getFullYear();
@@ -109,14 +109,14 @@ export function LandlordTodayScreen({ navigation }: any) {
         try {
             // Get landlord's properties
             const propertiesResponse = await propertyService.getMyProperties(1, 10);
-            
+
             // Check if response has the expected structure
             if (!propertiesResponse?.data?.properties) {
                 console.warn('No properties found in response:', propertiesResponse);
                 setRecentReviews([]);
                 return;
             }
-            
+
             const properties = propertiesResponse.data.properties;
 
             // Get recent reviews for each property
@@ -219,7 +219,7 @@ export function LandlordTodayScreen({ navigation }: any) {
                                 Monthly Revenue
                             </Text>
                         </View>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             onPress={() => navigation.navigate('StripeConnect')}
                             className="flex-row items-center bg-primary/10 px-3 py-1 rounded-full"
                         >

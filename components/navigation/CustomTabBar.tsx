@@ -73,23 +73,24 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
     };
 
     const bgColor = isDark ? '#1E293B' : '#FFFFFF';
-    const tabBarHeight = 60 + (insets.bottom > 0 ? insets.bottom : 20);
+    // Dynamic height based on content padding - ensuring full coverage
+    // const tabBarHeight = 60 + (insets.bottom > 0 ? insets.bottom : 20);
 
     return (
         <Animated.View
             style={[
                 {
                     position: 'absolute',
-                    bottom: 10,
+                    bottom: 0,
                     left: 0,
                     right: 0,
-                    height: tabBarHeight,
+                    // height: tabBarHeight, // REMOVED fixed height to allow auto-sizing
                     backgroundColor: bgColor,
                     flexDirection: 'row',
-                    alignItems: 'center',
+                    alignItems: 'center', // This centers items vertically
                     justifyContent: 'space-around',
                     paddingBottom: insets.bottom > 0 ? insets.bottom : 20,
-                    paddingTop: 10,
+                    paddingTop: 16, // Increased top padding for better visual balance
                     borderTopWidth: 1,
                     borderTopColor: isDark ? '#374151' : '#E5E7EB',
                     shadowColor: '#000',
@@ -137,8 +138,9 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
                         onLongPress={onLongPress}
                         style={{
                             alignItems: 'center',
-                            justifyContent: 'center',
+                            justifyContent: 'center', // Centers content vertically
                             flex: 1,
+                            height: 50, // Fix height of touch area to ensuring alignment
                         }}
                     >
                         <View style={{ alignItems: 'center', justifyContent: 'center' }}>
