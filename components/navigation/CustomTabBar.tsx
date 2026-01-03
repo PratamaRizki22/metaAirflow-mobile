@@ -64,6 +64,8 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
                 return <HomeIcon {...iconProps} />;
             case 'Bookings':
                 return <TripsIcon {...iconProps} />;
+            case 'Inbox':
+                return <MessagesIcon {...iconProps} />;
 
             default:
                 return null;

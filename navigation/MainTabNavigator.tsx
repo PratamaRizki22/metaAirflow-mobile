@@ -55,6 +55,13 @@ export const MainTabNavigator = () => {
                         }}
                     />
                     <Tab.Screen
+                        name="Inbox"
+                        component={LandlordInboxScreen}
+                        options={{
+                            tabBarLabel: 'Inbox',
+                        }}
+                    />
+                    <Tab.Screen
                         name="Profile"
                         component={ProfileScreen}
                         options={{
@@ -98,10 +105,10 @@ export const MainTabNavigator = () => {
                     })}
                 />
                 <Tab.Screen
-                    name="Messages"
-                    component={MessagesScreen}
+                    name="Trips"
+                    component={MyTripsScreen}
                     options={{
-                        tabBarLabel: 'Messages',
+                        tabBarLabel: 'Trips',
                     }}
                     listeners={({ navigation }) => ({
                         tabPress: (e) => {
@@ -113,10 +120,10 @@ export const MainTabNavigator = () => {
                     })}
                 />
                 <Tab.Screen
-                    name="Trips"
-                    component={MyTripsScreen}
+                    name="Messages"
+                    component={MessagesScreen}
                     options={{
-                        tabBarLabel: 'Trips',
+                        tabBarLabel: 'Messages',
                     }}
                     listeners={({ navigation }) => ({
                         tabPress: (e) => {
