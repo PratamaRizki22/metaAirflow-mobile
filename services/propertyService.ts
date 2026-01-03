@@ -175,7 +175,7 @@ class PropertyService extends BaseService {
         limit: number = 10,
         filters?: PropertyFilters
     ): Promise<PropertiesResponse> {
-        return this.fetchPropertiesWithRetry('/v1/properties', page, limit, filters, 1);
+        return this.fetchPropertiesWithRetry('/v1/m/properties', page, limit, filters, 1);
     }
 
     /**
@@ -213,7 +213,7 @@ class PropertyService extends BaseService {
      */
     async createProperty(data: CreatePropertyRequest): Promise<PropertyResponse> {
         try {
-            const response = await api.post<PropertyResponse>('/v1/properties', data);
+            const response = await api.post<PropertyResponse>('/v1/m/properties', data);
             return response.data;
         } catch (error: any) {
             console.error('Create property error:', error.response?.data || error.message);
@@ -226,7 +226,7 @@ class PropertyService extends BaseService {
      */
     async updateProperty(propertyId: string, data: UpdatePropertyRequest): Promise<PropertyResponse> {
         try {
-            const response = await api.put<PropertyResponse>(`/v1/properties/${propertyId}`, data);
+            const response = await api.put<PropertyResponse>(`/v1/m/properties/${propertyId}`, data);
             return response.data;
         } catch (error: any) {
             console.error('Update property error:', error.response?.data || error.message);
@@ -240,7 +240,7 @@ class PropertyService extends BaseService {
     async deleteProperty(propertyId: string): Promise<{ success: boolean; message: string }> {
         try {
             const response = await api.delete<{ success: boolean; message: string }>(
-                `/v1/properties/${propertyId}`
+                `/v1/m/properties/${propertyId}`
             );
             return response.data;
         } catch (error: any) {
@@ -259,7 +259,7 @@ class PropertyService extends BaseService {
     ): Promise<PropertiesResponse> {
         try {
             const response = await api.get<PropertiesResponse>(
-                `/v1/properties/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`
+                `/v1/m/properties/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`
             );
             return response.data;
         } catch (error: any) {
@@ -288,7 +288,7 @@ class PropertyService extends BaseService {
     async getMyProperties(page: number = 1, limit: number = 10): Promise<PropertiesResponse> {
         try {
             const response = await api.get<PropertiesResponse>(
-                `/v1/properties/my-properties?page=${page}&limit=${limit}`
+                `/v1/m/properties/my-properties?page=${page}&limit=${limit}`
             );
             return response.data;
         } catch (error: any) {
@@ -371,6 +371,30 @@ class PropertyService extends BaseService {
             return response.data.data;
         } catch (error: any) {
             console.error('Check availability error:', error.response?.data || error.message);
+            throw this.handleError(error);
+        }
+    }
+
+    /**
+     * Get occupied dates for a property
+     */
+    async getOccupiedDates(
+        propertyId: string,
+        startDate?: string,
+        endDate?: string
+    ): Promise<{ occupiedPeriods: { startDate: string; endDate: string; status: string }[] }> {
+        try {
+            const params: any = {};
+            if (startDate) params.startDate = startDate;
+            if (endDate) params.endDate = endDate;
+
+            const response = await api.get(
+                `/v1/m/properties/${propertyId}/occupied-dates`,
+                { params }
+            );
+            return response.data.data;
+        } catch (error: any) {
+            console.error('Get occupied dates error:', error.response?.data || error.message);
             throw this.handleError(error);
         }
     }

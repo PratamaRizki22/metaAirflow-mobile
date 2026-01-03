@@ -15,7 +15,7 @@ const API_CONFIG = {
     development: {
         // DEVELOPMENT: Using deployed backend public domain (HTTPS)
         baseURL: 'https://rentverse-api.loseyourip.com/api',
-        timeout: 12000,
+        timeout: 30000, // Increased to 30 seconds for payment operations
     },
     production: {
         // PRODUCTION: Using deployed backend public domain (HTTPS)

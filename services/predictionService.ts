@@ -27,7 +27,7 @@ class PredictionService {
      */
     async getStatus(): Promise<PredictionStatus> {
         try {
-            const response = await api.get('/v1/predictions/status');
+            const response = await api.get('/v1/m/predictions/status');
             return response.data.data?.status || response.data.status;
         } catch (error: any) {
             const message = error.response?.data?.message || 'Failed to get prediction status';
@@ -40,7 +40,7 @@ class PredictionService {
      */
     async predictPrice(input: PredictionInput): Promise<PredictionResult> {
         try {
-            const response = await api.post('/v1/predictions/predict', input);
+            const response = await api.post('/v1/m/predictions/predict', input);
             return response.data.data || response.data;
         } catch (error: any) {
             const message = error.response?.data?.message || 'Failed to predict price';
@@ -53,7 +53,7 @@ class PredictionService {
      */
     async toggleService(enabled: boolean): Promise<PredictionStatus> {
         try {
-            const response = await api.post('/v1/predictions/toggle', { enabled });
+            const response = await api.post('/v1/m/predictions/toggle', { enabled });
             return response.data.data?.status || response.data.status;
         } catch (error: any) {
             const message = error.response?.data?.message || 'Failed to toggle prediction service';

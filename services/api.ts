@@ -27,6 +27,12 @@ api.interceptors.request.use(
             } else {
                 console.warn('⚠️  No auth token found in storage');
             }
+            
+            // Log full request URL for debugging
+            if (__DEV__) {
+                const fullUrl = `${config.baseURL || ''}${config.url || ''}`;
+                console.log('📤 Request:', config.method?.toUpperCase(), fullUrl);
+            }
         } catch (error) {
             console.error('❌ Error getting token from storage:', error);
         }
@@ -57,8 +63,19 @@ api.interceptors.response.use(
     async (error) => {
         // Handle network errors specifically
         if (!error.response) {
-            // Silent fail - let UI handle error display
-            return Promise.reject(new Error('Network error. Please check your connection.'));
+            // Preserve original error for better debugging
+            console.error('🔴 Network error intercepted:', {
+                message: error.message,
+                code: error.code,
+                config: error.config ? {
+                    url: error.config.url,
+                    method: error.config.method,
+                    baseURL: error.config.baseURL,
+                } : 'no config',
+            });
+            // Keep the original error with config intact
+            error.message = 'Network error. Please check your connection.';
+            return Promise.reject(error);
         }
 
         const originalRequest = error.config;

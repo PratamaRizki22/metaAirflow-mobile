@@ -62,14 +62,73 @@ export interface PaymentHistoryResponse {
 }
 
 export interface RefundResponse {
-    refundId: string;
-    amount: number;
+    refundId?: string; // Optional if pending approval
+    refundRequestId?: string; // If pending approval
+    amount?: number;
     status: string;
     reason?: string;
+    createdAt?: string;
+    autoRefund?: boolean;
+    requiresApproval?: boolean;
+    message?: string;
+}
+
+export interface RefundRequest {
+    id: string;
+    leaseId: string;
+    requestedBy: string;
+    landlordId: string;
+    amount: number;
+    reason: string;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
     createdAt: string;
+    tenant: {
+        name: string;
+        email: string;
+        profilePicture?: string;
+    };
+    lease: {
+        id: string;
+        property: {
+            title: string;
+            address: string;
+        };
+        startDate: string;
+        endDate: string;
+    };
 }
 
 class StripeService {
+    /**
+     * Get refund requests (Landlord)
+     */
+    async getRefundRequests(status?: string): Promise<RefundRequest[]> {
+        try {
+            const response = await api.get('/v1/m/payments/refund-requests', {
+                params: { status }
+            });
+            return response.data.data;
+        } catch (error: any) {
+            const message = error.response?.data?.message || 'Failed to get refund requests';
+            throw new Error(message);
+        }
+    }
+
+    /**
+     * Process refund request (Landlord)
+     */
+    async processRefundRequest(requestId: string, approve: boolean, notes?: string): Promise<any> {
+        try {
+            const response = await api.post(`/v1/m/payments/refund-request/${requestId}/process`, {
+                approve,
+                notes,
+            });
+            return response.data;
+        } catch (error: any) {
+            const message = error.response?.data?.message || 'Failed to process refund request';
+            throw new Error(message);
+        }
+    }
     /**
      * Get Payment Sheet parameters for booking
      * This calls backend to create PaymentIntent securely
@@ -95,26 +154,74 @@ class StripeService {
         bookingId: string,
         paymentIntentId: string
     ): Promise<PaymentConfirmation> {
-        try {
-            console.log('🔵 Confirming payment:', { bookingId, paymentIntentId });
-            const response = await api.post('/v1/m/payments/confirm', {
-                bookingId,
-                paymentIntentId,
-            });
+        let lastError: any;
+        const maxRetries = 3;
 
-            console.log('✅ Payment confirmed successfully:', response.data);
-            // Backend returns { success: true, data: {...} }
-            return response.data.data || response.data;
-        } catch (error: any) {
-            console.error('❌ Payment confirmation error:', {
-                message: error.response?.data?.message,
-                status: error.response?.status,
-                data: error.response?.data,
-                error: error.message
-            });
-            const message = error.response?.data?.message || 'Failed to confirm payment';
-            throw new Error(message);
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                console.log(`🔵 Confirming payment (attempt ${attempt}/${maxRetries}):`, { bookingId, paymentIntentId });
+
+                const response = await api.post('/v1/m/payments/confirm', {
+                    bookingId,
+                    paymentIntentId,
+                }, {
+                    timeout: 30000, // 30 seconds timeout for payment
+                });
+
+                console.log('✅ Payment confirmed successfully:', response.data);
+                // Backend returns { success: true, data: {...} }
+                return response.data.data || response.data;
+            } catch (error: any) {
+                lastError = error;
+                console.error(`❌ Payment confirmation error (attempt ${attempt}/${maxRetries}):`, {
+                    message: error.message,
+                    hasResponse: !!error.response,
+                    status: error.response?.status,
+                    data: error.response?.data,
+                    url: error.config?.url,
+                    method: error.config?.method,
+                    code: error.code,
+                    isNetworkError: !error.response && error.message.includes('Network'),
+                    isTimeout: error.code === 'ECONNABORTED',
+                });
+
+                // If it's a network error, add more context
+                if (!error.response) {
+                    console.error('🔴 Network Error Details:', {
+                        errorName: error.name,
+                        errorCode: error.code,
+                        errorStack: error.stack?.substring(0, 200),
+                        configExists: !!error.config,
+                        baseURL: error.config?.baseURL,
+                        fullURL: error.config ? `${error.config.baseURL}${error.config.url}` : 'unknown',
+                    });
+
+                    // Network error - likely device connectivity issue
+                    console.error('⚠️  DEVICE NETWORK ISSUE: Cannot reach server. Check:');
+                    console.error('  1. Device has internet connection');
+                    console.error('  2. Emulator can reach external URLs');
+                    console.error('  3. Server is accessible from device network');
+                    console.error(`  4. Try: curl ${error.config?.baseURL}${error.config?.url} from device terminal`);
+                }
+
+                // Don't retry if it's a 4xx error (client error)
+                if (error.response && error.response.status >= 400 && error.response.status < 500) {
+                    const message = error.response?.data?.message || error.message || 'Failed to confirm payment';
+                    throw new Error(message);
+                }
+
+                // Wait before retry (exponential backoff)
+                if (attempt < maxRetries) {
+                    const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+                    console.log(`⏳ Retrying in ${waitTime}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                }
+            }
         }
+
+        // All retries failed
+        const message = lastError?.response?.data?.message || lastError?.message || 'Failed to confirm payment after multiple attempts';
+        throw new Error(message);
     }
 
     /**
@@ -131,7 +238,7 @@ class StripeService {
 
             const url = `/v1/m/payments/history${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
             console.log('📡 Payment history URL:', url);
-            
+
             const response = await api.get(url);
             console.log('✅ Payment history response status:', response.status);
             console.log('📦 Payment history response data:', JSON.stringify(response.data, null, 2));
@@ -142,7 +249,7 @@ class StripeService {
                 paymentsCount: result.payments?.length || 0,
                 pagination: result.pagination
             });
-            
+
             return result;
         } catch (error: any) {
             console.error('❌ Payment history error:', {
@@ -167,11 +274,11 @@ class StripeService {
 
             // Backend returns { success: true, data: {...} }
             const paymentData = response.data.data || response.data;
-            
+
             if (!paymentData) {
                 throw new Error('Payment data not found in response');
             }
-            
+
             return paymentData;
         } catch (error: any) {
             console.error('Payment details API error:', error.response?.data || error.message);

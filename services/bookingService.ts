@@ -1,14 +1,16 @@
 import api from './api';
 import { BaseService } from './BaseService';
 
-export type BookingStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'COMPLETED';
+export type BookingStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'REFUNDED' | 'CANCELLED' | 'COMPLETED';
 
 export interface Booking {
     id: string;
     propertyId: string;
     userId: string;
-    checkInDate: string;
-    checkOutDate: string;
+    checkInDate?: string;
+    checkOutDate?: string;
+    startDate?: string;
+    endDate?: string;
     totalPrice: number;
     status: BookingStatus;
     paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
@@ -69,9 +71,9 @@ class BookingService extends BaseService {
 
             console.log('🔵 Booking API Request:', url);
             console.log('🔵 Request params:', params);
-            
+
             const response = await api.get<BookingsResponse>(url);
-            
+
             console.log('🟢 Booking API Full Response:', JSON.stringify(response.data, null, 2));
             console.log('🟢 Response structure check:', {
                 hasSuccess: 'success' in response.data,
@@ -82,13 +84,13 @@ class BookingService extends BaseService {
                 bookingsCount: response.data?.data?.bookings?.length,
                 hasPagination: 'pagination' in (response.data?.data || {}),
             });
-            
+
             // Validate response structure
             if (!response.data || !response.data.data || !response.data.data.bookings) {
                 console.error('❌ Invalid response structure:', response.data);
                 throw new Error('Invalid response format from server');
             }
-            
+
             return response.data;
         } catch (error: any) {
             console.error('🔴 Get bookings error:', error.response?.data || error.message);

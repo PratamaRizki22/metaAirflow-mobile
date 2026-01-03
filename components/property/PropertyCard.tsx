@@ -81,6 +81,11 @@ export const PropertyCard = React.memo(function PropertyCard({
     };
 
     if (variant === 'compact') {
+        // Debug log for rating
+        if (property.rating !== undefined && property.rating > 0) {
+            console.log('⭐ PropertyCard compact - showing rating:', property.rating, 'for', property.title);
+        }
+        
         return (
             <TouchableOpacity
                 onPress={onPress}
@@ -157,18 +162,18 @@ export const PropertyCard = React.memo(function PropertyCard({
                         <View className="flex-row items-center">
                             <Ionicons name="location-outline" size={14} color="#9CA3AF" />
                             <Text
-                                className={`text-xs ml-1 ${isDark ? 'text-gray-400' : 'text-gray-600'
+                                className={`text-xs ml-1 flex-1 ${isDark ? 'text-gray-400' : 'text-gray-600'
                                     }`}
                                 numberOfLines={1}
                             >
                                 {property.location}
                             </Text>
                         </View>
-                        {property.rating !== undefined && (
+                        {property.rating !== undefined && property.rating > 0 && (
                             <View className="flex-row items-center mt-1">
-                                <Ionicons name="star" size={12} color="#F59E0B" />
+                                <Ionicons name="star" size={12} color="#FBBF24" />
                                 <Text className={`text-xs ml-1 font-bold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                                    {property.rating !== undefined ? property.rating.toFixed(1) : '0.0'}
+                                    {property.rating.toFixed(1)}
                                 </Text>
                             </View>
                         )}

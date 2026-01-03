@@ -55,6 +55,7 @@ export function AllWishlistScreen({ navigation, route }: any) {
                             image: item.property?.images?.[0] || DEFAULT_IMAGES.PROPERTY,
                             type: item.property?.propertyType?.name || 'Property',
                             isFavorited: isFavorited(item.property?.id || item.id),
+                            rating: item.property?.averageRating || 0,
                         }}
                         onPress={() => navigation.navigate('PropertyDetail', { 
                             propertyId: item.property?.id || item.id 

@@ -521,7 +521,7 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                                         key={amenity.id}
                                         className={`${cardBg} px-4 py-2 rounded-full border ${borderColor}`}
                                     >
-                                        <Text className={`${textColor}`}>• {amenity.name}</Text>
+                                        <Text className={`${textColor}`}>{amenity.name}</Text>
                                     </View>
                                 ))}
                             </View>

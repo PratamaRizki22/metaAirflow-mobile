@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, ActivityIndicator, Modal, KeyboardAvoidingView, Platform, FlatList } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +18,7 @@ export default function CreateBookingScreen({ route, navigation }: any) {
     const [loading, setLoading] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [agreedToTerms, setAgreedToTerms] = useState(false);
+    const [blockedDates, setBlockedDates] = useState<string[]>([]);
     const { toast, showToast, hideToast } = useToast();
     const insets = useSafeAreaInsets();
 
@@ -26,6 +27,31 @@ export default function CreateBookingScreen({ route, navigation }: any) {
     const cardBg = isDark ? 'bg-card-dark' : 'bg-card-light';
     const inputBg = isDark ? 'bg-surface-dark' : 'bg-surface-light';
     const borderColor = isDark ? 'border-gray-700' : 'border-gray-300';
+
+    useEffect(() => {
+        loadOccupiedDates();
+    }, [propertyId]);
+
+    const loadOccupiedDates = async () => {
+        try {
+            const data = await propertyService.getOccupiedDates(propertyId);
+            if (data?.occupiedPeriods) {
+                const dates: string[] = [];
+                data.occupiedPeriods.forEach(period => {
+                    let currentDate = new Date(period.startDate);
+                    const endDate = new Date(period.endDate);
+
+                    while (currentDate <= endDate) {
+                        dates.push(currentDate.toISOString().split('T')[0]);
+                        currentDate.setDate(currentDate.getDate() + 1);
+                    }
+                });
+                setBlockedDates(dates);
+            }
+        } catch (error) {
+            console.error('Failed to load occupied dates', error);
+        }
+    };
 
     const calculateNights = () => {
         if (!startDate || !endDate) return 0;
@@ -297,6 +323,7 @@ export default function CreateBookingScreen({ route, navigation }: any) {
                 onClose={() => setShowDatePicker(false)}
                 onConfirm={handleDateConfirm}
                 minDate={new Date().toISOString().split('T')[0]}
+                blockedDates={blockedDates}
                 initialStartDate={startDate}
                 initialEndDate={endDate}
             />

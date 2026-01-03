@@ -525,6 +525,7 @@ export function SearchScreen({ navigation }: any) {
                     type: item.propertyType?.name?.toLowerCase() || 'house',
                     isFavorited: isFavorited(item.id),
                     isInCollection: propertiesInCollections.has(item.id),
+                    rating: item.averageRating || 0,
                 }}
                 onPress={() => handlePropertyPress(item.id)}
                 onFavoriteToggle={handleFavoriteToggle}
@@ -660,6 +661,7 @@ export function SearchScreen({ navigation }: any) {
                                             type: property.propertyType?.name?.toLowerCase() || 'house',
                                             isFavorited: isFavorited(property.id),
                                             isInCollection: propertiesInCollections.has(property.id),
+                                            rating: property.averageRating || 0,
                                         }}
                                         variant="compact"
                                         onPress={() => handlePropertyPress(property.id)}
@@ -735,6 +737,7 @@ export function SearchScreen({ navigation }: any) {
                                             isFeatured: true,
                                             isFavorited: isFavorited(property.id),
                                             isInCollection: propertiesInCollections.has(property.id),
+                                            rating: property.averageRating || 0,
                                         }}
                                         variant="compact"
                                         onPress={() => handlePropertyPress(property.id)}
@@ -781,6 +784,7 @@ export function SearchScreen({ navigation }: any) {
                                             isFeatured: true,
                                             isFavorited: isFavorited(property.id),
                                             isInCollection: propertiesInCollections.has(property.id),
+                                            rating: property.averageRating || 0,
                                         }}
                                         variant="compact"
                                         onPress={() => handlePropertyPress(property.id)}
@@ -829,7 +833,7 @@ export function SearchScreen({ navigation }: any) {
                         </Text>
                     </View>
 
-                    {locationsLoading ? (
+                    {loading ? (
                         <View className="px-6">
                             <ActivityIndicator size="small" color="#00D9A3" />
                         </View>
@@ -1139,16 +1143,7 @@ export function SearchScreen({ navigation }: any) {
                                 </TouchableOpacity>
 
                                 {/* Collections List */}
-                                {(() => {
-                                    console.log('Rendering collections list. Loading:', loadingCollections, 'Count:', collections.length);
-                                    return null;
-                                })()}
-                                {loadingCollections ? (
-                                    <View className="py-12 items-center">
-                                        <ActivityIndicator size="large" color="#00D9A3" />
-                                        <Text className={`mt-2 ${secondaryTextColor}`}>Loading collections...</Text>
-                                    </View>
-                                ) : collections.length > 0 ? (
+                                {collections.length > 0 ? (
                                     <View style={{ maxHeight: 400 }}>
                                         <ScrollView
                                             showsVerticalScrollIndicator={true}

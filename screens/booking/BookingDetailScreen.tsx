@@ -31,7 +31,7 @@ export default function BookingDetailScreen({ route, navigation }: any) {
         try {
             setLoading(true);
             const response = await bookingService.getBookingById(bookingId);
-            
+
             console.log('📋 Booking detail loaded:', {
                 id: response.data.id,
                 startDate: response.data.startDate,
@@ -41,7 +41,7 @@ export default function BookingDetailScreen({ route, navigation }: any) {
                 totalPrice: response.data.totalPrice,
                 status: response.data.status,
             });
-            
+
             setBooking(response.data);
 
             // Check if user can review (for completed bookings)
@@ -84,8 +84,16 @@ export default function BookingDetailScreen({ route, navigation }: any) {
 
     const handleRequestRefund = async (reason: string) => {
         try {
-            await stripeService.requestRefund(bookingId, reason);
-            showToast('Refund request submitted successfully', 'success');
+            const response = await stripeService.requestRefund(bookingId, reason);
+
+            if (response.autoRefund) {
+                showToast(response.message || 'Refund processed immediately', 'success');
+            } else if (response.requiresApproval) {
+                showToast(response.message || 'Refund request sent to landlord for approval', 'info');
+            } else {
+                showToast('Refund request submitted successfully', 'success');
+            }
+
             setTimeout(() => {
                 loadBookingDetail();
             }, 1500);
@@ -228,8 +236,9 @@ export default function BookingDetailScreen({ route, navigation }: any) {
             case 'PENDING': return '#F59E0B';
             case 'APPROVED': return '#10B981';
             case 'REJECTED': return '#EF4444';
-            case 'CANCELLED': return '#8E8E93';
-            case 'COMPLETED': return '#007AFF';
+            case 'REFUNDED': return '#8E8E93'; // Grey for refunded
+            case 'CANCELLED': return '#6B7280';
+            case 'COMPLETED': return '#3B82F6';
             default: return '#8E8E93';
         }
     };
@@ -237,18 +246,18 @@ export default function BookingDetailScreen({ route, navigation }: any) {
     // Handle different field names from backend (startDate/endDate or checkInDate/checkOutDate)
     const checkInDate = new Date(booking.startDate || booking.checkInDate);
     const checkOutDate = new Date(booking.endDate || booking.checkOutDate);
-    
+
     // Validate dates
     const isValidCheckIn = !isNaN(checkInDate.getTime());
     const isValidCheckOut = !isNaN(checkOutDate.getTime());
-    
-    const nights = isValidCheckIn && isValidCheckOut 
+
+    const nights = isValidCheckIn && isValidCheckOut
         ? Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
         : 0;
 
     // Calculate price per night if we have valid data
-    const pricePerNight = nights > 0 && booking.totalPrice 
-        ? Number(booking.totalPrice) / nights 
+    const pricePerNight = nights > 0 && booking.totalPrice
+        ? Number(booking.totalPrice) / nights
         : Number(booking.property?.pricePerNight || 0);
 
     return (
@@ -277,7 +286,7 @@ export default function BookingDetailScreen({ route, navigation }: any) {
                 <View className="px-6 py-6">
                     {/* Status Badge */}
                     <View className="items-center mb-6">
-                        <View 
+                        <View
                             style={{ backgroundColor: getStatusColor(booking.status) }}
                             className="px-6 py-2.5 rounded-full"
                         >
@@ -300,8 +309,8 @@ export default function BookingDetailScreen({ route, navigation }: any) {
                         <Text className={`text-xl font-['VisbyRound-Bold'] mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                             {booking.property?.title}
                         </Text>
-                        <TouchableOpacity 
-                            onPress={openLocation} 
+                        <TouchableOpacity
+                            onPress={openLocation}
                             className="flex-row items-center mb-3"
                             activeOpacity={0.7}
                         >
@@ -334,7 +343,7 @@ export default function BookingDetailScreen({ route, navigation }: any) {
                                 Check-in
                             </Text>
                             <Text className={`font-['VisbyRound-Bold'] text-base ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                {isValidCheckIn 
+                                {isValidCheckIn
                                     ? checkInDate.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
                                     : 'Invalid Date'
                                 }
@@ -372,49 +381,7 @@ export default function BookingDetailScreen({ route, navigation }: any) {
                         </View>
                     </View>
 
-                {/* Price Breakdown */}
-                <View className={`rounded-2xl p-5 mb-4 ${isDark ? 'bg-surface-dark' : 'bg-white'}`}
-                    style={{
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 8,
-                        elevation: 3,
-                    }}
-                >
-                    <Text className={`text-lg font-['VisbyRound-Bold'] mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        Price Details
-                    </Text>
-
-                    <View className="flex-row justify-between mb-3">
-                        <Text className={`font-['VisbyRound-Regular'] ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                            RM {pricePerNight > 0 ? pricePerNight.toLocaleString('en-MY', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : '0'} x {nights > 0 ? nights : 'NaN'} nights
-                        </Text>
-                        <Text className={`font-['VisbyRound-Medium'] ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                            RM {nights > 0 && pricePerNight > 0 
-                                ? (pricePerNight * nights).toLocaleString('en-MY', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
-                                : 'NaN'
-                            }
-                        </Text>
-                    </View>
-
-                    <View className={`border-t pt-3 mt-2 ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
-                        <View className="flex-row justify-between">
-                            <Text className={`text-base font-['VisbyRound-Bold'] ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                Total
-                            </Text>
-                            <Text className="text-lg font-['VisbyRound-Bold'] text-primary">
-                                RM {booking.totalPrice 
-                                    ? Number(booking.totalPrice).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                                    : '0.00'
-                                }
-                            </Text>
-                        </View>
-                    </View>
-                </View>
-
-                {/* Guest/Host Info */}
-                {booking.user && (
+                    {/* Price Breakdown */}
                     <View className={`rounded-2xl p-5 mb-4 ${isDark ? 'bg-surface-dark' : 'bg-white'}`}
                         style={{
                             shadowColor: '#000',
@@ -424,275 +391,317 @@ export default function BookingDetailScreen({ route, navigation }: any) {
                             elevation: 3,
                         }}
                     >
-                        <Text className={`text-lg font-['VisbyRound-Bold'] mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                            {booking.isOwner ? 'Guest Information' : 'Host Information'}
+                        <Text className={`text-lg font-['VisbyRound-Bold'] mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            Price Details
                         </Text>
-                        <Text className={`text-base font-['VisbyRound-Bold'] mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                            {booking.user.name}
-                        </Text>
-                        <Text className={`font-['VisbyRound-Regular'] ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                            {booking.user.email}
-                        </Text>
-                    </View>
-                )}
 
-                {/* Actions */}
-                {booking.status === 'PENDING' && (
-                    <View className="mb-6">
-                        {booking.isOwner ? (
-                            // Owner actions
-                            <View className="flex-row gap-3">
-                                <TouchableOpacity
-                                    onPress={handleApproveBooking}
-                                    disabled={actionLoading}
-                                    className="flex-1 bg-green-500 py-4 rounded-xl items-center"
-                                    style={{
-                                        shadowColor: '#000',
-                                        shadowOffset: { width: 0, height: 2 },
-                                        shadowOpacity: 0.15,
-                                        shadowRadius: 4,
-                                        elevation: 3,
-                                    }}
-                                    activeOpacity={0.8}
-                                >
-                                    <Text className="text-white font-['VisbyRound-Bold'] text-base">
-                                        {actionLoading ? 'Processing...' : 'Approve'}
-                                    </Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    onPress={handleRejectBooking}
-                                    disabled={actionLoading}
-                                    className="flex-1 bg-red-500 py-4 rounded-xl items-center"
-                                    style={{
-                                        shadowColor: '#000',
-                                        shadowOffset: { width: 0, height: 2 },
-                                        shadowOpacity: 0.15,
-                                        shadowRadius: 4,
-                                        elevation: 3,
-                                    }}
-                                    activeOpacity={0.8}
-                                >
-                                    <Text className="text-white font-['VisbyRound-Bold'] text-base">
-                                        Reject
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                        ) : (
-                            // Tenant actions
-                            <TouchableOpacity
-                                onPress={handleCancelBooking}
-                                disabled={actionLoading}
-                                className="bg-red-500 py-4 rounded-xl items-center"
-                                style={{
-                                    shadowColor: '#000',
-                                    shadowOffset: { width: 0, height: 2 },
-                                    shadowOpacity: 0.15,
-                                    shadowRadius: 4,
-                                    elevation: 3,
-                                }}
-                                activeOpacity={0.8}
-                            >
-                                <Text className="text-white font-['VisbyRound-Bold'] text-base">
-                                    {actionLoading ? 'Cancelling...' : 'Cancel Booking'}
-                                </Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                )}
-
-                {/* Write Review Button (for completed bookings) */}
-                {booking.status === 'COMPLETED' && canReview && (
-                    <View style={{ marginTop: 16 }}>
-                        <Button
-                            onPress={() => navigation.navigate('WriteReview', {
-                                leaseId: bookingId,
-                                propertyId: booking.property.id,
-                                propertyTitle: booking.property.title
-                            })}
-                            variant="primary"
-                            fullWidth
-                        >
-                            Write a Review
-                        </Button>
-                    </View>
-                )}
-
-                {/* Already Reviewed */}
-                {booking.status === 'COMPLETED' && !canReview && (
-                    <View style={{
-                        marginTop: 16,
-                        padding: 16,
-                        backgroundColor: '#E8F5E9',
-                        borderRadius: 12,
-                        flexDirection: 'row',
-                        alignItems: 'center'
-                    }}>
-                        <Ionicons name="checkmark-circle" size={24} color="#10B981" />
-                        <Text style={{ color: '#059669', marginLeft: 12, flex: 1, fontWeight: '600' }}>
-                            You've already reviewed this property
-                        </Text>
-                    </View>
-                )}
-
-                {/* Pay Now Button (for APPROVED bookings not yet paid) */}
-                {booking.status === 'APPROVED' && booking.paymentStatus === 'pending' && !booking.isOwner && (
-                    <View style={{ marginTop: 16 }}>
-                        <Button
-                            onPress={() => navigation.navigate('Payment', {
-                                bookingId: booking.id,
-                                amount: booking.totalPrice,
-                                propertyTitle: booking.property?.title
-                            })}
-                            variant="primary"
-                            fullWidth
-                        >
-                            Pay Now - RM {booking.totalPrice?.toLocaleString()}
-                        </Button>
-                    </View>
-                )}
-
-                {/* Payment Completed Badge */}
-                {booking.paymentStatus === 'paid' && (
-                    <View style={{
-                        marginTop: 16,
-                        padding: 16,
-                        backgroundColor: '#D1FAE5',
-                        borderRadius: 12,
-                        flexDirection: 'row',
-                        alignItems: 'center'
-                    }}>
-                        <Ionicons name="checkmark-circle" size={24} color="#10B981" />
-                        <Text style={{ color: '#059669', marginLeft: 12, flex: 1, fontWeight: '600' }}>
-                            Payment completed successfully
-                        </Text>
-                    </View>
-                )}
-
-                {/* Rental Agreement Section (for paid bookings) */}
-                {booking.status === 'APPROVED' && booking.paymentStatus === 'paid' && !booking.isOwner && (
-                    <View style={{ marginTop: 16 }}>
-                        <View style={{ backgroundColor: 'white', borderRadius: 12, padding: 16 }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                                <Ionicons name="document-text" size={20} color="#6366F1" />
-                                <Text style={{ fontSize: 18, fontWeight: 'bold', marginLeft: 8 }}>
-                                    Rental Agreement
-                                </Text>
-                            </View>
-
-                            <Text style={{ color: '#666', marginBottom: 16, fontSize: 14 }}>
-                                View your rental agreement and get AI-powered insights
+                        <View className="flex-row justify-between mb-3">
+                            <Text className={`font-['VisbyRound-Regular'] ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                RM {pricePerNight > 0 ? pricePerNight.toLocaleString('en-MY', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : '0'} x {nights > 0 ? nights : 'NaN'} nights
                             </Text>
+                            <Text className={`font-['VisbyRound-Medium'] ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                                RM {nights > 0 && pricePerNight > 0
+                                    ? (pricePerNight * nights).toLocaleString('en-MY', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+                                    : 'NaN'
+                                }
+                            </Text>
+                        </View>
 
-                            {/* View PDF Button */}
+                        <View className={`border-t pt-3 mt-2 ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+                            <View className="flex-row justify-between">
+                                <Text className={`text-base font-['VisbyRound-Bold'] ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                    Total
+                                </Text>
+                                <Text className="text-lg font-['VisbyRound-Bold'] text-primary">
+                                    RM {booking.totalPrice
+                                        ? Number(booking.totalPrice).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                                        : '0.00'
+                                    }
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* Guest/Host Info */}
+                    {booking.user && (
+                        <View className={`rounded-2xl p-5 mb-4 ${isDark ? 'bg-surface-dark' : 'bg-white'}`}
+                            style={{
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 8,
+                                elevation: 3,
+                            }}
+                        >
+                            <Text className={`text-lg font-['VisbyRound-Bold'] mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                {booking.isOwner ? 'Guest Information' : 'Host Information'}
+                            </Text>
+                            <Text className={`text-base font-['VisbyRound-Bold'] mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                {booking.user.name}
+                            </Text>
+                            <Text className={`font-['VisbyRound-Regular'] ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                {booking.user.email}
+                            </Text>
+                        </View>
+                    )}
+
+                    {/* Actions */}
+                    {booking.status === 'PENDING' && (
+                        <View className="mb-6">
+                            {booking.isOwner ? (
+                                // Owner actions
+                                <View className="flex-row gap-3">
+                                    <TouchableOpacity
+                                        onPress={handleApproveBooking}
+                                        disabled={actionLoading}
+                                        className="flex-1 bg-green-500 py-4 rounded-xl items-center"
+                                        style={{
+                                            shadowColor: '#000',
+                                            shadowOffset: { width: 0, height: 2 },
+                                            shadowOpacity: 0.15,
+                                            shadowRadius: 4,
+                                            elevation: 3,
+                                        }}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text className="text-white font-['VisbyRound-Bold'] text-base">
+                                            {actionLoading ? 'Processing...' : 'Approve'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={handleRejectBooking}
+                                        disabled={actionLoading}
+                                        className="flex-1 bg-red-500 py-4 rounded-xl items-center"
+                                        style={{
+                                            shadowColor: '#000',
+                                            shadowOffset: { width: 0, height: 2 },
+                                            shadowOpacity: 0.15,
+                                            shadowRadius: 4,
+                                            elevation: 3,
+                                        }}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text className="text-white font-['VisbyRound-Bold'] text-base">
+                                            Reject
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            ) : (
+                                // Tenant actions
+                                <TouchableOpacity
+                                    onPress={handleCancelBooking}
+                                    disabled={actionLoading}
+                                    className="bg-red-500 py-4 rounded-xl items-center"
+                                    style={{
+                                        shadowColor: '#000',
+                                        shadowOffset: { width: 0, height: 2 },
+                                        shadowOpacity: 0.15,
+                                        shadowRadius: 4,
+                                        elevation: 3,
+                                    }}
+                                    activeOpacity={0.8}
+                                >
+                                    <Text className="text-white font-['VisbyRound-Bold'] text-base">
+                                        {actionLoading ? 'Cancelling...' : 'Cancel Booking'}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    )}
+
+                    {/* Write Review Button (for completed bookings) */}
+                    {booking.status === 'COMPLETED' && canReview && (
+                        <View style={{ marginTop: 16 }}>
+                            <Button
+                                onPress={() => navigation.navigate('WriteReview', {
+                                    leaseId: bookingId,
+                                    propertyId: booking.property.id,
+                                    propertyTitle: booking.property.title
+                                })}
+                                variant="primary"
+                                fullWidth
+                            >
+                                Write a Review
+                            </Button>
+                        </View>
+                    )}
+
+                    {/* Already Reviewed */}
+                    {booking.status === 'COMPLETED' && !canReview && (
+                        <View style={{
+                            marginTop: 16,
+                            padding: 16,
+                            backgroundColor: '#E8F5E9',
+                            borderRadius: 12,
+                            flexDirection: 'row',
+                            alignItems: 'center'
+                        }}>
+                            <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                            <Text style={{ color: '#059669', marginLeft: 12, flex: 1, fontWeight: '600' }}>
+                                You've already reviewed this property
+                            </Text>
+                        </View>
+                    )}
+
+                    {/* Pay Now Button (for APPROVED bookings not yet paid) */}
+                    {booking.status === 'APPROVED' && booking.paymentStatus === 'pending' && !booking.isOwner && (
+                        <View style={{ marginTop: 16 }}>
+                            <Button
+                                onPress={() => navigation.navigate('Payment', {
+                                    bookingId: booking.id,
+                                    amount: booking.totalPrice,
+                                    propertyTitle: booking.property?.title
+                                })}
+                                variant="primary"
+                                fullWidth
+                            >
+                                Pay Now - RM {booking.totalPrice?.toLocaleString()}
+                            </Button>
+                        </View>
+                    )}
+
+                    {/* Payment Completed Badge */}
+                    {booking.paymentStatus === 'paid' && (
+                        <View style={{
+                            marginTop: 16,
+                            padding: 16,
+                            backgroundColor: '#D1FAE5',
+                            borderRadius: 12,
+                            flexDirection: 'row',
+                            alignItems: 'center'
+                        }}>
+                            <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                            <Text style={{ color: '#059669', marginLeft: 12, flex: 1, fontWeight: '600' }}>
+                                Payment completed successfully
+                            </Text>
+                        </View>
+                    )}
+
+                    {/* Rental Agreement Section (for paid bookings) */}
+                    {booking.status === 'APPROVED' && booking.paymentStatus === 'paid' && !booking.isOwner && (
+                        <View style={{ marginTop: 16 }}>
+                            <View style={{ backgroundColor: 'white', borderRadius: 12, padding: 16 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                                    <Ionicons name="document-text" size={20} color="#6366F1" />
+                                    <Text style={{ fontSize: 18, fontWeight: 'bold', marginLeft: 8 }}>
+                                        Rental Agreement
+                                    </Text>
+                                </View>
+
+                                <Text style={{ color: '#666', marginBottom: 16, fontSize: 14 }}>
+                                    View your rental agreement and get AI-powered insights
+                                </Text>
+
+                                {/* View PDF Button */}
+                                <TouchableOpacity
+                                    onPress={handleViewAgreementPDF}
+                                    activeOpacity={0.8}
+                                    style={{
+                                        backgroundColor: '#6366F1',
+                                        padding: 14,
+                                        borderRadius: 10,
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        marginBottom: 10
+                                    }}
+                                >
+                                    <Ionicons name="document" size={18} color="white" />
+                                    <Text style={{ color: 'white', fontWeight: '600', marginLeft: 8, fontSize: 15 }}>
+                                        View PDF Agreement
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    )}
+
+                    {/* Refund Button (for confirmed bookings within 7 days) */}
+                    {booking.status === 'APPROVED' && booking.paymentStatus === 'paid' && refundEligibility.eligible && !booking.isOwner && (
+                        <View style={{ marginTop: 16 }}>
                             <TouchableOpacity
-                                onPress={handleViewAgreementPDF}
+                                onPress={() => setShowRefundModal(true)}
                                 activeOpacity={0.8}
                                 style={{
-                                    backgroundColor: '#6366F1',
-                                    padding: 14,
-                                    borderRadius: 10,
+                                    backgroundColor: '#EF4444',
+                                    padding: 16,
+                                    borderRadius: 12,
                                     flexDirection: 'row',
                                     alignItems: 'center',
-                                    justifyContent: 'center',
-                                    marginBottom: 10
+                                    justifyContent: 'center'
                                 }}
                             >
-                                <Ionicons name="document" size={18} color="white" />
-                                <Text style={{ color: 'white', fontWeight: '600', marginLeft: 8, fontSize: 15 }}>
-                                    View PDF Agreement
+                                <Ionicons name="arrow-undo" size={20} color="white" />
+                                <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 8, fontSize: 16 }}>
+                                    Request Refund ({refundEligibility.daysRemaining} days left)
                                 </Text>
                             </TouchableOpacity>
                         </View>
-                    </View>
-                )}
+                    )}
 
-                {/* Refund Button (for confirmed bookings within 7 days) */}
-                {booking.status === 'APPROVED' && booking.paymentStatus === 'paid' && refundEligibility.eligible && !booking.isOwner && (
-                    <View style={{ marginTop: 16 }}>
-                        <TouchableOpacity
-                            onPress={() => setShowRefundModal(true)}
-                            activeOpacity={0.8}
-                            style={{
-                                backgroundColor: '#EF4444',
-                                padding: 16,
-                                borderRadius: 12,
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}
-                        >
-                            <Ionicons name="arrow-undo" size={20} color="white" />
-                            <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 8, fontSize: 16 }}>
-                                Request Refund ({refundEligibility.daysRemaining} days left)
+                    {/* Refund Expired Notice */}
+                    {booking.status === 'APPROVED' && booking.paymentStatus === 'paid' && !refundEligibility.eligible && !booking.isOwner && (
+                        <View style={{
+                            marginTop: 16,
+                            padding: 16,
+                            backgroundColor: '#FEE2E2',
+                            borderRadius: 12,
+                            flexDirection: 'row',
+                            alignItems: 'center'
+                        }}>
+                            <Ionicons name="time-outline" size={24} color="#EF4444" />
+                            <Text style={{ color: '#DC2626', marginLeft: 12, flex: 1, fontWeight: '600' }}>
+                                Refund window expired (7 days from payment)
                             </Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
+                        </View>
+                    )}
 
-                {/* Refund Expired Notice */}
-                {booking.status === 'APPROVED' && booking.paymentStatus === 'paid' && !refundEligibility.eligible && !booking.isOwner && (
-                    <View style={{
-                        marginTop: 16,
-                        padding: 16,
-                        backgroundColor: '#FEE2E2',
-                        borderRadius: 12,
-                        flexDirection: 'row',
-                        alignItems: 'center'
-                    }}>
-                        <Ionicons name="time-outline" size={24} color="#EF4444" />
-                        <Text style={{ color: '#DC2626', marginLeft: 12, flex: 1, fontWeight: '600' }}>
-                            Refund window expired (7 days from payment)
-                        </Text>
-                    </View>
-                )}
+                    {/* Refunded Status */}
+                    {booking.paymentStatus === 'refunded' && (
+                        <View style={{
+                            marginTop: 16,
+                            padding: 16,
+                            backgroundColor: '#E0E7FF',
+                            borderRadius: 12,
+                            flexDirection: 'row',
+                            alignItems: 'center'
+                        }}>
+                            <Ionicons name="checkmark-circle" size={24} color="#6366F1" />
+                            <Text style={{ color: '#4F46E5', marginLeft: 12, flex: 1, fontWeight: '600' }}>
+                                Payment refunded successfully
+                            </Text>
+                        </View>
+                    )}
 
-                {/* Refunded Status */}
-                {booking.paymentStatus === 'refunded' && (
-                    <View style={{
-                        marginTop: 16,
-                        padding: 16,
-                        backgroundColor: '#E0E7FF',
-                        borderRadius: 12,
-                        flexDirection: 'row',
-                        alignItems: 'center'
-                    }}>
-                        <Ionicons name="checkmark-circle" size={24} color="#6366F1" />
-                        <Text style={{ color: '#4F46E5', marginLeft: 12, flex: 1, fontWeight: '600' }}>
-                            Payment refunded successfully
-                        </Text>
-                    </View>
-                )}
-
-                <View style={{ height: 40 }} />
-            </View>
-            <Toast
-                visible={toast.visible}
-                message={toast.message}
-                type={toast.type}
-                onHide={hideToast}
-            />
-            <RefundModal
-                visible={showRefundModal}
-                onClose={() => setShowRefundModal(false)}
-                onConfirm={handleRequestRefund}
-                bookingDetails={{
-                    propertyTitle: booking?.property?.title || '',
-                    amount: booking?.totalPrice || 0,
-                    completedDate: booking?.createdAt
-                }}
-                daysRemaining={refundEligibility.daysRemaining}
-            />
-            
-            {/* Toast */}
-            {toast.visible && (
+                    <View style={{ height: 40 }} />
+                </View>
                 <Toast
+                    visible={toast.visible}
                     message={toast.message}
                     type={toast.type}
-                    visible={toast.visible}
                     onHide={hideToast}
                 />
-            )}
-        </ScrollView>
+                <RefundModal
+                    visible={showRefundModal}
+                    onClose={() => setShowRefundModal(false)}
+                    onConfirm={handleRequestRefund}
+                    bookingDetails={{
+                        propertyTitle: booking?.property?.title || '',
+                        amount: booking?.totalPrice || 0,
+                        completedDate: booking?.createdAt
+                    }}
+                    daysRemaining={refundEligibility.daysRemaining}
+                />
+
+                {/* Toast */}
+                {toast.visible && (
+                    <Toast
+                        message={toast.message}
+                        type={toast.type}
+                        visible={toast.visible}
+                        onHide={hideToast}
+                    />
+                )}
+            </ScrollView>
         </View>
     );
 }

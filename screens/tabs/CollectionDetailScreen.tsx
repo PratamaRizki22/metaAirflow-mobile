@@ -162,6 +162,7 @@ export function CollectionDetailScreen({ navigation, route }: any) {
                                 type: item.property?.propertyType?.name?.toLowerCase() || 'house',
                                 isFavorited: isFavorited(item.property?.id || item.propertyId),
                                 isInCollection: true,
+                                rating: item.property?.averageRating || 0,
                             }}
                             onPress={() => navigation.navigate('PropertyDetail', { 
                                 propertyId: item.property?.id || item.propertyId 

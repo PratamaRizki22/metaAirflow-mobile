@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StatusBar, SafeAreaView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StatusBar, SafeAreaView, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../../hooks';
 import { useNavigation } from '@react-navigation/native';
+import { MAPTILER_API_KEY } from '@env';
 
 // Added AsyncStorage and updated logic
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,6 +15,8 @@ export const SearchInputScreen = () => {
     const { bgColor, textColor, secondaryTextColor, isDark } = useThemeColors();
     const [query, setQuery] = useState('');
     const [searchHistory, setSearchHistory] = useState<any[]>([]);
+    const [suggestions, setSuggestions] = useState<any[]>([]);
+    const [searchingLocation, setSearchingLocation] = useState(false);
 
     // Calculate top padding for Android
     const topPadding = Platform.OS === 'android' ? StatusBar.currentHeight : 0;
@@ -21,6 +24,15 @@ export const SearchInputScreen = () => {
     useEffect(() => {
         loadHistory();
     }, []);
+
+    useEffect(() => {
+        // Search location using MapTiler Geocoding API
+        const searchTimer = setTimeout(() => {
+            searchLocationByQuery(query);
+        }, 300); // Debounce 300ms
+
+        return () => clearTimeout(searchTimer);
+    }, [query]);
 
     const loadHistory = async () => {
         try {
@@ -30,6 +42,49 @@ export const SearchInputScreen = () => {
             }
         } catch (error) {
             console.log('Failed to load history', error);
+        }
+    };
+
+    const searchLocationByQuery = async (searchQuery: string) => {
+        if (!searchQuery || searchQuery.length < 3) {
+            setSuggestions([]);
+            return;
+        }
+
+        // Check if API key is available
+        if (!MAPTILER_API_KEY) {
+            console.error('MAPTILER_API_KEY is not configured');
+            setSuggestions([]);
+            return;
+        }
+
+        try {
+            setSearchingLocation(true);
+            const response = await fetch(
+                `https://api.maptiler.com/geocoding/${encodeURIComponent(searchQuery)}.json?key=${MAPTILER_API_KEY}&limit=5`
+            );
+            
+            // Check if response is ok
+            if (!response.ok) {
+                console.error('MapTiler API error:', response.status, response.statusText);
+                setSuggestions([]);
+                return;
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.error('MapTiler API returned non-JSON response');
+                setSuggestions([]);
+                return;
+            }
+
+            const data = await response.json();
+            setSuggestions(data.features || []);
+        } catch (error) {
+            console.error('Location search error:', error);
+            setSuggestions([]);
+        } finally {
+            setSearchingLocation(false);
         }
     };
 
@@ -67,6 +122,10 @@ export const SearchInputScreen = () => {
         if (newHistory.length > 10) newHistory.pop();
 
         await saveHistory(newHistory);
+
+        // Clear suggestions after selecting
+        setSuggestions([]);
+        setQuery('');
 
         navigation.navigate('MapSearchInfo', {
             searchQuery: searchText
@@ -115,18 +174,26 @@ export const SearchInputScreen = () => {
                         onChangeText={setQuery}
                         onSubmitEditing={() => handleSearch()}
                     />
-                    {query.length > 0 && (
-                        <TouchableOpacity onPress={() => setQuery('')}>
+                    {searchingLocation && (
+                        <ActivityIndicator size="small" color="#9CA3AF" />
+                    )}
+                    {query.length > 0 && !searchingLocation && (
+                        <TouchableOpacity onPress={() => {
+                            setQuery('');
+                            setSuggestions([]);
+                        }}>
                             <Ionicons name="close-circle" size={20} color="#9CA3AF" />
                         </TouchableOpacity>
                     )}
                 </View>
             </View>
 
-            {/* Recent Searches Title */}
+            {/* Recent Searches or Suggestions Title */}
             <View className="px-6 mt-8 mb-4 flex-row justify-between items-center">
-                <Text className={`text-sm font-medium ${secondaryTextColor}`}>Recent searches</Text>
-                {searchHistory.length > 0 && (
+                <Text className={`text-sm font-medium ${secondaryTextColor}`}>
+                    {suggestions.length > 0 ? 'Suggestions' : 'Recent searches'}
+                </Text>
+                {searchHistory.length > 0 && suggestions.length === 0 && (
                     <TouchableOpacity onPress={clearHistory}>
                         <Text className="text-primary text-xs">Clear All</Text>
                     </TouchableOpacity>
@@ -135,8 +202,14 @@ export const SearchInputScreen = () => {
 
             {/* List */}
             <FlatList
-                data={searchHistory}
-                keyExtractor={(item) => item.id}
+                data={suggestions.length > 0 ? suggestions.map((s, idx) => ({ 
+                    id: `suggestion-${idx}`, 
+                    title: s.place_name || s.text,
+                    subtitle: s.place_type?.join(', ') || 'Location', 
+                    icon: 'location-outline',
+                    raw: s
+                })) : searchHistory}
+                keyExtractor={(item) => item.id || item}
                 contentContainerStyle={{ paddingHorizontal: 24 }}
                 renderItem={({ item }) => (
                     <TouchableOpacity
@@ -157,7 +230,9 @@ export const SearchInputScreen = () => {
                 )}
                 ListEmptyComponent={
                     <View className="items-center justify-center mt-10">
-                        <Text className={`text-center ${secondaryTextColor}`}>No recent searches</Text>
+                        <Text className={`text-center ${secondaryTextColor}`}>
+                            {query.length > 0 ? 'No suggestions found' : 'No recent searches'}
+                        </Text>
                     </View>
                 }
             />

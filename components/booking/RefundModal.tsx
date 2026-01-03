@@ -118,12 +118,12 @@ export function RefundModal({
                         {/* Eligibility Warning */}
                         <View
                             className={`rounded-xl p-3 mb-4 ${daysRemaining <= 2
-                                    ? isDark
-                                        ? 'bg-red-900/20'
-                                        : 'bg-red-50'
-                                    : isDark
-                                        ? 'bg-yellow-900/20'
-                                        : 'bg-yellow-50'
+                                ? isDark
+                                    ? 'bg-red-900/20'
+                                    : 'bg-red-50'
+                                : isDark
+                                    ? 'bg-yellow-900/20'
+                                    : 'bg-yellow-50'
                                 }`}
                         >
                             <View className="flex-row">
@@ -160,8 +160,8 @@ export function RefundModal({
                                 multiline
                                 numberOfLines={4}
                                 className={`rounded-xl p-3 text-base ${isDark
-                                        ? 'bg-[#0F172A] text-white border-gray-700'
-                                        : 'bg-gray-50 text-gray-900 border-gray-300'
+                                    ? 'bg-[#0F172A] text-white border-gray-700'
+                                    : 'bg-gray-50 text-gray-900 border-gray-300'
                                     } border`}
                                 style={{ textAlignVertical: 'top', minHeight: 100 }}
                                 editable={!loading}
@@ -184,8 +184,8 @@ export function RefundModal({
                                     style={{ marginRight: 8, marginTop: 2 }}
                                 />
                                 <Text className="flex-1 text-xs text-blue-600 dark:text-blue-400">
-                                    Refund requests are processed within 5-7 business days. The amount
-                                    will be credited back to your original payment method.
+                                    Refund requests within 4 hours of payment are processed immediately.
+                                    Requests after 4 hours require landlord approval and may take 5-7 business days.
                                 </Text>
                             </View>
                         </View>
@@ -209,8 +209,8 @@ export function RefundModal({
                                 onPress={handleConfirm}
                                 disabled={loading || reason.trim().length < 10}
                                 className={`flex-1 rounded-xl py-3 ${loading || reason.trim().length < 10
-                                        ? 'bg-red-300'
-                                        : 'bg-red-500'
+                                    ? 'bg-red-300'
+                                    : 'bg-red-500'
                                     }`}
                             >
                                 {loading ? (

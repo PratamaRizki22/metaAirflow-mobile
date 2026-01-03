@@ -20,7 +20,7 @@ class AmenityService extends BaseService {
     async getAmenities(category?: string): Promise<AmenitiesResponse> {
         try {
             const params = category ? `?category=${encodeURIComponent(category)}` : '';
-            const response = await api.get(`/v1/amenities${params}`);
+            const response = await api.get(`/v1/m/amenities${params}`);
             return response.data.data || response.data;
         } catch (error: any) {
             throw this.handleError(error);
@@ -32,7 +32,7 @@ class AmenityService extends BaseService {
      */
     async getCategories(): Promise<string[]> {
         try {
-            const response = await api.get('/v1/amenities/categories');
+            const response = await api.get('/v1/m/amenities/categories');
             return response.data.data || response.data;
         } catch (error: any) {
             throw this.handleError(error);

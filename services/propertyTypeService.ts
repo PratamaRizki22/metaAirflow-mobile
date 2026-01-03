@@ -14,7 +14,7 @@ class PropertyTypeService extends BaseService {
      */
     async getPropertyTypes(): Promise<PropertyType[]> {
         return this.retryRequest(async () => {
-            const response = await api.get('/v1/property-types');
+            const response = await api.get('/v1/m/property-types');
             return response.data.data || response.data;
         }, 2);
     }
@@ -24,7 +24,7 @@ class PropertyTypeService extends BaseService {
      */
     async getPropertyTypeById(id: string): Promise<PropertyType> {
         try {
-            const response = await api.get(`/v1/property-types/${id}`);
+            const response = await api.get(`/v1/m/property-types/${id}`);
             return response.data.data || response.data;
         } catch (error: any) {
             throw this.handleError(error);

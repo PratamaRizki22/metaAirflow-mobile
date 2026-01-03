@@ -138,7 +138,7 @@ class AuthService extends BaseService {
     async updateProfile(data: UpdateProfileRequest): Promise<User> {
         try {
             // Backend returns: { success: true, data: { user: User } }
-            const response = await api.patch<{ success: boolean; message: string; data: { user: User } }>('/v1/users/profile', data);
+            const response = await api.patch<{ success: boolean; message: string; data: { user: User } }>('/v1/m/users/profile', data);
 
             if (response.data.success && response.data.data) {
                 // Update local storage with updated user data
@@ -159,7 +159,7 @@ class AuthService extends BaseService {
      */
     async activateHosting(): Promise<User> {
         try {
-            const response = await api.post<{ success: boolean; message: string; data: { user: User } }>('/v1/users/activate-hosting');
+            const response = await api.post<{ success: boolean; message: string; data: { user: User } }>('/v1/m/users/activate-hosting');
 
             if (response.data.success && response.data.data) {
                 // Update local storage with updated user data

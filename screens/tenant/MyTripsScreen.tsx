@@ -18,7 +18,7 @@ export default function MyTripsScreen({ navigation }: any) {
     const [bookings, setBookings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'COMPLETED'>('ALL');
+    const [filter, setFilter] = useState<'REFUNDED' | 'PENDING' | 'APPROVED' | 'COMPLETED' | 'CANCELLED'>('REFUNDED');
     const { toast, showToast, hideToast } = useToast();
 
     // Load bookings when screen gains focus
@@ -37,17 +37,23 @@ export default function MyTripsScreen({ navigation }: any) {
     const loadBookings = async () => {
         try {
             setLoading(true);
-            const status = filter === 'ALL' ? undefined : filter;
+            // For REFUNDED, we need to filter by paymentStatus instead of booking status
+            const status = filter === 'REFUNDED' ? undefined : filter;
             console.log('📱 Loading bookings with filter:', filter, 'status:', status);
             const response = await bookingService.getBookings(1, 20, status as any, 'tenant');
             console.log('📱 Bookings response:', response);
             console.log('📱 Bookings loaded successfully:', response.data.bookings.length, 'bookings');
-            
+
             if (response.data.bookings.length === 0) {
                 console.log('⚠️  No bookings found - checking if user is logged in and has made bookings');
             }
-            
-            setBookings(response.data.bookings);
+
+            // Filter for refunded bookings if REFUNDED tab is selected
+            const filteredBookings = filter === 'REFUNDED'
+                ? response.data.bookings.filter((b: any) => b.paymentStatus === 'refunded')
+                : response.data.bookings;
+
+            setBookings(filteredBookings);
         } catch (error: any) {
             console.error('🔴 Load bookings error:', error);
             console.error('🔴 Error details:', error.response?.data || error.message);
@@ -141,7 +147,7 @@ export default function MyTripsScreen({ navigation }: any) {
 
                 {/* Filter Tabs */}
                 <View className="flex-row gap-2">
-                    {['ALL', 'PENDING', 'APPROVED', 'COMPLETED'].map((tab) => (
+                    {['REFUNDED', 'PENDING', 'APPROVED', 'COMPLETED', 'CANCELLED'].map((tab) => (
                         <TouchableOpacity
                             key={tab}
                             onPress={() => setFilter(tab as any)}
@@ -195,11 +201,21 @@ export default function MyTripsScreen({ navigation }: any) {
                                 </Text>
 
                                 {/* Location */}
-                                <View className="flex-row items-center mb-3">
-                                    <Ionicons name="location" size={14} color="#9CA3AF" />
-                                    <Text className={`ml-1 text-sm ${secondaryTextColor}`}>
-                                        {item.property?.city}, {item.property?.state}
-                                    </Text>
+                                <View className="flex-row items-center justify-between mb-3">
+                                    <View className="flex-row items-center flex-1">
+                                        <Ionicons name="location" size={14} color="#9CA3AF" />
+                                        <Text className={`ml-1 text-sm ${secondaryTextColor}`} numberOfLines={1}>
+                                            {item.property?.city}, {item.property?.state}
+                                        </Text>
+                                    </View>
+                                    {item.property?.averageRating > 0 && (
+                                        <View className="flex-row items-center ml-2">
+                                            <Ionicons name="star" size={14} color="#FBBF24" />
+                                            <Text className={`ml-1 text-sm font-semibold ${textColor}`}>
+                                                {item.property.averageRating.toFixed(1)}
+                                            </Text>
+                                        </View>
+                                    )}
                                 </View>
 
                                 {/* Dates */}
@@ -241,11 +257,11 @@ export default function MyTripsScreen({ navigation }: any) {
                                                 className="ml-1.5 text-xs font-semibold"
                                                 style={{ color: getStatusColor(item.status) }}
                                             >
-                                                {item.status === 'PENDING' && item.paymentStatus !== 'paid' 
-                                                    ? 'Awaiting Payment' 
+                                                {item.status === 'PENDING' && item.paymentStatus !== 'paid'
+                                                    ? 'Awaiting Payment'
                                                     : item.status === 'PENDING' && item.paymentStatus === 'paid'
-                                                    ? 'Awaiting Approval'
-                                                    : item.status}
+                                                        ? 'Awaiting Approval'
+                                                        : item.status}
                                             </Text>
                                         </View>
                                     </View>
@@ -280,15 +296,15 @@ export default function MyTripsScreen({ navigation }: any) {
                                         const hoursSincePayment = (now - paymentTime) / (1000 * 60 * 60);
                                         return hoursSincePayment < 8;
                                     })() && (
-                                        <TouchableOpacity
-                                            onPress={() => handleCancelBooking(item.id)}
-                                            className="bg-red-500/10 border border-red-500/30 rounded-xl py-3"
-                                        >
-                                            <Text className="text-red-500 text-center font-semibold">
-                                                Cancel Booking
-                                            </Text>
-                                        </TouchableOpacity>
-                                    )}
+                                            <TouchableOpacity
+                                                onPress={() => handleCancelBooking(item.id)}
+                                                className="bg-red-500/10 border border-red-500/30 rounded-xl py-3"
+                                            >
+                                                <Text className="text-red-500 text-center font-semibold">
+                                                    Cancel Booking
+                                                </Text>
+                                            </TouchableOpacity>
+                                        )}
 
                                     {/* Cancel Button for unpaid bookings */}
                                     {item.status === 'PENDING' && item.paymentStatus !== 'paid' && (
@@ -313,12 +329,12 @@ export default function MyTripsScreen({ navigation }: any) {
                             No Trips Yet
                         </Text>
                         <Text className={`${secondaryTextColor} text-center mt-2 px-8`}>
-                            {filter === 'ALL'
-                                ? 'Start exploring and book your first property!'
+                            {filter === 'REFUNDED'
+                                ? 'No refunded bookings yet'
                                 : `No ${filter.toLowerCase()} bookings found`
                             }
                         </Text>
-                        {filter === 'ALL' && (
+                        {filter === 'REFUNDED' && (
                             <Button
                                 onPress={() => navigation.navigate('Search')}
                                 variant="primary"

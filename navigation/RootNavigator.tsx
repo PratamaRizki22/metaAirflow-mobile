@@ -15,6 +15,7 @@ import CreatePropertyScreen from '../screens/landlord/CreatePropertyScreen';
 import EditPropertyScreen from '../screens/landlord/EditPropertyScreen';
 import LandlordProfileScreen from '../screens/landlord/LandlordProfileScreen';
 import LandlordPropertiesScreen from '../screens/landlord/LandlordPropertiesScreen';
+import RefundRequestsScreen from '../screens/landlord/RefundRequestsScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import PaymentDetailScreen from '../screens/payment/PaymentDetailScreen';
 import PaymentScreenWrapper from '../screens/payment/PaymentScreenWrapper';
@@ -134,6 +135,11 @@ export function RootNavigator() {
                 <Stack.Screen
                     name="LandlordProperties"
                     component={LandlordPropertiesScreen}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="RefundRequests"
+                    component={RefundRequestsScreen}
                     options={{ headerShown: false }}
                 />
 

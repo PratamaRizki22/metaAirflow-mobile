@@ -32,6 +32,8 @@ export function TopRatedPropertiesScreen({ navigation }: any) {
     const [loadingMore, setLoadingMore] = useState(false);
     const [propertiesInCollections, setPropertiesInCollections] = useState<Set<string>>(new Set());
     const [collections, setCollections] = useState<any[]>([]);
+    const [averageRating, setAverageRating] = useState<number>(0);
+    const [totalRatings, setTotalRatings] = useState<number>(0);
 
     const loadProperties = useCallback(async (pageNum: number = 1, reset: boolean = false) => {
         try {
@@ -48,8 +50,20 @@ export function TopRatedPropertiesScreen({ navigation }: any) {
             const newProperties = response.data.properties;
             const pagination = response.data.pagination;
 
+            console.log('🏠 Top Rated Properties loaded:', newProperties.length);
+            console.log('🏠 First property rating:', newProperties[0]?.averageRating);
+
             if (reset) {
                 setProperties(newProperties);
+                // Calculate average rating from loaded properties
+                const validRatings = newProperties.filter((p: any) => p.averageRating > 0);
+                if (validRatings.length > 0) {
+                    const sum = validRatings.reduce((acc: number, p: any) => acc + p.averageRating, 0);
+                    const avgRating = sum / validRatings.length;
+                    setAverageRating(avgRating);
+                    setTotalRatings(validRatings.length);
+                    console.log('⭐ Average rating:', avgRating.toFixed(1), 'from', validRatings.length, 'properties');
+                }
             } else {
                 setProperties(prev => [...prev, ...newProperties]);
             }
@@ -174,33 +188,53 @@ export function TopRatedPropertiesScreen({ navigation }: any) {
             <View className="flex-1 items-center justify-center py-20">
                 <Ionicons name="star-outline" size={64} color="#9CA3AF" />
                 <Text className={`text-lg font-semibold ${textColor} mt-4`}>
-                    Tidak Ada Properti
+                    No Properties Found
                 </Text>
                 <Text className={`${secondaryTextColor} mt-2 text-center px-6`}>
-                    Belum ada properti dengan rating tinggi saat ini
+                    There are no highly rated properties available at the moment
                 </Text>
             </View>
         );
     };
 
     return (
-        <View className={`flex-1 ${bgColor}`} style={{ paddingTop: insets.top }}>
+        <View className={`flex-1 ${bgColor}`}>
             {/* Header */}
-            <View className="flex-row items-center px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <TouchableOpacity 
-                    onPress={() => navigation.goBack()} 
-                    className="mr-4 p-2 -ml-2"
-                    activeOpacity={0.7}
-                >
-                    <Ionicons 
-                        name="arrow-back" 
-                        size={24} 
-                        color={textColor === 'text-gray-900' ? '#111827' : '#FFF'} 
-                    />
-                </TouchableOpacity>
-                <Text className={`text-xl font-bold ${textColor}`}>
-                    Rekomendasi Terbaik
-                </Text>
+            <View style={{ paddingTop: insets.top + 16, paddingBottom: 16, paddingHorizontal: 24 }}>
+                {/* Back Button + Title Row */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <TouchableOpacity 
+                        onPress={() => navigation.goBack()} 
+                        style={{ 
+                            padding: 8, 
+                            marginLeft: -8,
+                            marginRight: 8
+                        }}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons 
+                            name="arrow-back" 
+                            size={24} 
+                            color={textColor === 'text-gray-900' ? '#111827' : '#FFF'} 
+                        />
+                    </TouchableOpacity>
+                    <Text className={`text-xl font-bold ${textColor} flex-1 text-center`} style={{ marginRight: 40 }}>
+                        Best Recommendations
+                    </Text>
+                </View>
+                
+                {/* Rating Info Row */}
+                {averageRating > 0 && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                        <Ionicons name="star" size={16} color="#FBBF24" />
+                        <Text className={`ml-1 text-sm font-semibold ${textColor}`}>
+                            {averageRating.toFixed(1)} average
+                        </Text>
+                        <Text className={`ml-1 text-sm ${secondaryTextColor}`}>
+                            • {totalRatings} {totalRatings === 1 ? 'property' : 'properties'}
+                        </Text>
+                    </View>
+                )}
             </View>
 
             {/* Properties List */}
