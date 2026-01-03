@@ -25,7 +25,7 @@ export default function ManagePropertiesScreen({ navigation }: any) {
         try {
             setLoading(true);
             const response = await propertyService.getMyProperties(1, 50);
-            setProperties(response.data.properties);
+            setProperties(response?.data?.properties || []);
         } catch (error: any) {
             showAlert('Error', error.message);
         } finally {

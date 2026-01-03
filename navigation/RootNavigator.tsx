@@ -17,6 +17,10 @@ import LandlordProfileScreen from '../screens/landlord/LandlordProfileScreen';
 import LandlordPropertiesScreen from '../screens/landlord/LandlordPropertiesScreen';
 import RefundRequestsScreen from '../screens/landlord/RefundRequestsScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
+import GetHelpScreen from '../screens/profile/GetHelpScreen';
+import TermsOfServiceScreen from '../screens/profile/TermsOfServiceScreen';
+import PrivacyPolicyScreen from '../screens/profile/PrivacyPolicyScreen';
+import OpenSourceLicensesScreen from '../screens/profile/OpenSourceLicensesScreen';
 import PaymentDetailScreen from '../screens/payment/PaymentDetailScreen';
 import PaymentScreenWrapper from '../screens/payment/PaymentScreenWrapper';
 import BookingDetailScreen from '../screens/booking/BookingDetailScreen';
@@ -53,7 +57,8 @@ export function RootNavigator() {
                     },
                     headerTintColor: '#FFFFFF',
                     headerTitleStyle: {
-                        fontWeight: 'bold',
+                        fontFamily: 'VisbyRound-Bold',
+                        fontSize: 18,
                     },
                 }}
             >
@@ -174,6 +179,26 @@ export function RootNavigator() {
                     name="EditProfile"
                     component={EditProfileScreen}
                     options={{ title: 'Edit Profile' }}
+                />
+                <Stack.Screen
+                    name="GetHelp"
+                    component={GetHelpScreen}
+                    options={{ title: 'Get Help' }}
+                />
+                <Stack.Screen
+                    name="TermsOfService"
+                    component={TermsOfServiceScreen}
+                    options={{ title: 'Terms of Service' }}
+                />
+                <Stack.Screen
+                    name="PrivacyPolicy"
+                    component={PrivacyPolicyScreen}
+                    options={{ title: 'Privacy Policy' }}
+                />
+                <Stack.Screen
+                    name="OpenSourceLicenses"
+                    component={OpenSourceLicensesScreen}
+                    options={{ title: 'Open Source Licenses' }}
                 />
 
                 {/* Payment Screens */}

@@ -9,6 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useTheme } from '../../contexts/ThemeContext';
 import { HomeIcon, MessagesIcon, TripsIcon, FavoritesIcon, ProfileIcon, AddIcon, SearchIcon } from './TabIcons';
+import { useTabBarAnimation } from '../../contexts/TabBarAnimationContext';
 
 const { width } = Dimensions.get('window');
 
@@ -21,6 +22,7 @@ interface CustomTabBarProps {
 export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarProps) {
     const { isDark } = useTheme();
     const insets = useSafeAreaInsets();
+    const { tabBarOpacity, tabBarTranslateY } = useTabBarAnimation();
 
     // Tab bar dimensions
     const tabBarWidth = width - 32; // 16px margin on each side
@@ -66,6 +68,13 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
         };
     });
 
+    // Animation for the entire Tab Bar container
+    const animatedContainerStyle = useAnimatedStyle(() => {
+        return {
+            opacity: tabBarOpacity.value,
+            transform: [{ translateY: tabBarTranslateY.value }],
+        };
+    });
 
     const getIcon = (routeName: string, isFocused: boolean) => {
         const color = isFocused
@@ -114,26 +123,29 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
     const textColorInactive = '#01E8AD'; // Gradient cyan for inactive text
 
     return (
-        <View
-            style={{
-                position: 'absolute',
-                bottom: insets.bottom > 0 ? insets.bottom + 14 : 35,
-                left: 16,
-                right: 16,
-                height: tabBarHeight,
-                backgroundColor: bgColor,
-                borderRadius: 40,
-                flexDirection: 'row',
-                alignItems: 'center',
-                paddingHorizontal: 16,
-                // Shadow for iOS
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.15,
-                shadowRadius: 12,
-                // Elevation for Android
-                elevation: 8,
-            }}
+        <Animated.View
+            style={[
+                {
+                    position: 'absolute',
+                    bottom: insets.bottom > 0 ? insets.bottom + 14 : 35,
+                    left: 16,
+                    right: 16,
+                    height: tabBarHeight,
+                    backgroundColor: bgColor,
+                    borderRadius: 40,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingHorizontal: 16,
+                    // Shadow for iOS
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 12,
+                    // Elevation for Android
+                    elevation: 8,
+                },
+                animatedContainerStyle
+            ]}
         >
             {/* Animated Indicator - Hidden when Add tab is selected */}
             {state.routes[state.index].name !== 'Add' && (
@@ -265,6 +277,6 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
                     </TouchableOpacity>
                 );
             })}
-        </View>
+        </Animated.View>
     );
 }

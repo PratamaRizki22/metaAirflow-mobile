@@ -92,7 +92,13 @@ export function LandlordTodayScreen({ navigation }: any) {
         try {
             // Get landlord's properties
             const propertiesResponse = await propertyService.getMyProperties(1, 10);
-            const properties = propertiesResponse.data.properties;
+            const properties = propertiesResponse?.data?.properties || [];
+
+            if (!properties || properties.length === 0) {
+                console.log('No properties found for landlord');
+                setRecentReviews([]);
+                return;
+            }
 
             // Get recent reviews for each property
             const allReviews: any[] = [];

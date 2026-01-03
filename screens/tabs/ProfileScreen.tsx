@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Modal, ViewStyle, RefreshControl, Alert, ImageBackground } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TouchableOpacity, Modal, ViewStyle, RefreshControl, Alert, ImageBackground, Platform, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -7,6 +7,19 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useMode } from '../../contexts/ModeContext';
 import { AuthFlowScreen } from '../auth/AuthFlowScreen';
 import { useThemeColors } from '../../hooks';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    useAnimatedScrollHandler,
+    interpolate,
+    Extrapolate,
+    useAnimatedReaction,
+    runOnJS,
+    withTiming
+} from 'react-native-reanimated';
+import { useTabBarAnimation } from '../../contexts/TabBarAnimationContext';
+import { useFocusEffect } from '@react-navigation/native';
 
 type Language = 'id' | 'en';
 
@@ -56,6 +69,11 @@ export function ProfileScreen({ navigation }: any) {
     const [showLanguageModal, setShowLanguageModal] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const insets = useSafeAreaInsets();
+
+    // Animation Shared Values
+    const scrollY = useSharedValue(0);
+    const { tabBarOpacity, tabBarTranslateY } = useTabBarAnimation();
 
     const onRefresh = async () => {
         setRefreshing(true);
@@ -67,6 +85,42 @@ export function ProfileScreen({ navigation }: any) {
             setRefreshing(false);
         }
     };
+
+    // Reset tab bar when leaving screen, handle visibility when entering
+    useFocusEffect(
+        useCallback(() => {
+            // On Focus: Initialize based on current scroll (likely 0)
+            const shouldShow = scrollY.value > 60;
+            tabBarOpacity.value = withTiming(shouldShow ? 1 : 0, { duration: 300 });
+            tabBarTranslateY.value = withTiming(shouldShow ? 0 : 100, { duration: 300 });
+
+            return () => {
+                // On Blur: Always show bar for other screens
+                tabBarOpacity.value = withTiming(1, { duration: 300 });
+                tabBarTranslateY.value = withTiming(0, { duration: 300 });
+            };
+        }, []) // Empty dependency array means this effect runs on focus/blur events stable-y
+    );
+
+    // Drive animations based on scroll
+    const scrollHandler = useAnimatedScrollHandler({
+        onScroll: (event) => {
+            scrollY.value = event.contentOffset.y;
+        },
+    });
+
+    // Update global tab bar through context based on local scroll
+    useAnimatedReaction(
+        () => scrollY.value,
+        (y) => {
+            // Logic: Hide initially, show after 120px
+            const opacity = interpolate(y, [60, 100], [0, 1], Extrapolate.CLAMP);
+            const translateY = interpolate(y, [60, 100], [100, 0], Extrapolate.CLAMP);
+
+            tabBarOpacity.value = opacity;
+            tabBarTranslateY.value = translateY;
+        }
+    );
 
     const handleLogout = () => {
         Alert.alert(
@@ -104,17 +158,33 @@ export function ProfileScreen({ navigation }: any) {
     const iconColor = '#00B87C';
     const selectedLangData = languages.find(l => l.code === selectedLanguage);
 
+    // Header Opacity Animations (Reanimated)
+    const stickyHeaderStyle = useAnimatedStyle(() => {
+        return {
+            opacity: interpolate(scrollY.value, [60, 100], [0, 1], Extrapolate.CLAMP),
+        };
+    });
+
+    const heroTitleStyle = useAnimatedStyle(() => {
+        return {
+            opacity: interpolate(scrollY.value, [0, 100], [1, 0], Extrapolate.CLAMP),
+        };
+    });
+
     return (
         <View className="flex-1 bg-gray-50">
-            <ScrollView
+            <Animated.ScrollView
                 className="flex-1"
-                contentContainerStyle={{ paddingBottom: 100 }}
+                contentContainerStyle={{ minHeight: '110%' }}
+                onScroll={scrollHandler}
+                scrollEventThrottle={16}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={onRefresh}
                         tintColor={iconColor}
                         colors={[iconColor]}
+                        progressViewOffset={insets.top + 10}
                     />
                 }>
                 {/* Header with Background Image */}
@@ -127,7 +197,12 @@ export function ProfileScreen({ navigation }: any) {
                         borderBottomRightRadius={35}
                     >
                         <View className="flex-1 items-center justify-top pt-12">
-                            <Text className="text-white text-2xl font-bold">Profile</Text>
+                            <Animated.Text
+                                className="text-white text-2xl font-bold"
+                                style={heroTitleStyle}
+                            >
+                                Profile
+                            </Animated.Text>
                         </View>
                     </ImageBackground>
                 </View>
@@ -245,7 +320,7 @@ export function ProfileScreen({ navigation }: any) {
                                     <MenuItem
                                         icon="help-circle-outline"
                                         title="Get help"
-                                        onPress={() => { }}
+                                        onPress={() => navigation.navigate('GetHelp')}
                                         iconColor="#6B7280"
                                         textColor="#1F2937"
                                     />
@@ -268,7 +343,7 @@ export function ProfileScreen({ navigation }: any) {
                                     <MenuItem
                                         icon="document-text-outline"
                                         title="Terms of Service"
-                                        onPress={() => { }}
+                                        onPress={() => navigation.navigate('TermsOfService')}
                                         iconColor="#6B7280"
                                         textColor="#1F2937"
                                     />
@@ -277,7 +352,7 @@ export function ProfileScreen({ navigation }: any) {
                                     <MenuItem
                                         icon="lock-closed-outline"
                                         title="Privacy Policy"
-                                        onPress={() => { }}
+                                        onPress={() => navigation.navigate('PrivacyPolicy')}
                                         iconColor="#6B7280"
                                         textColor="#1F2937"
                                     />
@@ -286,7 +361,7 @@ export function ProfileScreen({ navigation }: any) {
                                     <MenuItem
                                         icon="code-slash-outline"
                                         title="Open Source Licenses"
-                                        onPress={() => { }}
+                                        onPress={() => navigation.navigate('OpenSourceLicenses')}
                                         iconColor="#6B7280"
                                         textColor="#1F2937"
                                     />
@@ -305,7 +380,7 @@ export function ProfileScreen({ navigation }: any) {
                                     <MenuItem
                                         icon="help-circle-outline"
                                         title="Get help"
-                                        onPress={() => { }}
+                                        onPress={() => navigation.navigate('GetHelp')}
                                         iconColor="#6B7280"
                                         textColor="#1F2937"
                                     />
@@ -314,7 +389,7 @@ export function ProfileScreen({ navigation }: any) {
                                     <MenuItem
                                         icon="document-text-outline"
                                         title="Terms of Service"
-                                        onPress={() => { }}
+                                        onPress={() => navigation.navigate('TermsOfService')}
                                         iconColor="#6B7280"
                                         textColor="#1F2937"
                                     />
@@ -323,7 +398,7 @@ export function ProfileScreen({ navigation }: any) {
                                     <MenuItem
                                         icon="lock-closed-outline"
                                         title="Privacy Policy"
-                                        onPress={() => { }}
+                                        onPress={() => navigation.navigate('PrivacyPolicy')}
                                         iconColor="#6B7280"
                                         textColor="#1F2937"
                                     />
@@ -332,7 +407,7 @@ export function ProfileScreen({ navigation }: any) {
                                     <MenuItem
                                         icon="code-slash-outline"
                                         title="Open Source Licenses"
-                                        onPress={() => { }}
+                                        onPress={() => navigation.navigate('OpenSourceLicenses')}
                                         iconColor="#6B7280"
                                         textColor="#1F2937"
                                     />
@@ -374,6 +449,7 @@ export function ProfileScreen({ navigation }: any) {
                 </View>
 
 
+                {/* Language Modal */}
                 <Modal
                     visible={showLanguageModal}
                     transparent
@@ -435,70 +511,7 @@ export function ProfileScreen({ navigation }: any) {
                         onClose={() => setShowAuthModal(false)}
                     />
                 </Modal>
-            </ScrollView>
-
-            {/* Language Modal */}
-            <Modal
-                visible={showLanguageModal}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setShowLanguageModal(false)}
-            >
-                <TouchableOpacity
-                    activeOpacity={1}
-                    onPress={() => setShowLanguageModal(false)}
-                    className="flex-1 bg-black/50 justify-center items-center"
-                >
-                    <View className="w-80 rounded-3xl p-6 bg-white">
-                        <Text className="text-xl font-bold mb-6 text-center text-gray-900">
-                            Select Language
-                        </Text>
-
-                        {languages.map((lang) => (
-                            <TouchableOpacity
-                                key={lang.code}
-                                onPress={() => {
-                                    setSelectedLanguage(lang.code);
-                                    setShowLanguageModal(false);
-                                }}
-                                className={`flex-row items-center justify-between p-4 rounded-2xl mb-3 ${selectedLanguage === lang.code ? 'bg-primary' : 'bg-gray-50'
-                                    }`}
-                            >
-                                <View className="flex-row items-center">
-                                    <Ionicons
-                                        name="globe-outline"
-                                        size={28}
-                                        color={selectedLanguage === lang.code ? '#FFFFFF' : iconColor}
-                                        style={{ marginRight: 12 }}
-                                    />
-                                    <Text className={`text-base font-medium ${selectedLanguage === lang.code ? 'text-white' : 'text-gray-900'
-                                        }`}>
-                                        {lang.name}
-                                    </Text>
-                                </View>
-                                {selectedLanguage === lang.code && (
-                                    <Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
-                                )}
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </TouchableOpacity>
-            </Modal>
-
-            {/* Auth Flow Modal */}
-            <Modal
-                visible={showAuthModal}
-                animationType="slide"
-                presentationStyle="pageSheet"
-                onRequestClose={() => setShowAuthModal(false)}
-            >
-                <AuthFlowScreen
-                    onAuthSuccess={() => {
-                        setShowAuthModal(false);
-                    }}
-                    onClose={() => setShowAuthModal(false)}
-                />
-            </Modal>
+            </Animated.ScrollView>
         </View>
     );
 }
