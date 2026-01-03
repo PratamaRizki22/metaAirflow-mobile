@@ -1,12 +1,11 @@
 import React from 'react';
-import { View, Dimensions } from 'react-native';
+import { View, Dimensions, Image } from 'react-native';
 import Animated, {
     useAnimatedStyle,
     interpolate,
     Extrapolate,
     FadeInUp,
 } from 'react-native-reanimated';
-import LottieView from 'lottie-react-native';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { EnhancedSlideProps } from '../types';
 import { StaggeredText } from './StaggeredText';
@@ -18,7 +17,7 @@ export function EnhancedSlide({ item, index, scrollX, currentIndex }: EnhancedSl
     const textColor = isDark ? 'text-text-primary-dark' : 'text-text-primary-light';
     const secondaryTextColor = isDark ? 'text-text-secondary-dark' : 'text-text-secondary-light';
 
-    const lottieStyle = useAnimatedStyle(() => {
+    const imageStyle = useAnimatedStyle(() => {
         const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
 
         const scale = interpolate(
@@ -77,14 +76,13 @@ export function EnhancedSlide({ item, index, scrollX, currentIndex }: EnhancedSl
     return (
         <View style={{ width }} className="flex-1 items-center justify-center px-8">
             <Animated.View
-                style={[lottieStyle]}
+                style={[imageStyle]}
                 className="h-80 w-80 items-center justify-center mb-12"
             >
-                <LottieView
-                    source={item.animation}
-                    autoPlay
-                    loop
+                <Image
+                    source={item.image}
                     style={{ width: 320, height: 320 }}
+                    resizeMode="contain"
                 />
             </Animated.View>
 
