@@ -175,7 +175,7 @@ export function ProfileScreen({ navigation }: any) {
         <View className="flex-1 bg-gray-50">
             <Animated.ScrollView
                 className="flex-1"
-                contentContainerStyle={{ minHeight: '110%' }}
+                contentContainerStyle={{ paddingBottom: 100, minHeight: '120%' }}
                 onScroll={scrollHandler}
                 scrollEventThrottle={16}
                 refreshControl={

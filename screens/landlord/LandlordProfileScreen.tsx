@@ -117,7 +117,7 @@ export default function LandlordProfileScreen({ route, navigation }: any) {
 
     return (
         <View className={`flex-1 ${bgColor}`}>
-            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+            <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100, minHeight: '120%' }}>
                 {/* Header with ImageBackground */}
                 <View style={{ position: 'relative' }}>
                     <ImageBackground
