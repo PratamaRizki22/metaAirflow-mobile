@@ -241,29 +241,13 @@ export default function MyTripsScreen({ navigation }: any) {
                                                 className="ml-1.5 text-xs font-semibold"
                                                 style={{ color: getStatusColor(item.status) }}
                                             >
-                                                {item.status}
+                                                {item.status === 'PENDING' && item.paymentStatus !== 'paid' 
+                                                    ? 'Awaiting Payment' 
+                                                    : item.status === 'PENDING' && item.paymentStatus === 'paid'
+                                                    ? 'Awaiting Approval'
+                                                    : item.status}
                                             </Text>
                                         </View>
-
-                                        {/* Payment Status Badge */}
-                                        {item.paymentStatus && (
-                                            <View
-                                                className="flex-row items-center px-3 py-1.5 rounded-full"
-                                                style={{ backgroundColor: getPaymentStatusColor(item.paymentStatus).bg }}
-                                            >
-                                                <Ionicons
-                                                    name={getPaymentStatusColor(item.paymentStatus).icon as any}
-                                                    size={14}
-                                                    color={getPaymentStatusColor(item.paymentStatus).text}
-                                                />
-                                                <Text
-                                                    className="ml-1 text-xs font-semibold capitalize"
-                                                    style={{ color: getPaymentStatusColor(item.paymentStatus).text }}
-                                                >
-                                                    {item.paymentStatus}
-                                                </Text>
-                                            </View>
-                                        )}
                                     </View>
 
                                     {/* Price */}
@@ -276,8 +260,8 @@ export default function MyTripsScreen({ navigation }: any) {
 
                                 {/* Action Buttons */}
                                 <View className="gap-2">
-                                    {/* Pay Now Button - for APPROVED but not paid */}
-                                    {item.status === 'APPROVED' && item.paymentStatus === 'pending' && (
+                                    {/* Pay Now Button - for unpaid bookings */}
+                                    {item.status === 'PENDING' && item.paymentStatus !== 'paid' && (
                                         <TouchableOpacity
                                             onPress={() => handlePayNow(item.id, item.totalPrice, item.property?.title)}
                                             className="bg-primary rounded-xl py-3 flex-row items-center justify-center gap-2"
@@ -289,8 +273,25 @@ export default function MyTripsScreen({ navigation }: any) {
                                         </TouchableOpacity>
                                     )}
 
-                                    {/* Cancel Button */}
-                                    {(item.status === 'PENDING' || (item.status === 'APPROVED' && item.paymentStatus === 'pending')) && (
+                                    {/* Cancel Button - only available within 8 hours after payment and before approval */}
+                                    {item.status === 'PENDING' && item.paymentStatus === 'paid' && (() => {
+                                        const paymentTime = new Date(item.paymentDate || item.createdAt).getTime();
+                                        const now = new Date().getTime();
+                                        const hoursSincePayment = (now - paymentTime) / (1000 * 60 * 60);
+                                        return hoursSincePayment < 8;
+                                    })() && (
+                                        <TouchableOpacity
+                                            onPress={() => handleCancelBooking(item.id)}
+                                            className="bg-red-500/10 border border-red-500/30 rounded-xl py-3"
+                                        >
+                                            <Text className="text-red-500 text-center font-semibold">
+                                                Cancel Booking
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )}
+
+                                    {/* Cancel Button for unpaid bookings */}
+                                    {item.status === 'PENDING' && item.paymentStatus !== 'paid' && (
                                         <TouchableOpacity
                                             onPress={() => handleCancelBooking(item.id)}
                                             className="bg-red-500/10 border border-red-500/30 rounded-xl py-3"

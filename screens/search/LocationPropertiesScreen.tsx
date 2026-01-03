@@ -6,21 +6,24 @@ import {
     ActivityIndicator,
     TouchableOpacity,
     RefreshControl,
+    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '../../hooks';
 import { useFavorites } from '../../contexts/FavoritesContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { PropertyCard } from '../../components/property';
 import { DEFAULT_IMAGES } from '../../constants/images';
-import { propertyService } from '../../services';
+import { propertyService, collectionService } from '../../services';
 
 export function LocationPropertiesScreen({ route, navigation }: any) {
     const { location } = route.params;
     const insets = useSafeAreaInsets();
     const { bgColor, textColor, secondaryTextColor } = useThemeColors();
     const { isFavorited, toggleFavorite } = useFavorites();
+    const { isLoggedIn } = useAuth();
 
     const [properties, setProperties] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -28,6 +31,8 @@ export function LocationPropertiesScreen({ route, navigation }: any) {
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
+    const [propertiesInCollections, setPropertiesInCollections] = useState<Set<string>>(new Set());
+    const [collections, setCollections] = useState<any[]>([]);
 
     const loadProperties = useCallback(async (pageNum: number = 1, reset: boolean = false) => {
         try {
@@ -61,7 +66,29 @@ export function LocationPropertiesScreen({ route, navigation }: any) {
 
     useEffect(() => {
         loadProperties(1, true);
-    }, [location]);
+        if (isLoggedIn) {
+            loadCollections();
+        }
+    }, [location, isLoggedIn]);
+
+    const loadCollections = useCallback(async () => {
+        if (!isLoggedIn) return;
+        try {
+            const response = await collectionService.getCollections();
+            const collectionsData = response.data?.collections || [];
+            setCollections(collectionsData);
+            
+            const propertyIdSet = new Set<string>();
+            collectionsData.forEach((collection: any) => {
+                if (collection.propertyIds && Array.isArray(collection.propertyIds)) {
+                    collection.propertyIds.forEach((id: string) => propertyIdSet.add(id));
+                }
+            });
+            setPropertiesInCollections(propertyIdSet);
+        } catch (error) {
+            console.error('Failed to load collections:', error);
+        }
+    }, [isLoggedIn]);
 
     const handleRefresh = () => {
         setRefreshing(true);
@@ -85,9 +112,48 @@ export function LocationPropertiesScreen({ route, navigation }: any) {
         try {
             await toggleFavorite(propertyId);
         } catch (error: any) {
-            console.error('Toggle favorite error:', error);
+            Alert.alert('Error', error.message || 'Failed to toggle favorite');
         }
     };
+
+    const handleAddToCollection = useCallback((propertyId: string) => {
+        if (!isLoggedIn) {
+            Alert.alert('Login Required', 'Please login to add properties to collections');
+            return;
+        }
+        
+        if (propertiesInCollections.has(propertyId)) {
+            Alert.alert(
+                'Remove from Collection',
+                'This property is already in a collection. Do you want to remove it?',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                        text: 'Remove',
+                        style: 'destructive',
+                        onPress: async () => {
+                            try {
+                                const collectionsWithProperty = collections.filter(c => 
+                                    c.propertyIds?.includes(propertyId)
+                                );
+                                
+                                for (const collection of collectionsWithProperty) {
+                                    await collectionService.removePropertyFromCollection(collection.id, propertyId);
+                                }
+                                
+                                Alert.alert('Success', 'Property removed from collection(s)');
+                                await loadCollections();
+                            } catch (error: any) {
+                                Alert.alert('Error', error.message || 'Failed to remove property from collection');
+                            }
+                        }
+                    }
+                ]
+            );
+        } else {
+            navigation.navigate('Search');
+        }
+    }, [isLoggedIn, propertiesInCollections, collections, loadCollections, navigation]);
 
     const renderPropertyItem = ({ item, index }: any) => (
         <Animated.View
@@ -106,9 +172,11 @@ export function LocationPropertiesScreen({ route, navigation }: any) {
                     image: item.images?.[0] || DEFAULT_IMAGES.PROPERTY,
                     type: item.propertyType?.name?.toLowerCase() || 'house',
                     isFavorited: isFavorited(item.id),
+                    isInCollection: propertiesInCollections.has(item.id),
                 }}
                 onPress={() => handlePropertyPress(item.id)}
                 onFavoriteToggle={handleFavoriteToggle}
+                onAddToCollection={handleAddToCollection}
             />
         </Animated.View>
     );

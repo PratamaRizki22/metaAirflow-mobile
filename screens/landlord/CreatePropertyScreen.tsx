@@ -27,6 +27,7 @@ export default function CreatePropertyScreen({ navigation }: any) {
         bathrooms: '',
         areaSqm: '',
         furnished: false,
+        autoApproval: false,
         propertyTypeId: '',
         latitude: 3.1390,
         longitude: 101.6869,
@@ -320,6 +321,7 @@ export default function CreatePropertyScreen({ navigation }: any) {
                 bathrooms: parseInt(formData.bathrooms),
                 areaSqm: parseFloat(formData.areaSqm),
                 furnished: formData.furnished,
+                autoApproval: formData.autoApproval,
                 isAvailable: true,
                 propertyTypeId: formData.propertyTypeId,
                 images: imageUrls,
@@ -362,8 +364,29 @@ export default function CreatePropertyScreen({ navigation }: any) {
     }
 
     return (
-        <ScrollView className={`flex-1 ${bgColor}`}>
-            <View className="p-6">
+        <View className={`flex-1 ${bgColor}`}>
+            {/* Header with Gradient */}
+            <LinearGradient
+                colors={['#00D9A3', '#00BF8F']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                className="pt-12 pb-6 px-6"
+            >
+                <View className="flex-row items-center">
+                    <TouchableOpacity 
+                        onPress={() => navigation.goBack()}
+                        className="mr-4 w-10 h-10 rounded-full bg-white/20 items-center justify-center"
+                    >
+                        <Ionicons name="arrow-back" size={24} color="white" />
+                    </TouchableOpacity>
+                    <Text className="text-white text-2xl" style={{ fontFamily: 'VisbyRound-Bold' }}>
+                        Add New Property
+                    </Text>
+                </View>
+            </LinearGradient>
+
+            <ScrollView className="flex-1">
+                <View className="p-6">
                 {/* Title */}
                 <FormInput
                     label="Property Title"
@@ -695,13 +718,30 @@ export default function CreatePropertyScreen({ navigation }: any) {
                 {/* Furnished */}
                 <TouchableOpacity
                     onPress={() => setFormData({ ...formData, furnished: !formData.furnished })}
-                    className={`flex-row items-center p-4 rounded-xl border ${borderColor} mb-6 ${cardBg}`}
+                    className={`flex-row items-center p-4 rounded-xl border ${borderColor} mb-4 ${cardBg}`}
                 >
                     <View className={`w-6 h-6 rounded border-2 mr-3 items-center justify-center ${formData.furnished ? 'bg-primary border-primary' : `border-gray-300 ${cardBg}`
                         }`}>
                         {formData.furnished && <Ionicons name="checkmark" size={16} color="white" />}
                     </View>
                     <Text className={`text-base ${textColor}`}>Furnished</Text>
+                </TouchableOpacity>
+
+                {/* Auto Approval */}
+                <TouchableOpacity
+                    onPress={() => setFormData({ ...formData, autoApproval: !formData.autoApproval })}
+                    className={`flex-row items-start p-4 rounded-xl border ${borderColor} mb-6 ${cardBg}`}
+                >
+                    <View className={`w-6 h-6 rounded border-2 mr-3 items-center justify-center mt-0.5 ${formData.autoApproval ? 'bg-primary border-primary' : `border-gray-300 ${cardBg}`
+                        }`}>
+                        {formData.autoApproval && <Ionicons name="checkmark" size={16} color="white" />}
+                    </View>
+                    <View className="flex-1">
+                        <Text className={`text-base font-semibold ${textColor} mb-1`}>Auto Approval Booking</Text>
+                        <Text className={`text-sm ${secondaryTextColor}`}>
+                            Automatically approve booking requests without manual review. Best for passive landlords.
+                        </Text>
+                    </View>
                 </TouchableOpacity>
 
                 {/* AI Price Suggestion & Price Input - AT THE BOTTOM */}
@@ -789,7 +829,8 @@ export default function CreatePropertyScreen({ navigation }: any) {
                 type={toast.type}
                 onHide={hideToast}
             />
-        </ScrollView >
+            </ScrollView>
+        </View>
     );
 }
 

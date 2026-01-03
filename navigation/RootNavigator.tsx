@@ -16,7 +16,6 @@ import EditPropertyScreen from '../screens/landlord/EditPropertyScreen';
 import LandlordProfileScreen from '../screens/landlord/LandlordProfileScreen';
 import LandlordPropertiesScreen from '../screens/landlord/LandlordPropertiesScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
-import PaymentHistoryScreen from '../screens/profile/PaymentHistoryScreen';
 import PaymentDetailScreen from '../screens/payment/PaymentDetailScreen';
 import PaymentScreenWrapper from '../screens/payment/PaymentScreenWrapper';
 import BookingDetailScreen from '../screens/booking/BookingDetailScreen';
@@ -28,6 +27,7 @@ import { LocationPropertiesScreen } from '../screens/search/LocationPropertiesSc
 import { TopRatedPropertiesScreen } from '../screens/search/TopRatedPropertiesScreen';
 import { MapSearchScreen } from '../screens/map/MapSearchScreen';
 import { AllWishlistScreen } from '../screens/tabs/AllWishlistScreen';
+import { CollectionDetailScreen } from '../screens/tabs/CollectionDetailScreen';
 import { OfflineBanner, GradientHeader } from '../components/common';
 import { useNetwork } from '../hooks';
 import { useTheme } from '../contexts/ThemeContext';
@@ -119,7 +119,7 @@ export function RootNavigator() {
                 <Stack.Screen
                     name="CreateProperty"
                     component={CreatePropertyScreen}
-                    options={{ title: 'Add New Property' }}
+                    options={{ headerShown: false }}
                 />
                 <Stack.Screen
                     name="EditProperty"
@@ -141,7 +141,7 @@ export function RootNavigator() {
                 <Stack.Screen
                     name="BookingDetail"
                     component={BookingDetailScreen}
-                    options={{ title: 'Booking Details' }}
+                    options={{ headerShown: false }}
                 />
 
                 {/* Chat Screens */}
@@ -177,11 +177,6 @@ export function RootNavigator() {
                     options={{ headerShown: false }}
                 />
                 <Stack.Screen
-                    name="PaymentHistory"
-                    component={PaymentHistoryScreen}
-                    options={{ headerShown: false }}
-                />
-                <Stack.Screen
                     name="PaymentDetail"
                     component={PaymentDetailScreen}
                     options={{ headerShown: false }}
@@ -211,6 +206,11 @@ export function RootNavigator() {
                 <Stack.Screen
                     name="AllWishlist"
                     component={AllWishlistScreen}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="CollectionDetail"
+                    component={CollectionDetailScreen}
                     options={{ headerShown: false }}
                 />
             </Stack.Navigator>

@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
 import { DateRangePicker } from '../../components/booking';
-import { bookingService, propertyService, agreementService } from '../../services';
+import { bookingService, propertyService } from '../../services';
 import { useToast } from '../../hooks/useToast';
 import { Toast, Button } from '../../components/common';
 
@@ -21,53 +21,11 @@ export default function CreateBookingScreen({ route, navigation }: any) {
     const { toast, showToast, hideToast } = useToast();
     const insets = useSafeAreaInsets();
 
-    // Chatbot State
-    const [propertyDetails, setPropertyDetails] = useState<any>(null);
-    const [showChatbot, setShowChatbot] = useState(false);
-    const [chatQuery, setChatQuery] = useState('');
-    const [chatHistory, setChatHistory] = useState<any[]>([
-        { role: 'bot', content: 'Hello! I am your AI Agreement Assistant. Ask me anything about the house rules or rental agreement.' }
-    ]);
-    const [chatLoading, setChatLoading] = useState(false);
-
     const bgColor = isDark ? 'bg-background-dark' : 'bg-background-light';
     const textColor = isDark ? 'text-text-primary-dark' : 'text-text-primary-light';
     const cardBg = isDark ? 'bg-card-dark' : 'bg-card-light';
     const inputBg = isDark ? 'bg-surface-dark' : 'bg-surface-light';
     const borderColor = isDark ? 'border-gray-700' : 'border-gray-300';
-
-    React.useEffect(() => {
-        loadPropertyDetails();
-    }, []);
-
-    const loadPropertyDetails = async () => {
-        try {
-            const details = await propertyService.getPropertyById(propertyId);
-            setPropertyDetails(details);
-        } catch (e) {
-            console.log("Failed to load property details", e);
-        }
-    };
-
-    const handleAskAI = async () => {
-        if (!chatQuery.trim()) return;
-
-        const question = chatQuery;
-        setChatQuery('');
-        setChatHistory(prev => [...prev, { role: 'user', content: question }]);
-        setChatLoading(true);
-
-        try {
-            const agreementText = propertyDetails?.description || "No specific rules provided.";
-            const response = await agreementService.ask(agreementText, question);
-
-            setChatHistory(prev => [...prev, { role: 'bot', content: response.answer }]);
-        } catch (error) {
-            setChatHistory(prev => [...prev, { role: 'bot', content: "Sorry, I couldn't process your question at the moment." }]);
-        } finally {
-            setChatLoading(false);
-        }
-    };
 
     const calculateNights = () => {
         if (!startDate || !endDate) return 0;
@@ -295,23 +253,6 @@ export default function CreateBookingScreen({ route, navigation }: any) {
                 <View className="px-6 mb-6">
                     <View className={`${cardBg} rounded-2xl p-4`}>
                         <TouchableOpacity
-                            onPress={() => setShowChatbot(true)}
-                            disabled={!propertyDetails}
-                            className={`bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-xl mb-4 flex-row items-center justify-center border border-indigo-100 dark:border-indigo-800 ${!propertyDetails ? 'opacity-50' : ''}`}
-                        >
-                            {!propertyDetails ? (
-                                <ActivityIndicator size="small" color="#6366F1" />
-                            ) : (
-                                <Ionicons name="chatbubbles-outline" size={20} color="#6366F1" />
-                            )}
-                            <Text className="text-indigo-600 dark:text-indigo-400 font-semibold ml-2">
-                                {!propertyDetails ? 'Loading Agreement...' : 'Ask AI about Agreement'}
-                            </Text>
-                        </TouchableOpacity>
-
-                        <View className="border-t border-gray-200 dark:border-gray-700 my-2 mb-4" />
-
-                        <TouchableOpacity
                             onPress={() => setAgreedToTerms(!agreedToTerms)}
                             className="flex-row items-start gap-3"
                         >
@@ -349,192 +290,6 @@ export default function CreateBookingScreen({ route, navigation }: any) {
                     Request to Book
                 </Button>
             </View>
-
-            {/* AI Chatbot Modal */}
-            <Modal
-                visible={showChatbot}
-                animationType="slide"
-                presentationStyle="pageSheet"
-                onRequestClose={() => setShowChatbot(false)}
-            >
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                    className={`flex-1`}
-                    style={{ backgroundColor: isDark ? '#0F172A' : '#F8FAFC' }}
-                >
-                    <View className="flex-1">
-                        {/* Gradient Header */}
-                        <LinearGradient
-                            colors={['#10B981', '#059669']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={{
-                                paddingTop: insets.top + 16,
-                                paddingHorizontal: 20,
-                                paddingBottom: 20,
-                                shadowColor: '#000',
-                                shadowOffset: { width: 0, height: 2 },
-                                shadowOpacity: 0.1,
-                                shadowRadius: 8,
-                                elevation: 4,
-                            }}
-                        >
-                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                                    <View style={{
-                                        width: 40,
-                                        height: 40,
-                                        borderRadius: 20,
-                                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        marginRight: 12
-                                    }}>
-                                        <Ionicons name="sparkles" size={22} color="#FFF" />
-                                    </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={{
-                                            fontSize: 20,
-                                            fontWeight: 'bold',
-                                            fontFamily: 'VisbyRound-Bold',
-                                            color: 'white',
-                                            marginBottom: 2
-                                        }}>
-                                            AI Assistant
-                                        </Text>
-                                        <Text style={{
-                                            fontSize: 13,
-                                            fontFamily: 'VisbyRound-Regular',
-                                            color: 'rgba(255, 255, 255, 0.9)'
-                                        }}>
-                                            Ask me about house rules & agreement
-                                        </Text>
-                                    </View>
-                                </View>
-                                <TouchableOpacity
-                                    onPress={() => setShowChatbot(false)}
-                                    style={{
-                                        width: 36,
-                                        height: 36,
-                                        borderRadius: 18,
-                                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}
-                                >
-                                    <Ionicons name="close" size={22} color="white" />
-                                </TouchableOpacity>
-                            </View>
-                        </LinearGradient>
-
-                        {/* Chat History */}
-                        <FlatList
-                            data={chatHistory}
-                            keyExtractor={(_, index) => index.toString()}
-                            contentContainerStyle={{ padding: 16, paddingBottom: 8 }}
-                            renderItem={({ item }) => (
-                                <View className={`mb-3 flex-row ${item.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    {item.role === 'bot' && (
-                                        <View style={{
-                                            width: 32,
-                                            height: 32,
-                                            borderRadius: 16,
-                                            backgroundColor: '#10B981',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            marginRight: 8,
-                                            marginTop: 4
-                                        }}>
-                                            <Ionicons name="sparkles" size={16} color="white" />
-                                        </View>
-                                    )}
-                                    <View style={{
-                                        maxWidth: '75%',
-                                        borderRadius: 20,
-                                        padding: 14,
-                                        backgroundColor: item.role === 'user' ? '#10B981' : (isDark ? '#1E293B' : 'white'),
-                                        shadowColor: '#000',
-                                        shadowOffset: { width: 0, height: 1 },
-                                        shadowOpacity: item.role === 'user' ? 0.2 : 0.05,
-                                        shadowRadius: 4,
-                                        elevation: 2,
-                                        ...(item.role === 'user' ? { borderTopRightRadius: 6 } : { borderTopLeftRadius: 6 })
-                                    }}>
-                                        <Text style={{
-                                            color: item.role === 'user' ? 'white' : (isDark ? '#F1F5F9' : '#1E293B'),
-                                            fontSize: 15,
-                                            lineHeight: 22,
-                                            fontFamily: 'VisbyRound-Regular'
-                                        }}>
-                                            {item.content}
-                                        </Text>
-                                    </View>
-                                </View>
-                            )}
-                        />
-
-                        {/* Input Area */}
-                        <View style={{
-                            paddingHorizontal: 16,
-                            paddingTop: 12,
-                            paddingBottom: Math.max(insets.bottom + 8, 20),
-                            backgroundColor: isDark ? '#0F172A' : '#F8FAFC',
-                            borderTopWidth: 1,
-                            borderTopColor: isDark ? '#1E293B' : '#E2E8F0',
-                        }}>
-                            <View style={{
-                                flexDirection: 'row',
-                                alignItems: 'flex-end',
-                                backgroundColor: isDark ? '#1E293B' : 'white',
-                                borderRadius: 24,
-                                paddingHorizontal: 16,
-                                paddingVertical: 8,
-                                shadowColor: '#000',
-                                shadowOffset: { width: 0, height: 2 },
-                                shadowOpacity: 0.08,
-                                shadowRadius: 8,
-                                elevation: 3,
-                            }}>
-                                <TextInput
-                                    style={{
-                                        flex: 1,
-                                        color: isDark ? '#F1F5F9' : '#1E293B',
-                                        fontSize: 15,
-                                        maxHeight: 100,
-                                        paddingVertical: 8,
-                                        paddingRight: 8
-                                    }}
-                                    placeholder="Ask about rules, parking, etc..."
-                                    placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
-                                    value={chatQuery}
-                                    onChangeText={setChatQuery}
-                                    onSubmitEditing={handleAskAI}
-                                    multiline
-                                />
-                                <TouchableOpacity
-                                    onPress={handleAskAI}
-                                    disabled={chatLoading || !chatQuery.trim()}
-                                    style={{
-                                        width: 40,
-                                        height: 40,
-                                        borderRadius: 20,
-                                        backgroundColor: (chatLoading || !chatQuery.trim()) ? '#94A3B8' : '#10B981',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        marginLeft: 8
-                                    }}
-                                >
-                                    {chatLoading ? (
-                                        <ActivityIndicator color="white" size="small" />
-                                    ) : (
-                                        <Ionicons name="send" size={18} color="white" />
-                                    )}
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </View>
-                </KeyboardAvoidingView>
-            </Modal>
 
             {/* Date Range Picker Modal */}
             <DateRangePicker

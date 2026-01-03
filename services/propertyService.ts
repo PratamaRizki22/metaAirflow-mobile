@@ -67,6 +67,7 @@ export interface CreatePropertyRequest {
     bathrooms: number;
     areaSqm: number;
     furnished: boolean;
+    autoApproval?: boolean;
     isAvailable: boolean;
     status?: PropertyStatus;
     images: string[];

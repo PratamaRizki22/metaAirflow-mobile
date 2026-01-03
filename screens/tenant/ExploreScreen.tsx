@@ -18,6 +18,7 @@ export default function ExploreScreen({ navigation }: any) {
 
     const { requestLocation, loading: loadingLocation } = useUserLocation();
 
+    // Load properties on mount
     useEffect(() => {
         loadProperties();
     }, []);
@@ -39,7 +40,6 @@ export default function ExploreScreen({ navigation }: any) {
             setProperties(response.data.properties);
         } catch (error: any) {
             console.error('ExploreScreen - Get mobile properties error:', error);
-            // Don't show Alert to prevent infinite loop
             setProperties([]); // Set empty array on error
         } finally {
             setLoading(false);

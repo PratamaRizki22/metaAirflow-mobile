@@ -147,40 +147,31 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
         try {
             setLoading(true);
 
-            // Load property detail
-            const response = await propertyService.getPropertyById(propertyId);
-            console.log('Property images:', response.data?.images);
-            console.log('Images count:', response.data?.images?.length || 0);
-            setProperty(response.data);
+            // Load all data in parallel
+            const [propertyResponse, bookingsResponse, ratingResponse] = await Promise.all([
+                propertyService.getPropertyById(propertyId),
+                isLoggedIn ? bookingService.getBookings(1, 100, 'COMPLETED').catch(() => ({ data: { bookings: [] } })) : Promise.resolve({ data: { bookings: [] } }),
+                reviewService.getPropertyRating(propertyId).catch(() => ({ success: false, data: null }))
+            ]);
 
-            // Check if favorited (only if logged in and propertyId is valid)
-            // Note: Using FavoritesContext instead of API call
+            // Set property data
+            console.log('Property images:', propertyResponse.data?.images);
+            console.log('Images count:', propertyResponse.data?.images?.length || 0);
+            setProperty(propertyResponse.data);
+
+            // Check if user has completed booking
             if (isLoggedIn && propertyId && typeof propertyId === 'string') {
-                // Check if user has completed booking
-                try {
-                    const bookingsResponse = await bookingService.getBookings(1, 100, 'COMPLETED');
-                    const hasBooking = bookingsResponse.data.bookings.some(
-                        (booking: any) => booking.property?.id === propertyId
-                    );
-                    setHasCompletedBooking(hasBooking);
-                } catch (bookingError) {
-                    // Silently fail
-                    console.log('Failed to check booking history:', bookingError);
-                    setHasCompletedBooking(false);
-                }
+                const hasBooking = bookingsResponse.data.bookings.some(
+                    (booking: any) => booking.property?.id === propertyId
+                );
+                setHasCompletedBooking(hasBooking);
             }
 
-            // Load property rating
-            try {
-                const ratingData = await reviewService.getPropertyRating(propertyId);
-                console.log('Property rating data:', ratingData);
-                if (ratingData.success && ratingData.data) {
-                    setPropertyRating(ratingData.data);
-                }
-            } catch (ratingError) {
-                console.log('Failed to load rating:', ratingError);
+            // Set property rating
+            console.log('Property rating data:', ratingResponse);
+            if (ratingResponse.success && ratingResponse.data) {
+                setPropertyRating(ratingResponse.data);
             }
-
 
         } catch (error: any) {
             Alert.alert('Error', error.message || 'Failed to load property details');

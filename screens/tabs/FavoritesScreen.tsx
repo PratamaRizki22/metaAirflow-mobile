@@ -280,6 +280,12 @@ export function FavoritesScreen({ navigation }: any) {
                                 if (item.id === 'all') {
                                     // Navigate to All Wishlist screen with favorites data
                                     navigation.navigate('AllWishlist', { favorites });
+                                } else if (item.type === 'collection') {
+                                    // Navigate to Collection Detail screen
+                                    navigation.navigate('CollectionDetail', { 
+                                        collectionId: item.id,
+                                        collectionName: item.name 
+                                    });
                                 } else {
                                     console.log('Open Collection:', item.name);
                                 }

@@ -19,6 +19,7 @@ export interface Property {
     type: 'house' | 'apartment' | 'villa' | 'land';
     isFeatured?: boolean;
     isFavorited?: boolean;
+    isInCollection?: boolean;
     rating?: number;
 }
 
@@ -104,9 +105,14 @@ export const PropertyCard = React.memo(function PropertyCard({
                             className="w-full h-32"
                             resizeMode="cover"
                         />
+                        {/* Bottom Gradient Effect */}
                         <LinearGradient
-                            colors={['transparent', 'rgba(0,0,0,0.6)']}
-                            className="absolute bottom-0 left-0 right-0 h-16"
+                            colors={['rgba(1, 232, 173, 0)', 'rgba(1, 232, 173, 0.4)', 'rgba(16, 160, 247, 0.6)']}
+                            locations={[0, 0.4, 1]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 0, y: 1 }}
+                            className="absolute bottom-0 left-0 right-0"
+                            style={{ height: 47, borderTopLeftRadius: 8, borderTopRightRadius: 8 }}
                         />
 
                         {/* Favorite Button */}
@@ -128,9 +134,9 @@ export const PropertyCard = React.memo(function PropertyCard({
                                 className="absolute top-2 right-12 w-8 h-8 rounded-full bg-white/90 items-center justify-center"
                             >
                                 <Ionicons
-                                    name="bookmark-outline"
+                                    name={property.isInCollection ? 'bookmark' : 'bookmark-outline'}
                                     size={18}
-                                    color="#6B7280"
+                                    color={property.isInCollection ? '#000000' : '#6B7280'}
                                 />
                             </TouchableOpacity>
                         )}
@@ -196,9 +202,14 @@ export const PropertyCard = React.memo(function PropertyCard({
                         className="w-full h-56"
                         resizeMode="cover"
                     />
+                    {/* Bottom Gradient Effect */}
                     <LinearGradient
-                        colors={['transparent', 'rgba(0,0,0,0.7)']}
-                        className="absolute bottom-0 left-0 right-0 h-24"
+                        colors={['rgba(1, 232, 173, 0)', 'rgba(1, 232, 173, 0.4)', 'rgba(16, 160, 247, 0.6)']}
+                        locations={[0, 0.4, 1]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        className="absolute bottom-0 left-0 right-0"
+                        style={{ height: 47, borderTopLeftRadius: 8, borderTopRightRadius: 8 }}
                     />
 
                     {/* Type Badge */}
@@ -246,9 +257,9 @@ export const PropertyCard = React.memo(function PropertyCard({
                             className="absolute top-4 right-16 w-10 h-10 rounded-full bg-white/90 items-center justify-center"
                         >
                             <Ionicons
-                                name="bookmark-outline"
+                                name={property.isInCollection ? 'bookmark' : 'bookmark-outline'}
                                 size={22}
-                                color="#6B7280"
+                                color={property.isInCollection ? '#000000' : '#6B7280'}
                             />
                         </TouchableOpacity>
                     )}

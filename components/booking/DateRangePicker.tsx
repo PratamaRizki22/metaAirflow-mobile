@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 
 interface DateRangePickerProps {
@@ -24,6 +26,7 @@ export function DateRangePicker({
     initialEndDate,
 }: DateRangePickerProps) {
     const { isDark } = useTheme();
+    const insets = useSafeAreaInsets();
     const [startDate, setStartDate] = useState<string | undefined>(initialStartDate);
     const [endDate, setEndDate] = useState<string | undefined>(initialEndDate);
 
@@ -190,77 +193,94 @@ export function DateRangePicker({
             onRequestClose={onClose}
         >
             <View style={{ flex: 1, backgroundColor: bgColor }}>
-                {/* Header */}
-                <View
+                {/* Gradient Header */}
+                <LinearGradient
+                    colors={['#00D9A3', '#10A0F7']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
                     style={{
                         paddingHorizontal: 24,
                         paddingTop: 60,
-                        paddingBottom: 16,
-                        backgroundColor: cardBg,
+                        paddingBottom: 20,
                     }}
                 >
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <TouchableOpacity onPress={onClose}>
-                            <Ionicons name="close" size={28} color={textColor} />
-                        </TouchableOpacity>
-                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: textColor }}>
-                            Select Dates
-                        </Text>
-                        <TouchableOpacity onPress={handleClear}>
-                            <Text style={{ color: '#00D9A3', fontWeight: '600' }}>Clear</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-
-                <ScrollView>
-                    {/* Date Summary */}
-                    <View style={{ padding: 24 }}>
-                        <View
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                        <TouchableOpacity 
+                            onPress={onClose}
                             style={{
-                                flexDirection: 'row',
-                                gap: 12,
-                                marginBottom: 16,
+                                width: 36,
+                                height: 36,
+                                borderRadius: 18,
+                                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                alignItems: 'center',
+                                justifyContent: 'center',
                             }}
                         >
-                            {/* Check-in */}
-                            <View style={{ flex: 1, backgroundColor: cardBg, padding: 16, borderRadius: 12 }}>
-                                <Text style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 4 }}>
+                            <Ionicons name="close" size={24} color="#FFFFFF" />
+                        </TouchableOpacity>
+                        <Text style={{ fontSize: 20, fontWeight: 'bold', fontFamily: 'VisbyRound-Bold', color: '#FFFFFF' }}>
+                            Select Dates
+                        </Text>
+                        <TouchableOpacity 
+                            onPress={handleClear}
+                            style={{
+                                paddingHorizontal: 12,
+                                paddingVertical: 6,
+                                borderRadius: 12,
+                                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                            }}
+                        >
+                            <Text style={{ color: '#FFFFFF', fontWeight: '600', fontFamily: 'VisbyRound-SemiBold' }}>Clear</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Date Summary Cards in Header */}
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                        {/* Check-in */}
+                        <View style={{ 
+                            flex: 1, 
+                            backgroundColor: 'rgba(255, 255, 255, 0.2)', 
+                            padding: 16, 
+                            borderRadius: 16,
+                            borderWidth: 1,
+                            borderColor: 'rgba(255, 255, 255, 0.3)',
+                        }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                                <Ionicons name="log-in-outline" size={16} color="#FFFFFF" />
+                                <Text style={{ fontSize: 12, color: '#FFFFFF', marginLeft: 6, fontFamily: 'VisbyRound-SemiBold' }}>
                                     CHECK-IN
                                 </Text>
-                                <Text style={{ fontSize: 16, fontWeight: '600', color: textColor }}>
-                                    {formatDate(startDate)}
-                                </Text>
                             </View>
-
-                            {/* Check-out */}
-                            <View style={{ flex: 1, backgroundColor: cardBg, padding: 16, borderRadius: 12 }}>
-                                <Text style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 4 }}>
-                                    CHECK-OUT
-                                </Text>
-                                <Text style={{ fontSize: 16, fontWeight: '600', color: textColor }}>
-                                    {formatDate(endDate)}
-                                </Text>
-                            </View>
+                            <Text style={{ fontSize: 15, fontFamily: 'VisbyRound-Bold', color: '#FFFFFF' }}>
+                                {startDate ? formatDate(startDate).split(',')[0] : 'Select date'}
+                            </Text>
                         </View>
 
-                        {/* Nights Count */}
-                        {startDate && endDate && (
-                            <View
-                                style={{
-                                    backgroundColor: '#00D9A3',
-                                    padding: 12,
-                                    borderRadius: 8,
-                                    alignItems: 'center',
-                                    marginBottom: 16,
-                                }}
-                            >
-                                <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>
-                                    {calculateNights()} {calculateNights() === 1 ? 'night' : 'nights'}
+                        {/* Check-out */}
+                        <View style={{ 
+                            flex: 1, 
+                            backgroundColor: 'rgba(255, 255, 255, 0.2)', 
+                            padding: 16, 
+                            borderRadius: 16,
+                            borderWidth: 1,
+                            borderColor: 'rgba(255, 255, 255, 0.3)',
+                        }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                                <Ionicons name="log-out-outline" size={16} color="#FFFFFF" />
+                                <Text style={{ fontSize: 12, color: '#FFFFFF', marginLeft: 6, fontFamily: 'VisbyRound-SemiBold' }}>
+                                    CHECK-OUT
                                 </Text>
                             </View>
-                        )}
+                            <Text style={{ fontSize: 15, fontFamily: 'VisbyRound-Bold', color: '#FFFFFF' }}>
+                                {endDate ? formatDate(endDate).split(',')[0] : 'Select date'}
+                            </Text>
+                        </View>
+                    </View>
+                </LinearGradient>
 
-                        {/* Calendar */}
+                <ScrollView style={{ flex: 1 }}>
+                    {/* Calendar */}
+                    <View style={{ padding: 24 }}>
                         <Calendar
                             minDate={minDate || new Date().toISOString().split('T')[0]}
                             onDayPress={handleDayPress}
@@ -269,10 +289,10 @@ export function DateRangePicker({
                             theme={{
                                 backgroundColor: bgColor,
                                 calendarBackground: bgColor,
-                                textSectionTitleColor: textColor,
+                                textSectionTitleColor: '#00D9A3',
                                 selectedDayBackgroundColor: '#00D9A3',
                                 selectedDayTextColor: '#FFFFFF',
-                                todayTextColor: '#00D9A3',
+                                todayTextColor: '#10A0F7',
                                 dayTextColor: textColor,
                                 textDisabledColor: '#9CA3AF',
                                 monthTextColor: textColor,
@@ -280,56 +300,130 @@ export function DateRangePicker({
                                 textDayFontSize: 16,
                                 textMonthFontSize: 18,
                                 textDayHeaderFontSize: 14,
+                                'stylesheet.calendar.header': {
+                                    monthText: {
+                                        fontSize: 18,
+                                        fontWeight: 'bold',
+                                        color: textColor,
+                                    },
+                                    arrow: {
+                                        padding: 8,
+                                    },
+                                },
                             }}
                             style={{
-                                borderRadius: 12,
+                                borderRadius: 16,
                                 padding: 8,
+                                backgroundColor: cardBg,
                             }}
+                            renderArrow={(direction) => (
+                                <View style={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: 16,
+                                    backgroundColor: isDark ? '#334155' : '#F1F5F9',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}>
+                                    <Ionicons 
+                                        name={direction === 'left' ? 'chevron-back' : 'chevron-forward'} 
+                                        size={20} 
+                                        color="#00D9A3" 
+                                    />
+                                </View>
+                            )}
                         />
 
                         {/* Legend */}
-                        <View style={{ marginTop: 16, gap: 8 }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <View style={{ 
+                            marginTop: 24, 
+                            padding: 16, 
+                            backgroundColor: cardBg, 
+                            borderRadius: 12,
+                            gap: 12 
+                        }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                                 <View
                                     style={{
-                                        width: 16,
-                                        height: 16,
+                                        width: 20,
+                                        height: 20,
                                         backgroundColor: '#00D9A3',
-                                        borderRadius: 4,
+                                        borderRadius: 6,
                                     }}
                                 />
-                                <Text style={{ color: '#9CA3AF', fontSize: 14 }}>Selected dates</Text>
+                                <Text style={{ color: textColor, fontSize: 14, fontFamily: 'VisbyRound-Medium' }}>Selected dates</Text>
                             </View>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                                 <View
                                     style={{
-                                        width: 16,
-                                        height: 16,
+                                        width: 20,
+                                        height: 20,
                                         backgroundColor: isDark ? '#374151' : '#E5E7EB',
-                                        borderRadius: 4,
+                                        borderRadius: 6,
                                     }}
                                 />
-                                <Text style={{ color: '#9CA3AF', fontSize: 14 }}>Unavailable</Text>
+                                <Text style={{ color: textColor, fontSize: 14, fontFamily: 'VisbyRound-Medium' }}>Unavailable</Text>
                             </View>
                         </View>
+
+                        {/* Nights Count */}
+                        {startDate && endDate && (
+                            <View
+                                style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: 16,
+                                    borderRadius: 16,
+                                    marginTop: 16,
+                                    backgroundColor: isDark ? '#1E293B' : '#F0FDF4',
+                                    borderWidth: 1,
+                                    borderColor: isDark ? '#334155' : '#BBF7D0',
+                                }}
+                            >
+                                <Ionicons name="moon-outline" size={20} color="#00D9A3" />
+                                <Text style={{ color: '#00D9A3', fontFamily: 'VisbyRound-Bold', fontSize: 16, marginLeft: 8 }}>
+                                    {calculateNights()} {calculateNights() === 1 ? 'Night' : 'Nights'}
+                                </Text>
+                            </View>
+                        )}
                     </View>
                 </ScrollView>
 
                 {/* Confirm Button */}
-                <View style={{ padding: 24, backgroundColor: cardBg }}>
+                <View style={{ 
+                    padding: 24,
+                    paddingTop: 16,
+                    paddingBottom: Math.max(insets.bottom, 24),
+                    backgroundColor: cardBg,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: -2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 8,
+                    elevation: 8,
+                }}>
                     <TouchableOpacity
                         onPress={handleConfirm}
                         disabled={!startDate || !endDate}
-                        style={{
-                            backgroundColor: startDate && endDate ? '#00D9A3' : '#9CA3AF',
-                            paddingVertical: 16,
-                            borderRadius: 12,
-                            alignItems: 'center',
-                        }}
+                        style={{ borderRadius: 16, overflow: 'hidden' }}
                     >
-                        <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 }}>
-                            Confirm Dates
-                        </Text>
+                        <LinearGradient
+                            colors={startDate && endDate ? ['#00D9A3', '#10A0F7'] : ['#9CA3AF', '#9CA3AF']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={{
+                                paddingVertical: 16,
+                                alignItems: 'center',
+                                flexDirection: 'row',
+                                justifyContent: 'center',
+                                opacity: startDate && endDate ? 1 : 0.5,
+                            }}
+                        >
+                            <Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
+                            <Text style={{ color: '#FFFFFF', fontFamily: 'VisbyRound-Bold', fontSize: 16, marginLeft: 8 }}>
+                                Confirm Dates
+                            </Text>
+                        </LinearGradient>
                     </TouchableOpacity>
                 </View>
             </View>

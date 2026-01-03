@@ -7,6 +7,7 @@ export interface Collection {
     name: string;
     createdAt: string;
     updatedAt: string;
+    propertyIds?: string[];
     _count?: {
         favorites: number;
     };

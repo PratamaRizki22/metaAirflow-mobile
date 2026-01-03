@@ -21,6 +21,7 @@ export default function EditPropertyScreen({ route, navigation }: any) {
         bathrooms: '',
         areaSqm: '',
         furnished: false,
+        autoApproval: false,
         isAvailable: true,
         latitude: 3.1390,
         longitude: 101.6869,
@@ -57,6 +58,7 @@ export default function EditPropertyScreen({ route, navigation }: any) {
                 bathrooms: property.bathrooms.toString(),
                 areaSqm: property.areaSqm.toString(),
                 furnished: property.furnished || false,
+                autoApproval: property.autoApproval || false,
                 isAvailable: property.isAvailable !== false,
                 latitude: property.latitude || 3.1390,
                 longitude: property.longitude || 101.6869,
@@ -128,6 +130,7 @@ export default function EditPropertyScreen({ route, navigation }: any) {
                 bathrooms: parseInt(formData.bathrooms),
                 areaSqm: parseFloat(formData.areaSqm),
                 furnished: formData.furnished,
+                autoApproval: formData.autoApproval,
                 isAvailable: formData.isAvailable,
                 latitude: formData.latitude,
                 longitude: formData.longitude,
@@ -391,6 +394,41 @@ export default function EditPropertyScreen({ route, navigation }: any) {
                         {formData.furnished && <Text style={{ color: 'white', fontWeight: 'bold' }}>✓</Text>}
                     </View>
                     <Text style={{ fontSize: 16 }}>Furnished</Text>
+                </TouchableOpacity>
+
+                {/* Auto Approval */}
+                <TouchableOpacity
+                    onPress={() => setFormData({ ...formData, autoApproval: !formData.autoApproval })}
+                    style={{
+                        flexDirection: 'row',
+                        alignItems: 'flex-start',
+                        padding: 12,
+                        borderWidth: 1,
+                        borderColor: '#ddd',
+                        borderRadius: 8,
+                        marginBottom: 15,
+                    }}
+                >
+                    <View style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 4,
+                        borderWidth: 2,
+                        borderColor: formData.autoApproval ? '#007AFF' : '#ddd',
+                        backgroundColor: formData.autoApproval ? '#007AFF' : 'white',
+                        marginRight: 10,
+                        marginTop: 2,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}>
+                        {formData.autoApproval && <Text style={{ color: 'white', fontWeight: 'bold' }}>✓</Text>}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 4 }}>Auto Approval Booking</Text>
+                        <Text style={{ fontSize: 13, color: '#666' }}>
+                            Automatically approve booking requests without manual review. Best for passive landlords.
+                        </Text>
+                    </View>
                 </TouchableOpacity>
 
                 {/* Available */}

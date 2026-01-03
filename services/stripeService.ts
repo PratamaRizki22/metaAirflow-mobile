@@ -96,14 +96,22 @@ class StripeService {
         paymentIntentId: string
     ): Promise<PaymentConfirmation> {
         try {
+            console.log('🔵 Confirming payment:', { bookingId, paymentIntentId });
             const response = await api.post('/v1/m/payments/confirm', {
                 bookingId,
                 paymentIntentId,
             });
 
+            console.log('✅ Payment confirmed successfully:', response.data);
             // Backend returns { success: true, data: {...} }
             return response.data.data || response.data;
         } catch (error: any) {
+            console.error('❌ Payment confirmation error:', {
+                message: error.response?.data?.message,
+                status: error.response?.status,
+                data: error.response?.data,
+                error: error.message
+            });
             const message = error.response?.data?.message || 'Failed to confirm payment';
             throw new Error(message);
         }

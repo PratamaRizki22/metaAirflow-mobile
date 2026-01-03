@@ -21,16 +21,7 @@ export default function BookingDetailScreen({ route, navigation }: any) {
     const { isDark } = useTheme();
     const insets = useSafeAreaInsets();
 
-    // AI Chatbot states
-    const [showAIChatbot, setShowAIChatbot] = useState(false);
     const [agreementPdfUrl, setAgreementPdfUrl] = useState<string | null>(null);
-    const [agreementText, setAgreementText] = useState<string>('');
-    const [chatHistory, setChatHistory] = useState<any[]>([
-        { role: 'bot', content: 'Hello! I am your AI Agreement Assistant. I can help you understand your rental agreement. Ask me anything!' }
-    ]);
-    const [chatQuery, setChatQuery] = useState('');
-    const [chatLoading, setChatLoading] = useState(false);
-    const [aiAnalysisLoading, setAiAnalysisLoading] = useState(false);
 
     useEffect(() => {
         loadBookingDetail();
@@ -199,83 +190,19 @@ export default function BookingDetailScreen({ route, navigation }: any) {
 
     const handleAnalyzeWithAI = async () => {
         try {
-            setShowAIChatbot(true);
+            // Get PDF URL and open it
+            const response = await bookingService.getRentalAgreementPDF(bookingId);
+            const pdfUrl = response.data.pdf?.url;
 
-            // If agreement text not loaded yet, load it
-            if (!agreementText) {
-                setAiAnalysisLoading(true);
-
-                // Get PDF URL
-                const response = await bookingService.getRentalAgreementPDF(bookingId);
-                const pdfUrl = response.data.pdf?.url;
-
-                if (!pdfUrl) {
-                    showToast('PDF not available yet', 'error');
-                    setShowAIChatbot(false);
-                    return;
-                }
-
+            if (pdfUrl) {
                 setAgreementPdfUrl(pdfUrl);
-
-                // Download and extract text from PDF
-                // Note: In production, you might want to do this on backend
-                // For now, we'll use property description as placeholder
-                const checkIn = new Date(booking.startDate || booking.checkInDate);
-                const checkOut = new Date(booking.endDate || booking.checkOutDate);
-                
-                const placeholderText = `Rental Agreement for ${booking.property?.title}
-                
-Property: ${booking.property?.title}
-Location: ${booking.property?.address}, ${booking.property?.city}
-Check-in: ${!isNaN(checkIn.getTime()) ? checkIn.toLocaleDateString() : 'Invalid Date'}
-Check-out: ${!isNaN(checkOut.getTime()) ? checkOut.toLocaleDateString() : 'Invalid Date'}
-Total Price: RM ${booking.totalPrice || '0'}
-
-Terms and Conditions:
-1. Payment must be made in full before check-in
-2. Security deposit is refundable upon checkout
-3. No smoking inside the property
-4. Pets are not allowed unless specified
-5. Tenant is responsible for any damages
-6. Notice period for cancellation: 7 days
-
-For full agreement details, please refer to the PDF document.`;
-
-                setAgreementText(placeholderText);
-
-                // Auto-analyze
-                try {
-                    const analysisResponse = await agreementService.analyze(placeholderText);
-                    setChatHistory(prev => [...prev,
-                    { role: 'bot', content: `📄 Agreement Analysis:\n\n${analysisResponse.analysis}` }
-                    ]);
-                } catch (analyzeError) {
-                    console.log('Auto-analysis failed:', analyzeError);
-                }
-
-                setAiAnalysisLoading(false);
+                Linking.openURL(pdfUrl);
+                showToast('Opening PDF agreement...', 'success');
+            } else {
+                showToast('PDF not available yet', 'error');
             }
         } catch (error: any) {
-            setAiAnalysisLoading(false);
             showToast(error.message || 'Failed to load agreement', 'error');
-        }
-    };
-
-    const handleAskAI = async () => {
-        if (!chatQuery.trim()) return;
-
-        const question = chatQuery;
-        setChatQuery('');
-        setChatHistory(prev => [...prev, { role: 'user', content: question }]);
-        setChatLoading(true);
-
-        try {
-            const response = await agreementService.ask(agreementText, question);
-            setChatHistory(prev => [...prev, { role: 'bot', content: response.answer }]);
-        } catch (error) {
-            setChatHistory(prev => [...prev, { role: 'bot', content: "Sorry, I couldn't process your question at the moment." }]);
-        } finally {
-            setChatLoading(false);
         }
     };
 
@@ -325,90 +252,145 @@ For full agreement details, please refer to the PDF document.`;
         : Number(booking.property?.pricePerNight || 0);
 
     return (
-        <ScrollView style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
-            <View style={{ padding: 20 }}>
-                {/* Status Badge */}
-                <View style={{ alignItems: 'center', marginBottom: 20 }}>
-                    <View style={{
-                        backgroundColor: getStatusColor(booking.status),
-                        paddingHorizontal: 20,
-                        paddingVertical: 8,
-                        borderRadius: 20,
-                    }}>
-                        <Text style={{ color: 'white', fontWeight: 'bold' }}>
-                            {booking.status}
-                        </Text>
-                    </View>
-                </View>
-
-                {/* Property Info */}
-                <View style={{ backgroundColor: 'white', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-                    <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 8 }}>
-                        {booking.property?.title}
-                    </Text>
-                    <TouchableOpacity onPress={openLocation} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                        <Ionicons name="location" size={16} color="#007AFF" />
-                        <Text style={{ color: '#007AFF', marginLeft: 4 }}>
-                            {booking.property?.city}, {booking.property?.state}
-                        </Text>
+        <View className={`flex-1 ${isDark ? 'bg-background-dark' : 'bg-gray-50'}`}>
+            {/* Header */}
+            <LinearGradient
+                colors={['#00D9A3', '#00BF8F']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{ paddingTop: insets.top }}
+            >
+                <View className="px-6 py-4 flex-row items-center">
+                    <TouchableOpacity
+                        onPress={() => navigation.goBack()}
+                        className="mr-4"
+                    >
+                        <Ionicons name="chevron-back" size={28} color="white" />
                     </TouchableOpacity>
-                    <Text style={{ color: '#666' }}>
-                        {booking.property?.bedrooms} beds • {booking.property?.bathrooms} baths • {booking.property?.areaSqm} m²
-                    </Text>
-                </View>
-
-                {/* Booking Details */}
-                <View style={{ backgroundColor: 'white', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>
+                    <Text className="text-white text-xl font-['VisbyRound-Bold'] flex-1">
                         Booking Details
                     </Text>
-
-                    <View style={{ marginBottom: 12 }}>
-                        <Text style={{ color: '#666', marginBottom: 4 }}>Check-in</Text>
-                        <Text style={{ fontSize: 16, fontWeight: '600' }}>
-                            {isValidCheckIn 
-                                ? checkInDate.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
-                                : 'Invalid Date'
-                            }
-                        </Text>
-                    </View>
-
-                    <View style={{ marginBottom: 12 }}>
-                        <Text style={{ color: '#666', marginBottom: 4 }}>Check-out</Text>
-                        <Text style={{ fontSize: 16, fontWeight: '600' }}>
-                            {isValidCheckOut
-                                ? checkOutDate.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
-                                : 'Invalid Date'
-                            }
-                        </Text>
-                    </View>
-
-                    <View style={{ marginBottom: 12 }}>
-                        <Text style={{ color: '#666', marginBottom: 4 }}>Duration</Text>
-                        <Text style={{ fontSize: 16, fontWeight: '600' }}>
-                            {nights > 0 ? `${nights} night${nights > 1 ? 's' : ''}` : 'Invalid duration'}
-                        </Text>
-                    </View>
-
-                    <View style={{ marginBottom: 12 }}>
-                        <Text style={{ color: '#666', marginBottom: 4 }}>Guests</Text>
-                        <Text style={{ fontSize: 16, fontWeight: '600' }}>
-                            {booking.numberOfGuests} guest{booking.numberOfGuests > 1 ? 's' : ''}
-                        </Text>
-                    </View>
                 </View>
+            </LinearGradient>
+
+            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+                <View className="px-6 py-6">
+                    {/* Status Badge */}
+                    <View className="items-center mb-6">
+                        <View 
+                            style={{ backgroundColor: getStatusColor(booking.status) }}
+                            className="px-6 py-2.5 rounded-full"
+                        >
+                            <Text className="text-white font-['VisbyRound-Bold'] text-sm">
+                                {booking.status}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* Property Info */}
+                    <View className={`rounded-2xl p-5 mb-4 ${isDark ? 'bg-surface-dark' : 'bg-white'}`}
+                        style={{
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 8,
+                            elevation: 3,
+                        }}
+                    >
+                        <Text className={`text-xl font-['VisbyRound-Bold'] mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            {booking.property?.title}
+                        </Text>
+                        <TouchableOpacity 
+                            onPress={openLocation} 
+                            className="flex-row items-center mb-3"
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="location" size={18} color="#00D9A3" />
+                            <Text className="text-primary font-['VisbyRound-Medium'] ml-1.5 text-base">
+                                {booking.property?.city}, {booking.property?.state}
+                            </Text>
+                        </TouchableOpacity>
+                        <Text className={`font-['VisbyRound-Regular'] ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                            {booking.property?.bedrooms} beds • {booking.property?.bathrooms} baths • {booking.property?.areaSqm} m²
+                        </Text>
+                    </View>
+
+                    {/* Booking Details */}
+                    <View className={`rounded-2xl p-5 mb-4 ${isDark ? 'bg-surface-dark' : 'bg-white'}`}
+                        style={{
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 8,
+                            elevation: 3,
+                        }}
+                    >
+                        <Text className={`text-lg font-['VisbyRound-Bold'] mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            Booking Details
+                        </Text>
+
+                        <View className="mb-4">
+                            <Text className={`font-['VisbyRound-Regular'] text-sm mb-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                Check-in
+                            </Text>
+                            <Text className={`font-['VisbyRound-Bold'] text-base ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                {isValidCheckIn 
+                                    ? checkInDate.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
+                                    : 'Invalid Date'
+                                }
+                            </Text>
+                        </View>
+
+                        <View className="mb-4">
+                            <Text className={`font-['VisbyRound-Regular'] text-sm mb-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                Check-out
+                            </Text>
+                            <Text className={`font-['VisbyRound-Bold'] text-base ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                {isValidCheckOut
+                                    ? checkOutDate.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
+                                    : 'Invalid Date'
+                                }
+                            </Text>
+                        </View>
+
+                        <View className="mb-4">
+                            <Text className={`font-['VisbyRound-Regular'] text-sm mb-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                Duration
+                            </Text>
+                            <Text className={`font-['VisbyRound-Bold'] text-base ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                {nights > 0 ? `${nights} night${nights > 1 ? 's' : ''}` : 'Invalid duration'}
+                            </Text>
+                        </View>
+
+                        <View>
+                            <Text className={`font-['VisbyRound-Regular'] text-sm mb-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                Guests
+                            </Text>
+                            <Text className={`font-['VisbyRound-Bold'] text-base ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                {booking.numberOfGuests} guest{booking.numberOfGuests > 1 ? 's' : ''}
+                            </Text>
+                        </View>
+                    </View>
 
                 {/* Price Breakdown */}
-                <View style={{ backgroundColor: 'white', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>
+                <View className={`rounded-2xl p-5 mb-4 ${isDark ? 'bg-surface-dark' : 'bg-white'}`}
+                    style={{
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 8,
+                        elevation: 3,
+                    }}
+                >
+                    <Text className={`text-lg font-['VisbyRound-Bold'] mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                         Price Details
                     </Text>
 
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                        <Text>
+                    <View className="flex-row justify-between mb-3">
+                        <Text className={`font-['VisbyRound-Regular'] ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                             RM {pricePerNight > 0 ? pricePerNight.toLocaleString('en-MY', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : '0'} x {nights > 0 ? nights : 'NaN'} nights
                         </Text>
-                        <Text>
+                        <Text className={`font-['VisbyRound-Medium'] ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
                             RM {nights > 0 && pricePerNight > 0 
                                 ? (pricePerNight * nights).toLocaleString('en-MY', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
                                 : 'NaN'
@@ -416,10 +398,12 @@ For full agreement details, please refer to the PDF document.`;
                         </Text>
                     </View>
 
-                    <View style={{ borderTopWidth: 1, borderColor: '#E5E5E5', marginTop: 8, paddingTop: 8 }}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                            <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Total</Text>
-                            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007AFF' }}>
+                    <View className={`border-t pt-3 mt-2 ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+                        <View className="flex-row justify-between">
+                            <Text className={`text-base font-['VisbyRound-Bold'] ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                Total
+                            </Text>
+                            <Text className="text-lg font-['VisbyRound-Bold'] text-primary">
                                 RM {booking.totalPrice 
                                     ? Number(booking.totalPrice).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                                     : '0.00'
@@ -431,14 +415,22 @@ For full agreement details, please refer to the PDF document.`;
 
                 {/* Guest/Host Info */}
                 {booking.user && (
-                    <View style={{ backgroundColor: 'white', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-                        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>
+                    <View className={`rounded-2xl p-5 mb-4 ${isDark ? 'bg-surface-dark' : 'bg-white'}`}
+                        style={{
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 8,
+                            elevation: 3,
+                        }}
+                    >
+                        <Text className={`text-lg font-['VisbyRound-Bold'] mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                             {booking.isOwner ? 'Guest Information' : 'Host Information'}
                         </Text>
-                        <Text style={{ fontSize: 16, marginBottom: 4 }}>
+                        <Text className={`text-base font-['VisbyRound-Bold'] mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                             {booking.user.name}
                         </Text>
-                        <Text style={{ color: '#666' }}>
+                        <Text className={`font-['VisbyRound-Regular'] ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                             {booking.user.email}
                         </Text>
                     </View>
@@ -446,37 +438,41 @@ For full agreement details, please refer to the PDF document.`;
 
                 {/* Actions */}
                 {booking.status === 'PENDING' && (
-                    <View style={{ marginBottom: 20 }}>
+                    <View className="mb-6">
                         {booking.isOwner ? (
                             // Owner actions
-                            <View style={{ flexDirection: 'row', gap: 10 }}>
+                            <View className="flex-row gap-3">
                                 <TouchableOpacity
                                     onPress={handleApproveBooking}
                                     disabled={actionLoading}
+                                    className="flex-1 bg-green-500 py-4 rounded-xl items-center"
                                     style={{
-                                        flex: 1,
-                                        backgroundColor: '#34C759',
-                                        padding: 16,
-                                        borderRadius: 12,
-                                        alignItems: 'center',
+                                        shadowColor: '#000',
+                                        shadowOffset: { width: 0, height: 2 },
+                                        shadowOpacity: 0.15,
+                                        shadowRadius: 4,
+                                        elevation: 3,
                                     }}
+                                    activeOpacity={0.8}
                                 >
-                                    <Text style={{ color: 'white', fontWeight: 'bold' }}>
+                                    <Text className="text-white font-['VisbyRound-Bold'] text-base">
                                         {actionLoading ? 'Processing...' : 'Approve'}
                                     </Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     onPress={handleRejectBooking}
                                     disabled={actionLoading}
+                                    className="flex-1 bg-red-500 py-4 rounded-xl items-center"
                                     style={{
-                                        flex: 1,
-                                        backgroundColor: '#FF3B30',
-                                        padding: 16,
-                                        borderRadius: 12,
-                                        alignItems: 'center',
+                                        shadowColor: '#000',
+                                        shadowOffset: { width: 0, height: 2 },
+                                        shadowOpacity: 0.15,
+                                        shadowRadius: 4,
+                                        elevation: 3,
                                     }}
+                                    activeOpacity={0.8}
                                 >
-                                    <Text style={{ color: 'white', fontWeight: 'bold' }}>
+                                    <Text className="text-white font-['VisbyRound-Bold'] text-base">
                                         Reject
                                     </Text>
                                 </TouchableOpacity>
@@ -486,14 +482,17 @@ For full agreement details, please refer to the PDF document.`;
                             <TouchableOpacity
                                 onPress={handleCancelBooking}
                                 disabled={actionLoading}
+                                className="bg-red-500 py-4 rounded-xl items-center"
                                 style={{
-                                    backgroundColor: '#FF3B30',
-                                    padding: 16,
-                                    borderRadius: 12,
-                                    alignItems: 'center',
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 2 },
+                                    shadowOpacity: 0.15,
+                                    shadowRadius: 4,
+                                    elevation: 3,
                                 }}
+                                activeOpacity={0.8}
                             >
-                                <Text style={{ color: 'white', fontWeight: 'bold' }}>
+                                <Text className="text-white font-['VisbyRound-Bold'] text-base">
                                     {actionLoading ? 'Cancelling...' : 'Cancel Booking'}
                                 </Text>
                             </TouchableOpacity>
@@ -603,25 +602,6 @@ For full agreement details, please refer to the PDF document.`;
                                     View PDF Agreement
                                 </Text>
                             </TouchableOpacity>
-
-                            {/* Analyze with AI Button */}
-                            <TouchableOpacity
-                                onPress={handleAnalyzeWithAI}
-                                activeOpacity={0.8}
-                                style={{
-                                    backgroundColor: '#10B981',
-                                    padding: 14,
-                                    borderRadius: 10,
-                                    flexDirection: 'row',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}
-                            >
-                                <Ionicons name="chatbubbles" size={18} color="white" />
-                                <Text style={{ color: 'white', fontWeight: '600', marginLeft: 8, fontSize: 15 }}>
-                                    🤖 Analyze with AI
-                                </Text>
-                            </TouchableOpacity>
                         </View>
                     </View>
                 )}
@@ -702,233 +682,17 @@ For full agreement details, please refer to the PDF document.`;
                 }}
                 daysRemaining={refundEligibility.daysRemaining}
             />
-
-            {/* AI Chatbot Modal */}
-            <Modal
-                visible={showAIChatbot}
-                animationType="slide"
-                presentationStyle="pageSheet"
-                onRequestClose={() => setShowAIChatbot(false)}
-            >
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                    style={{ flex: 1, backgroundColor: isDark ? '#0F172A' : '#F8FAFC' }}
-                >
-                    <View style={{ flex: 1 }}>
-                        {/* Gradient Header */}
-                        <LinearGradient
-                            colors={['#10B981', '#059669']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={{
-                                paddingTop: insets.top + 16,
-                                paddingHorizontal: 20,
-                                paddingBottom: 20,
-                                shadowColor: '#000',
-                                shadowOffset: { width: 0, height: 2 },
-                                shadowOpacity: 0.1,
-                                shadowRadius: 8,
-                                elevation: 4,
-                            }}
-                        >
-                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                                    <View style={{
-                                        width: 40,
-                                        height: 40,
-                                        borderRadius: 20,
-                                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        marginRight: 12
-                                    }}>
-                                        <Ionicons name="sparkles" size={22} color="#FFF" />
-                                    </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={{
-                                            fontSize: 20,
-                                            fontWeight: 'bold',
-                                            fontFamily: 'VisbyRound-Bold',
-                                            color: 'white',
-                                            marginBottom: 2
-                                        }}>
-                                            AI Assistant
-                                        </Text>
-                                        <Text style={{
-                                            fontSize: 13,
-                                            fontFamily: 'VisbyRound-Regular',
-                                            color: 'rgba(255, 255, 255, 0.9)'
-                                        }}>
-                                            Ask me anything about your agreement
-                                        </Text>
-                                    </View>
-                                </View>
-                                <TouchableOpacity
-                                    onPress={() => setShowAIChatbot(false)}
-                                    style={{
-                                        width: 36,
-                                        height: 36,
-                                        borderRadius: 18,
-                                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}
-                                >
-                                    <Ionicons name="close" size={22} color="white" />
-                                </TouchableOpacity>
-                            </View>
-                        </LinearGradient>
-
-                        {/* Loading Indicator */}
-                        {aiAnalysisLoading && (
-                            <View style={{
-                                padding: 24,
-                                alignItems: 'center',
-                                backgroundColor: isDark ? '#1E293B' : 'white',
-                                marginHorizontal: 16,
-                                marginTop: 16,
-                                borderRadius: 16,
-                                shadowColor: '#000',
-                                shadowOffset: { width: 0, height: 2 },
-                                shadowOpacity: 0.05,
-                                shadowRadius: 8,
-                                elevation: 2,
-                            }}>
-                                <ActivityIndicator size="large" color="#10B981" />
-                                <Text style={{
-                                    marginTop: 12,
-                                    color: isDark ? '#94A3B8' : '#64748B',
-                                    fontSize: 15,
-                                    fontWeight: '500',
-                                    fontFamily: 'VisbyRound-Medium'
-                                }}>
-                                    Analyzing your agreement...
-                                </Text>
-                            </View>
-                        )}
-
-                        {/* Chat History */}
-                        <FlatList
-                            data={chatHistory}
-                            keyExtractor={(_, index) => index.toString()}
-                            contentContainerStyle={{
-                                padding: 16,
-                                paddingBottom: 8
-                            }}
-                            renderItem={({ item }) => (
-                                <View style={{
-                                    marginBottom: 12,
-                                    flexDirection: 'row',
-                                    justifyContent: item.role === 'user' ? 'flex-end' : 'flex-start'
-                                }}>
-                                    {item.role === 'bot' && (
-                                        <View style={{
-                                            width: 32,
-                                            height: 32,
-                                            borderRadius: 16,
-                                            backgroundColor: '#10B981',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            marginRight: 8,
-                                            marginTop: 4
-                                        }}>
-                                            <Ionicons name="sparkles" size={16} color="white" />
-                                        </View>
-                                    )}
-                                    <View style={{
-                                        maxWidth: '75%',
-                                        borderRadius: 20,
-                                        padding: 14,
-                                        backgroundColor: item.role === 'user'
-                                            ? '#10B981'
-                                            : (isDark ? '#1E293B' : 'white'),
-                                        shadowColor: '#000',
-                                        shadowOffset: { width: 0, height: 1 },
-                                        shadowOpacity: item.role === 'user' ? 0.2 : 0.05,
-                                        shadowRadius: 4,
-                                        elevation: 2,
-                                        ...(item.role === 'user' ? {
-                                            borderTopRightRadius: 6,
-                                        } : {
-                                            borderTopLeftRadius: 6,
-                                        })
-                                    }}>
-                                        <Text style={{
-                                            color: item.role === 'user' ? 'white' : (isDark ? '#F1F5F9' : '#1E293B'),
-                                            fontSize: 15,
-                                            lineHeight: 22,
-                                            fontFamily: 'VisbyRound-Regular'
-                                        }}>
-                                            {item.content}
-                                        </Text>
-                                    </View>
-                                </View>
-                            )}
-                        />
-
-                        {/* Input Area */}
-                        <View style={{
-                            paddingHorizontal: 16,
-                            paddingTop: 12,
-                            paddingBottom: Math.max(insets.bottom + 8, 20),
-                            backgroundColor: isDark ? '#0F172A' : '#F8FAFC',
-                            borderTopWidth: 1,
-                            borderTopColor: isDark ? '#1E293B' : '#E2E8F0',
-                        }}>
-                            <View style={{
-                                flexDirection: 'row',
-                                alignItems: 'flex-end',
-                                backgroundColor: isDark ? '#1E293B' : 'white',
-                                borderRadius: 24,
-                                paddingHorizontal: 16,
-                                paddingVertical: 8,
-                                shadowColor: '#000',
-                                shadowOffset: { width: 0, height: 2 },
-                                shadowOpacity: 0.08,
-                                shadowRadius: 8,
-                                elevation: 3,
-                            }}>
-                                <TextInput
-                                    style={{
-                                        flex: 1,
-                                        color: isDark ? '#F1F5F9' : '#1E293B',
-                                        fontSize: 15,
-                                        maxHeight: 100,
-                                        paddingVertical: 8,
-                                        paddingRight: 8
-                                    }}
-                                    placeholder="Ask about your agreement..."
-                                    placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
-                                    value={chatQuery}
-                                    onChangeText={setChatQuery}
-                                    onSubmitEditing={handleAskAI}
-                                    multiline
-                                    maxLength={500}
-                                />
-                                <TouchableOpacity
-                                    onPress={handleAskAI}
-                                    disabled={chatLoading || !chatQuery.trim()}
-                                    style={{
-                                        width: 40,
-                                        height: 40,
-                                        borderRadius: 20,
-                                        backgroundColor: (chatLoading || !chatQuery.trim()) ? '#94A3B8' : '#10B981',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        marginLeft: 8
-                                    }}
-                                >
-                                    {chatLoading ? (
-                                        <ActivityIndicator color="white" size="small" />
-                                    ) : (
-                                        <Ionicons name="send" size={18} color="white" />
-                                    )}
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </View>
-                </KeyboardAvoidingView>
-            </Modal>
+            
+            {/* Toast */}
+            {toast.visible && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    visible={toast.visible}
+                    onHide={hideToast}
+                />
+            )}
         </ScrollView>
+        </View>
     );
 }
