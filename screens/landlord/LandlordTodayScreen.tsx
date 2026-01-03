@@ -78,7 +78,11 @@ export function LandlordTodayScreen({ navigation }: any) {
                 monthlyRevenue = revenueData.currentMonthRevenue || 0;
                 console.log('💰 Actual Stripe revenue for current month:', monthlyRevenue);
             } catch (error) {
-                console.log('Error fetching Stripe revenue, falling back to booking total:', (error as any).message);
+                const errorMessage = (error as any).message || 'Unknown error';
+                if (errorMessage.includes('No such payment intent') || errorMessage.includes('No such payment_intent')) {
+                    console.warn('⚠️ Stripe Error: Backend tried to access a PaymentIntent that matches your DB but not your Stripe Account. Check if you switched Stripe keys/accounts without clearing your DB.');
+                }
+                console.log('Error fetching Stripe revenue, falling back to booking total:', errorMessage);
                 // Fallback: calculate from bookings if Stripe data not available
                 const currentMonth = new Date().getMonth();
                 const currentYear = new Date().getFullYear();

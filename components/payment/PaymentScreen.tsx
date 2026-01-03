@@ -54,6 +54,9 @@ export function PaymentScreen({
                 publishableKey
             } = await stripeService.getPaymentSheetParams(bookingId);
 
+            console.log('💳 Payment Intent ID:', paymentIntent);
+            console.log('🔑 Backend returned Publishable Key:', publishableKey ? `${publishableKey.substring(0, 10)}...` : 'Missing');
+
             // Save payment intent ID for confirmation later
             setPaymentIntentId(paymentIntent);
 
@@ -105,8 +108,19 @@ export function PaymentScreen({
             setReady(true);
         } catch (error: any) {
             console.error('Payment Sheet initialization error:', error);
-            showToast(error.message || 'Failed to initialize payment', 'error');
-            setTimeout(() => onCancel(), 2000);
+            const errorMessage = error.message || 'Failed to initialize payment';
+
+            // Check for various forms of "No such payment intent" error (snake_case or spaces)
+            if (errorMessage.includes('No such payment intent') || errorMessage.includes('No such payment_intent')) {
+                Alert.alert(
+                    'Payment Configuration Error',
+                    'The payment session for this booking is invalid or expired (Mismatch between Database and Stripe). Please cancel this booking and try again.',
+                    [{ text: 'OK', onPress: onCancel }]
+                );
+            } else {
+                showToast(errorMessage, 'error');
+                setTimeout(() => onCancel(), 2000);
+            }
         } finally {
             setLoading(false);
         }
