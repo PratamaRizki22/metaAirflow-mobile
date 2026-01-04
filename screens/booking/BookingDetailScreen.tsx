@@ -84,16 +84,9 @@ export default function BookingDetailScreen({ route, navigation }: any) {
 
     const handleRequestRefund = async (reason: string) => {
         try {
-            const response = await stripeService.requestRefund(bookingId, reason);
-
-            if (response.autoRefund) {
-                showToast(response.message || 'Refund processed immediately', 'success');
-            } else if (response.requiresApproval) {
-                showToast(response.message || 'Refund request sent to landlord for approval', 'info');
-            } else {
-                showToast('Refund request submitted successfully', 'success');
-            }
-
+            await bookingService.requestRefund(bookingId, reason);
+            showToast('Refund request sent to landlord for approval', 'success');
+            
             setTimeout(() => {
                 loadBookingDetail();
             }, 1500);

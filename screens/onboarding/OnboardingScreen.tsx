@@ -7,8 +7,6 @@ import Animated, {
 import { useTheme } from '../../contexts/ThemeContext';
 import { EnhancedSlide } from './components/EnhancedSlide';
 import { AnimatedBackground } from './components/AnimatedBackground';
-import { FloatingElements } from './components/FloatingElements';
-import { AnimatedCurvedBackground } from './components/AnimatedCurvedBackground';
 import { PaginationDot } from './components/PaginationDot';
 import { AnimatedButton } from './components/AnimatedButton';
 import { ONBOARDING_SLIDES } from './constants';
@@ -68,7 +66,6 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     return (
         <View className={`flex-1 ${bgColor}`}>
             <AnimatedBackground scrollX={scrollX} slides={ONBOARDING_SLIDES} />
-            <FloatingElements scrollX={scrollX} />
 
             <Animated.FlatList
                 ref={flatListRef}
@@ -84,28 +81,24 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                 scrollEventThrottle={16}
             />
 
-            <View className="absolute bottom-0 left-0 right-0" style={{ height: 220 }}>
-                <AnimatedCurvedBackground currentIndex={currentIndex} />
-
-                <View className="flex-1 justify-end px-8" style={{ paddingBottom: 60, marginBottom: 8 }}>
-                    <View className="flex-row justify-between" style={{ height: 56, alignItems: 'center' }}>
-                        <View className="flex-row items-center">
-                            {ONBOARDING_SLIDES.map((_, index) => (
-                                <PaginationDot
-                                    key={index}
-                                    index={index}
-                                    currentIndex={currentIndex}
-                                    scrollX={scrollX}
-                                />
-                            ))}
-                        </View>
-
-                        <AnimatedButton
-                            currentIndex={currentIndex}
-                            totalSlides={ONBOARDING_SLIDES.length}
-                            onPress={handleNext}
-                        />
+            <View className="absolute bottom-0 left-0 right-0 px-8" style={{ paddingBottom: 100 }}>
+                <View className="flex-row justify-between" style={{ height: 56, alignItems: 'center' }}>
+                    <View className="flex-row items-center">
+                        {ONBOARDING_SLIDES.map((_, index) => (
+                            <PaginationDot
+                                key={index}
+                                index={index}
+                                currentIndex={currentIndex}
+                                scrollX={scrollX}
+                            />
+                        ))}
                     </View>
+
+                    <AnimatedButton
+                        currentIndex={currentIndex}
+                        totalSlides={ONBOARDING_SLIDES.length}
+                        onPress={handleNext}
+                    />
                 </View>
             </View>
         </View>

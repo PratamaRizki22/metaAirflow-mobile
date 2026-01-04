@@ -4,7 +4,7 @@ export interface OnboardingSlide {
     id: string;
     title: string;
     description: string;
-    animation: any;
+    image?: any;
     gradient: string[];
 }
 

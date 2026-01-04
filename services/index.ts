@@ -14,4 +14,5 @@ export { predictionService, type PredictionInput, type PredictionResult, type Pr
 export { amenityService } from './amenityService';
 export { propertyTypeService } from './propertyTypeService';
 export { locationService, type Location } from './locationService';
+export { refundService, type RefundRequest } from './refundService';
 export { default as api } from './api';

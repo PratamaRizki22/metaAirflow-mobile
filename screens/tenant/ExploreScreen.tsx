@@ -3,10 +3,13 @@ import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, TextInput, A
 import { Ionicons } from '@expo/vector-icons';
 import { propertyService } from '../../services';
 import { useUserLocation } from '../../hooks';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function ExploreScreen({ navigation }: any) {
+    const { isDark } = useTheme();
     const [properties, setProperties] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isReady, setIsReady] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [filters, setFilters] = useState({
         city: '',
@@ -26,6 +29,8 @@ export default function ExploreScreen({ navigation }: any) {
     const loadProperties = async (lat?: number, lng?: number) => {
         try {
             setLoading(true);
+            setIsReady(false);
+
             const queryFilters = {
                 ...filters,
                 search: searchQuery || undefined,
@@ -37,12 +42,19 @@ export default function ExploreScreen({ navigation }: any) {
             }
 
             const response = await propertyService.getMobileProperties(1, 20, queryFilters);
+
+            // Wait minimum 500ms to prevent flickering
+            const minLoadTime = new Promise(resolve => setTimeout(resolve, 500));
+            await minLoadTime;
+
             setProperties(response.data.properties);
         } catch (error: any) {
             console.error('ExploreScreen - Get mobile properties error:', error);
             setProperties([]); // Set empty array on error
         } finally {
             setLoading(false);
+            // Small delay to ensure everything is rendered
+            setTimeout(() => setIsReady(true), 100);
         }
     };
 
@@ -67,11 +79,16 @@ export default function ExploreScreen({ navigation }: any) {
         navigation.navigate('PropertyDetail', { propertyId });
     };
 
-    if (loading) {
+    const bgColor = isDark ? 'bg-background-dark' : 'bg-background-light';
+    const textColor = isDark ? 'text-text-primary-dark' : 'text-text-primary-light';
+
+    if (loading || !isReady) {
         return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size="large" />
-                <Text>Loading properties...</Text>
+            <View className={`flex-1 justify-center items-center ${bgColor}`}>
+                <ActivityIndicator size="large" color="#00D9A3" />
+                <Text className={`mt-4 ${textColor}`} style={{ fontFamily: 'VisbyRound-Medium' }}>
+                    Loading properties...
+                </Text>
             </View>
         );
     }

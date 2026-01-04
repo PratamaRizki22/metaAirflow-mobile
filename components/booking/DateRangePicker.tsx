@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
+import { propertyService, type OccupiedDate } from '../../services';
 
 interface DateRangePickerProps {
     visible: boolean;
@@ -14,6 +15,7 @@ interface DateRangePickerProps {
     blockedDates?: string[]; // Dates that are already booked
     initialStartDate?: string;
     initialEndDate?: string;
+    propertyId?: string; // Add propertyId to load occupied dates
 }
 
 export function DateRangePicker({
@@ -24,21 +26,55 @@ export function DateRangePicker({
     blockedDates = [],
     initialStartDate,
     initialEndDate,
+    propertyId,
 }: DateRangePickerProps) {
     const { isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const [startDate, setStartDate] = useState<string | undefined>(initialStartDate);
     const [endDate, setEndDate] = useState<string | undefined>(initialEndDate);
+    const [occupiedDates, setOccupiedDates] = useState<OccupiedDate[]>([]);
+    const [loading, setLoading] = useState(false);
 
     const bgColor = isDark ? '#1E293B' : '#FFFFFF';
     const textColor = isDark ? '#F1F5F9' : '#1E293B';
     const cardBg = isDark ? '#334155' : '#F8FAFC';
 
+    // Load occupied dates when modal opens
+    useEffect(() => {
+        if (visible && propertyId) {
+            loadOccupiedDates();
+        }
+    }, [visible, propertyId]);
+
+    const loadOccupiedDates = async () => {
+        if (!propertyId) return;
+        
+        try {
+            setLoading(true);
+            const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+            const endMonth = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 7); // 3 months ahead
+            
+            const dates = await propertyService.getOccupiedDates(propertyId, currentMonth, endMonth);
+            setOccupiedDates(dates);
+        } catch (error) {
+            console.error('Load occupied dates error:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Check if date is occupied
+    const isDateOccupied = (dateString: string): boolean => {
+        return occupiedDates.some(range => 
+            dateString >= range.start && dateString <= range.end
+        );
+    };
+
     const handleDayPress = (day: DateData) => {
         const selectedDate = day.dateString;
 
-        // Check if date is blocked
-        if (blockedDates.includes(selectedDate)) {
+        // Check if date is blocked or occupied
+        if (blockedDates.includes(selectedDate) || isDateOccupied(selectedDate)) {
             return;
         }
 
@@ -75,7 +111,7 @@ export function DateRangePicker({
     const getMarkedDates = () => {
         const marked: any = {};
 
-        // Mark blocked dates
+        // Mark blocked dates (legacy)
         blockedDates.forEach((date) => {
             marked[date] = {
                 disabled: true,
@@ -91,6 +127,29 @@ export function DateRangePicker({
                     },
                 },
             };
+        });
+
+        // Mark occupied dates from API
+        occupiedDates.forEach((range) => {
+            const start = new Date(range.start);
+            const end = new Date(range.end);
+            
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const dateString = d.toISOString().split('T')[0];
+                marked[dateString] = {
+                    disabled: true,
+                    disableTouchEvent: true,
+                    customStyles: {
+                        container: {
+                            backgroundColor: '#FEE2E2', // Light red for occupied
+                        },
+                        text: {
+                            color: '#DC2626', // Red text
+                            fontWeight: 'bold',
+                        },
+                    },
+                };
+            }
         });
 
         // Mark start date

@@ -87,6 +87,9 @@ export function RefundModal({
                                 <Text className={`text-xl font-bold ${textColor}`}>
                                     Request Refund
                                 </Text>
+                                <Text className="text-sm text-gray-600 mt-1">
+                                    Your request will be sent to the landlord for approval
+                                </Text>
                             </View>
                             <TouchableOpacity onPress={handleClose} disabled={loading}>
                                 <Ionicons
