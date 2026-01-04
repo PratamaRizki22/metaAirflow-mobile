@@ -85,7 +85,7 @@ export const PropertyCard = React.memo(function PropertyCard({
         if (property.rating !== undefined && property.rating > 0) {
             console.log('⭐ PropertyCard compact - showing rating:', property.rating, 'for', property.title);
         }
-        
+
         return (
             <TouchableOpacity
                 onPress={onPress}
@@ -169,14 +169,16 @@ export const PropertyCard = React.memo(function PropertyCard({
                                 {property.location}
                             </Text>
                         </View>
-                        {property.rating !== undefined && property.rating > 0 && (
-                            <View className="flex-row items-center mt-1">
-                                <Ionicons name="star" size={12} color="#FBBF24" />
-                                <Text className={`text-xs ml-1 font-bold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                                    {property.rating.toFixed(1)}
-                                </Text>
-                            </View>
-                        )}
+                        <View className="flex-row items-center mt-1">
+                            <Ionicons
+                                name="star"
+                                size={12}
+                                color={property.rating && property.rating > 0 ? "#FBBF24" : "#9CA3AF"}
+                            />
+                            <Text className={`text-xs ml-1 font-bold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                {property.rating && property.rating > 0 ? property.rating.toFixed(1) : 'Unrated'}
+                            </Text>
+                        </View>
                     </View>
                 </View>
             </TouchableOpacity>
@@ -292,16 +294,18 @@ export const PropertyCard = React.memo(function PropertyCard({
                     </View>
 
                     {/* Rating Badge for Default Variant */}
-                    {property.rating !== undefined && (
-                        <View className="absolute top-0 right-0 p-5">
-                            <View className="flex-row items-center bg-white/90 dark:bg-black/60 px-2 py-1 rounded-lg backdrop-blur-sm">
-                                <Ionicons name="star" size={14} color="#F59E0B" />
-                                <Text className={`text-xs ml-1 font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                    {property.rating !== undefined ? property.rating.toFixed(1) : '0.0'}
-                                </Text>
-                            </View>
+                    <View className="absolute top-0 right-0 p-5">
+                        <View className="flex-row items-center bg-white/90 dark:bg-black/60 px-2 py-1 rounded-lg backdrop-blur-sm">
+                            <Ionicons
+                                name="star"
+                                size={14}
+                                color={property.rating && property.rating > 0 ? "#F59E0B" : "#9CA3AF"}
+                            />
+                            <Text className={`text-xs ml-1 font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                {property.rating && property.rating > 0 ? property.rating.toFixed(1) : 'Unrated'}
+                            </Text>
                         </View>
-                    )}
+                    </View>
 
                     <Text className="text-primary font-bold text-2xl mb-4">
                         {formatPrice(property.price)}
