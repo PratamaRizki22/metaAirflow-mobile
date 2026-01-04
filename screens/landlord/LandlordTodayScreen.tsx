@@ -225,10 +225,9 @@ export function LandlordTodayScreen({ navigation }: any) {
                         </View>
                         <TouchableOpacity
                             onPress={() => navigation.navigate('StripeConnect')}
-                            className="flex-row items-center bg-primary/10 px-3 py-1 rounded-full"
+                            className="items-center justify-center w-8 h-8"
                         >
-                            <Ionicons name="card-outline" size={14} color="#10A0F7" />
-                            <Text className="text-primary text-xs ml-1 font-semibold">Stripe</Text>
+                            <Ionicons name="card" size={24} color="#635BFF" />
                         </TouchableOpacity>
                     </View>
                     <Text
@@ -251,13 +250,7 @@ export function LandlordTodayScreen({ navigation }: any) {
                         >
                             Earnings Overview
                         </Text>
-                        <TouchableOpacity
-                            onPress={() => navigation.navigate('PaymentHistory')}
-                            className="flex-row items-center"
-                        >
-                            <Text className="text-primary text-sm font-semibold mr-1">View All</Text>
-                            <Ionicons name="chevron-forward" size={16} color="#10A0F7" />
-                        </TouchableOpacity>
+
                     </View>
 
                     {/* Revenue Stats Grid */}

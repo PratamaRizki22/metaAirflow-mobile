@@ -40,7 +40,7 @@ export default function AnalyticsScreen({ navigation }: any) {
             const activeProperties = properties.filter((p: any) => p.status === 'APPROVED' && p.isAvailable);
 
             // Load all bookings
-            const bookingsResponse = await bookingService.getBookings(1, 100, undefined, 'owner');
+            const bookingsResponse = await bookingService.getBookings(1, 100, undefined, 'landlord');
             const bookings = bookingsResponse.data.bookings;
 
             // Calculate booking stats
