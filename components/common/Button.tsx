@@ -80,11 +80,12 @@ export function Button({
                 disabled={disabled || loading}
                 className={`${fullWidth ? 'w-full' : ''} ${className}`}
                 style={{
+                    borderRadius: 9999, // Restore rounded corners for shadow shape
                     shadowColor: '#10A0F7',
-                    shadowOffset: { width: 0, height: 4 }, // Adjusted offset
-                    shadowOpacity: 0.3, // Slightly reduced opacity
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
                     shadowRadius: 8,
-                    elevation: 5,
+                    elevation: 10,
                     backgroundColor: 'transparent', // Important for shadow on some versions
                 }}
             >

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StatusBar, SafeAreaView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, SectionList, StatusBar, SafeAreaView, Platform, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../../hooks';
 import { useNavigation } from '@react-navigation/native';
 import { MAPTILER_API_KEY } from '@env';
+import { propertyService } from '../../services';
 
 // Added AsyncStorage and updated logic
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,7 +17,7 @@ export const SearchInputScreen = () => {
     const [query, setQuery] = useState('');
     const [searchHistory, setSearchHistory] = useState<any[]>([]);
     const [suggestions, setSuggestions] = useState<any[]>([]);
-    const [searchingLocation, setSearchingLocation] = useState(false);
+    const [searching, setSearching] = useState(false);
 
     // Calculate top padding for Android
     const topPadding = Platform.OS === 'android' ? StatusBar.currentHeight : 0;
@@ -26,9 +27,9 @@ export const SearchInputScreen = () => {
     }, []);
 
     useEffect(() => {
-        // Search location using MapTiler Geocoding API
+        // Search location and properties
         const searchTimer = setTimeout(() => {
-            searchLocationByQuery(query);
+            performSearch(query);
         }, 300); // Debounce 300ms
 
         return () => clearTimeout(searchTimer);
@@ -45,46 +46,78 @@ export const SearchInputScreen = () => {
         }
     };
 
-    const searchLocationByQuery = async (searchQuery: string) => {
+    const performSearch = async (searchQuery: string) => {
         if (!searchQuery || searchQuery.length < 3) {
             setSuggestions([]);
             return;
         }
 
-        // Check if API key is available
-        if (!MAPTILER_API_KEY) {
-            console.error('MAPTILER_API_KEY is not configured');
-            setSuggestions([]);
-            return;
-        }
+        setSearching(true);
+        const results: any[] = [];
 
         try {
-            setSearchingLocation(true);
-            const response = await fetch(
-                `https://api.maptiler.com/geocoding/${encodeURIComponent(searchQuery)}.json?key=${MAPTILER_API_KEY}&limit=5`
-            );
-            
-            // Check if response is ok
-            if (!response.ok) {
-                console.error('MapTiler API error:', response.status, response.statusText);
-                setSuggestions([]);
-                return;
+            // 1. Search Properties (Backend)
+            try {
+                console.log(`🔍 Searching properties for: "${searchQuery}"`);
+                const propertyResponse = await propertyService.getMobileProperties(1, 5, {
+                    search: searchQuery
+                });
+
+                console.log('📦 Property Search Response Success:', propertyResponse.success);
+
+                if (propertyResponse.success && propertyResponse.data.properties) {
+                    console.log(`✅ Found ${propertyResponse.data.properties.length} properties matching "${searchQuery}"`);
+                    const propertyResults = propertyResponse.data.properties.map(p => ({
+                        id: `property-${p.id}`,
+                        title: p.title,
+                        subtitle: `${p.city}, ${p.state} • ${p.propertyType?.name || 'Property'}`,
+                        icon: 'home-outline',
+                        type: 'property',
+                        data: p
+                    }));
+                    results.push(...propertyResults);
+                } else {
+                    console.log('⚠️ No properties found or success false');
+                }
+            } catch (propError) {
+                console.log('❌ Property search error:', propError);
             }
 
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                console.error('MapTiler API returned non-JSON response');
-                setSuggestions([]);
-                return;
+            // 2. Search Locations (MapTiler)
+            if (MAPTILER_API_KEY) {
+                try {
+                    const response = await fetch(
+                        `https://api.maptiler.com/geocoding/${encodeURIComponent(searchQuery)}.json?key=${MAPTILER_API_KEY}&limit=5`
+                    );
+
+                    if (response.ok) {
+                        const contentType = response.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                            const data = await response.json();
+                            const locationResults = (data.features || []).map((f: any) => ({
+                                id: `location-${f.id}`,
+                                title: f.place_name || f.text,
+                                subtitle: f.place_type?.join(', ') || 'Location',
+                                icon: 'location-outline',
+                                type: 'location',
+                                data: f
+                            }));
+                            results.push(...locationResults);
+                        }
+                    }
+                } catch (locError) {
+                    console.log('Location search error:', locError);
+                }
+            } else {
+                console.log('MAPTILER_API_KEY not configured, skipping location search');
             }
 
-            const data = await response.json();
-            setSuggestions(data.features || []);
+            setSuggestions(results);
         } catch (error) {
-            console.error('Location search error:', error);
+            console.error('Search error:', error);
             setSuggestions([]);
         } finally {
-            setSearchingLocation(false);
+            setSearching(false);
         }
     };
 
@@ -98,38 +131,67 @@ export const SearchInputScreen = () => {
     };
 
     const handleSearch = async (item?: any) => {
-        const searchText = item ? item.title : query;
-        if (!searchText) return;
+        // If searching via enter key (no item selected explicitly)
+        // We'll treat it as a location search query navigation map
+        if (!item) {
+            if (!query.trim()) return;
 
-        // Save to history if it's a new query
-        const existingIndex = searchHistory.findIndex((h) => h.title.toLowerCase() === searchText.toLowerCase());
-        let newHistory = [...searchHistory];
+            // Add to history
+            const newItem = {
+                id: Date.now().toString(),
+                title: query,
+                subtitle: 'Search query',
+                icon: 'search-outline',
+                type: 'query'
+            };
+            addToHistory(newItem);
 
-        if (existingIndex !== -1) {
-            // Move to top
-            newHistory.splice(existingIndex, 1);
+            navigation.navigate('MapSearchInfo', {
+                searchQuery: query
+            });
+            return;
         }
 
-        const newItem = {
+        // Add to history
+        const historyItem = {
             id: Date.now().toString(),
-            title: searchText,
-            subtitle: 'Recent search',
-            icon: 'time-outline'
+            title: item.title,
+            subtitle: item.subtitle,
+            icon: item.icon,
+            type: item.type,
+            data: item.data // Store data for history retrieval if needed
         };
+        addToHistory(historyItem);
 
-        newHistory.unshift(newItem);
-        // Limit to 10 items
-        if (newHistory.length > 10) newHistory.pop();
-
-        await saveHistory(newHistory);
-
-        // Clear suggestions after selecting
+        // Clear state
         setSuggestions([]);
         setQuery('');
 
-        navigation.navigate('MapSearchInfo', {
-            searchQuery: searchText
-        });
+        // Navigate based on type
+        if (item.type === 'property') {
+            navigation.navigate('PropertyDetail', {
+                propertyId: item.data.id
+            });
+        } else {
+            // Location or Generic Query
+            navigation.navigate('MapSearchInfo', {
+                searchQuery: item.title
+            });
+        }
+    };
+
+    const addToHistory = async (item: any) => {
+        const existingIndex = searchHistory.findIndex((h) => h.title.toLowerCase() === item.title.toLowerCase());
+        let newHistory = [...searchHistory];
+
+        if (existingIndex !== -1) {
+            newHistory.splice(existingIndex, 1);
+        }
+
+        newHistory.unshift(item);
+        if (newHistory.length > 10) newHistory.pop();
+
+        await saveHistory(newHistory);
     };
 
     const clearHistory = async () => {
@@ -167,17 +229,18 @@ export const SearchInputScreen = () => {
                     <Ionicons name="search-outline" size={20} color="#9CA3AF" />
                     <TextInput
                         className={`flex-1 ml-3 text-base ${textColor}`}
-                        placeholder="Search locations"
+                        placeholder="Search properties or locations..."
                         placeholderTextColor="#9CA3AF"
                         autoFocus={true}
                         value={query}
                         onChangeText={setQuery}
                         onSubmitEditing={() => handleSearch()}
+                        returnKeyType="search"
                     />
-                    {searchingLocation && (
+                    {searching && (
                         <ActivityIndicator size="small" color="#9CA3AF" />
                     )}
-                    {query.length > 0 && !searchingLocation && (
+                    {query.length > 0 && !searching && (
                         <TouchableOpacity onPress={() => {
                             setQuery('');
                             setSuggestions([]);
@@ -188,50 +251,74 @@ export const SearchInputScreen = () => {
                 </View>
             </View>
 
-            {/* Recent Searches or Suggestions Title */}
-            <View className="px-6 mt-8 mb-4 flex-row justify-between items-center">
-                <Text className={`text-sm font-medium ${secondaryTextColor}`}>
-                    {suggestions.length > 0 ? 'Suggestions' : 'Recent searches'}
-                </Text>
-                {searchHistory.length > 0 && suggestions.length === 0 && (
-                    <TouchableOpacity onPress={clearHistory}>
-                        <Text className="text-primary text-xs">Clear All</Text>
-                    </TouchableOpacity>
-                )}
-            </View>
+            {/* Recent Searches or Suggestions Title - Removed individual header, moved to SectionList */}
 
             {/* List */}
-            <FlatList
-                data={suggestions.length > 0 ? suggestions.map((s, idx) => ({ 
-                    id: `suggestion-${idx}`, 
-                    title: s.place_name || s.text,
-                    subtitle: s.place_type?.join(', ') || 'Location', 
-                    icon: 'location-outline',
-                    raw: s
-                })) : searchHistory}
-                keyExtractor={(item) => item.id || item}
-                contentContainerStyle={{ paddingHorizontal: 24 }}
-                renderItem={({ item }) => (
+            <SectionList
+                sections={
+                    query.length > 0
+                        ? [
+                            {
+                                title: 'Properties',
+                                data: suggestions.filter(s => s.type === 'property'),
+                            },
+                            {
+                                title: 'Locations',
+                                data: suggestions.filter(s => s.type === 'location'),
+                            },
+                        ].filter(section => section.data.length > 0)
+                        : searchHistory.length > 0
+                            ? [{ title: 'Recent Searches', data: searchHistory }]
+                            : []
+                }
+                keyExtractor={(item: any) => item.id || item.title}
+                contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 20 }}
+                keyboardShouldPersistTaps="handled"
+                stickySectionHeadersEnabled={false}
+                renderSectionHeader={({ section: { title, data } }: { section: { title: string, data: any[] } }) => (
+                    <View className="mt-6 mb-4 flex-row justify-between items-center">
+                        <Text className={`text-sm font-medium ${secondaryTextColor}`}>
+                            {title}
+                        </Text>
+                        {title === 'Recent Searches' && (
+                            <TouchableOpacity onPress={clearHistory}>
+                                <Text className="text-primary text-xs">Clear All</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                )}
+                renderItem={({ item }: { item: any }) => (
                     <TouchableOpacity
                         className="flex-row items-center mb-6"
                         onPress={() => handleSearch(item)}
                     >
                         <View className={`w-10 h-10 rounded-xl items-center justify-center mr-4 ${isDark ? 'bg-gray-800' : 'bg-gray-100'}`}>
-                            <Ionicons name={item.icon as any || 'time-outline'} size={20} color="#6B7280" />
+                            {item.type === 'property' && item.data?.images?.[0] ? (
+                                <Image
+                                    source={{ uri: item.data.images[0] }}
+                                    style={{ width: 40, height: 40, borderRadius: 12 }}
+                                />
+                            ) : (
+                                <Ionicons
+                                    name={item.icon as any || 'time-outline'}
+                                    size={20}
+                                    color={item.type === 'property' ? '#10A0F7' : '#6B7280'}
+                                />
+                            )}
                         </View>
                         <View className="flex-1">
-                            <Text className={`font-semibold text-base ${textColor}`}>{item.title}</Text>
-                            <Text className={`text-xs mt-0.5 ${secondaryTextColor}`}>{item.subtitle}</Text>
+                            <Text className={`font-semibold text-base ${textColor}`} numberOfLines={1}>{item.title}</Text>
+                            <Text className={`text-xs mt-0.5 ${secondaryTextColor}`} numberOfLines={1}>{item.subtitle}</Text>
                         </View>
                         <TouchableOpacity>
-                            <Ionicons name="navigate-outline" size={18} color="#10A0F7" />
+                            <Ionicons name="chevron-forward" size={18} color={secondaryTextColor} />
                         </TouchableOpacity>
                     </TouchableOpacity>
                 )}
                 ListEmptyComponent={
                     <View className="items-center justify-center mt-10">
                         <Text className={`text-center ${secondaryTextColor}`}>
-                            {query.length > 0 ? 'No suggestions found' : 'No recent searches'}
+                            {query.length > 0 ? 'No results found' : 'No recent searches'}
                         </Text>
                     </View>
                 }
