@@ -94,7 +94,7 @@ export function LandlordTodayScreen({ navigation }: any) {
                         const isPaid = b.status === 'APPROVED' || b.status === 'COMPLETED';
                         return isCurrentMonth && isPaid;
                     })
-                    .reduce((sum: number, b: any) => sum + (b.totalPrice || 0), 0);
+                    .reduce((sum: number, b: any) => sum + Number(b.totalPrice || 0), 0);
             }
 
             setStats({ pending, approved, revenue: monthlyRevenue });

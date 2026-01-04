@@ -1,7 +1,7 @@
 import api from './api';
 import { BaseService } from './BaseService';
 
-export type BookingStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'REFUNDED' | 'CANCELLED' | 'COMPLETED';
+export type BookingStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'REFUNDED' | 'CANCELLED' | 'COMPLETED' | 'PAID';
 
 export interface Booking {
     id: string;

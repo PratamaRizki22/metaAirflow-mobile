@@ -9,9 +9,10 @@ interface BookingCardProps {
     showDate?: boolean;
     showPayButton?: boolean;
     onPayPress?: () => void;
+    renderActions?: () => React.ReactNode;
 }
 
-export function BookingCard({ booking, onPress, showDate = false, showPayButton = false, onPayPress }: BookingCardProps) {
+export function BookingCard({ booking, onPress, showDate = false, showPayButton = false, onPayPress, renderActions }: BookingCardProps) {
     const { cardBg, textColor, isDark } = useThemeColors();
 
     const getStatusColor = (status: string) => {
@@ -19,7 +20,9 @@ export function BookingCard({ booking, onPress, showDate = false, showPayButton 
             case 'PENDING': return { bg: 'bg-yellow-500/20', text: 'text-yellow-600' };
             case 'APPROVED': return { bg: 'bg-green-500/20', text: 'text-green-600' };
             case 'REJECTED': return { bg: 'bg-red-500/20', text: 'text-red-600' };
+            case 'REFUNDED': return { bg: 'bg-purple-500/20', text: 'text-purple-600' };
             case 'CANCELLED': return { bg: 'bg-gray-500/20', text: 'text-gray-600' };
+            case 'PAID': return { bg: 'bg-violet-500/20', text: 'text-violet-600' };
             default: return { bg: 'bg-gray-500/20', text: 'text-gray-600' };
         }
     };
@@ -113,6 +116,13 @@ export function BookingCard({ booking, onPress, showDate = false, showPayButton 
                     <Ionicons name="card" size={18} color="white" />
                     <Text className="text-white font-semibold">Pay Now</Text>
                 </TouchableOpacity>
+            )}
+
+            {/* Custom Actions Area */}
+            {renderActions && (
+                <View className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                    {renderActions()}
+                </View>
             )}
         </TouchableOpacity>
     );

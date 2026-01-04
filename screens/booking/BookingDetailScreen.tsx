@@ -152,11 +152,40 @@ export default function BookingDetailScreen({ route, navigation }: any) {
                     onPress: async () => {
                         try {
                             setActionLoading(true);
-                            await bookingService.rejectBooking(bookingId);
+                            await bookingService.rejectBooking(bookingId, 'Rejected by landlord');
                             showToast('Booking rejected', 'success');
                             loadBookingDetail();
                         } catch (error: any) {
                             showToast(error.message || 'Failed to reject booking', 'error');
+                        } finally {
+                            setActionLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const handleCancelPaidBooking = async () => {
+        Alert.alert(
+            'Refund & Cancel Booking',
+            'This booking is PAID. Cancelling it will automatically issue a refund to the tenant. This action cannot be undone. Are you sure?',
+            [
+                { text: 'No, Keep It', style: 'cancel' },
+                {
+                    text: 'Yes, Refund & Cancel',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            setActionLoading(true);
+                            console.log('🔴 Cancelling/Refunding PAID booking:', bookingId);
+                            // We use rejectBooking for owner cancellation, backend handles refund if status is PAID
+                            await bookingService.rejectBooking(bookingId, 'Cancelled and Refunded by Landlord');
+                            showToast('Booking cancelled and refund processed', 'success');
+                            loadBookingDetail();
+                        } catch (error: any) {
+                            console.error('❌ Cancel paid booking error:', error);
+                            showToast(error.message || 'Failed to process refund', 'error');
                         } finally {
                             setActionLoading(false);
                         }
@@ -232,6 +261,7 @@ export default function BookingDetailScreen({ route, navigation }: any) {
             case 'REFUNDED': return '#8E8E93'; // Grey for refunded
             case 'CANCELLED': return '#6B7280';
             case 'COMPLETED': return '#3B82F6';
+            case 'PAID': return '#8B5CF6'; // Purple for PAID
             default: return '#8E8E93';
         }
     };
@@ -440,66 +470,26 @@ export default function BookingDetailScreen({ route, navigation }: any) {
                     )}
 
                     {/* Actions */}
-                    {booking.status === 'PENDING' && (
+                    {/* Only show Tenant Cancel action here. Owner actions are in the list view. */}
+                    {booking.status === 'PENDING' && !booking.isOwner && (
                         <View className="mb-6">
-                            {booking.isOwner ? (
-                                // Owner actions
-                                <View className="flex-row gap-3">
-                                    <TouchableOpacity
-                                        onPress={handleApproveBooking}
-                                        disabled={actionLoading}
-                                        className="flex-1 bg-green-500 py-4 rounded-xl items-center"
-                                        style={{
-                                            shadowColor: '#000',
-                                            shadowOffset: { width: 0, height: 2 },
-                                            shadowOpacity: 0.15,
-                                            shadowRadius: 4,
-                                            elevation: 3,
-                                        }}
-                                        activeOpacity={0.8}
-                                    >
-                                        <Text className="text-white font-['VisbyRound-Bold'] text-base">
-                                            {actionLoading ? 'Processing...' : 'Approve'}
-                                        </Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        onPress={handleRejectBooking}
-                                        disabled={actionLoading}
-                                        className="flex-1 bg-red-500 py-4 rounded-xl items-center"
-                                        style={{
-                                            shadowColor: '#000',
-                                            shadowOffset: { width: 0, height: 2 },
-                                            shadowOpacity: 0.15,
-                                            shadowRadius: 4,
-                                            elevation: 3,
-                                        }}
-                                        activeOpacity={0.8}
-                                    >
-                                        <Text className="text-white font-['VisbyRound-Bold'] text-base">
-                                            Reject
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
-                            ) : (
-                                // Tenant actions
-                                <TouchableOpacity
-                                    onPress={handleCancelBooking}
-                                    disabled={actionLoading}
-                                    className="bg-red-500 py-4 rounded-xl items-center"
-                                    style={{
-                                        shadowColor: '#000',
-                                        shadowOffset: { width: 0, height: 2 },
-                                        shadowOpacity: 0.15,
-                                        shadowRadius: 4,
-                                        elevation: 3,
-                                    }}
-                                    activeOpacity={0.8}
-                                >
-                                    <Text className="text-white font-['VisbyRound-Bold'] text-base">
-                                        {actionLoading ? 'Cancelling...' : 'Cancel Booking'}
-                                    </Text>
-                                </TouchableOpacity>
-                            )}
+                            <TouchableOpacity
+                                onPress={handleCancelBooking}
+                                disabled={actionLoading}
+                                className="bg-red-500 py-4 rounded-xl items-center"
+                                style={{
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 2 },
+                                    shadowOpacity: 0.15,
+                                    shadowRadius: 4,
+                                    elevation: 3,
+                                }}
+                                activeOpacity={0.8}
+                            >
+                                <Text className="text-white font-['VisbyRound-Bold'] text-base">
+                                    {actionLoading ? 'Cancelling...' : 'Cancel Booking'}
+                                </Text>
+                            </TouchableOpacity>
                         </View>
                     )}
 

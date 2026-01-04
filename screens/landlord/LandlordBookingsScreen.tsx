@@ -6,7 +6,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useThemeColors } from '../../hooks';
 import { useToast } from '../../hooks/useToast';
 import { bookingService } from '../../services';
-import { LoadingState, Toast } from '../../components/common';
+import { LoadingState, Toast, Button } from '../../components/common';
 import { BookingCard } from '../../components/booking';
 
 export function LandlordBookingsScreen({ navigation }: any) {
@@ -41,6 +41,46 @@ export function LandlordBookingsScreen({ navigation }: any) {
         setRefreshing(true);
         await loadBookings();
         setRefreshing(false);
+    };
+
+    const handleApprove = async (bookingId: string) => {
+        try {
+            setLoading(true);
+            await bookingService.approveBooking(bookingId);
+            showToast('Booking approved successfully', 'success');
+            await loadBookings();
+        } catch (error: any) {
+            showToast(error.message || 'Failed to approve booking', 'error');
+            setLoading(false);
+        }
+    };
+
+    const handleReject = async (bookingId: string, status: string) => {
+        const isPaid = status === 'PAID';
+        Alert.alert(
+            isPaid ? 'Refund & Cancel' : 'Reject Booking',
+            isPaid
+                ? 'This booking is PAID. Cancelling it will issue a refund. Continue?'
+                : 'Are you sure you want to reject this request?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: isPaid ? 'Yes, Refund' : 'Yes, Reject',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            setLoading(true);
+                            await bookingService.rejectBooking(bookingId, isPaid ? 'Cancelled & Refunded by Landlord' : 'Rejected by Landlord');
+                            showToast(isPaid ? 'Refund processed successfully' : 'Booking rejected', 'success');
+                            await loadBookings();
+                        } catch (error: any) {
+                            showToast(error.message || 'Failed to reject booking', 'error');
+                            setLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const filteredBookings = bookings.filter(booking => {
@@ -131,6 +171,36 @@ export function LandlordBookingsScreen({ navigation }: any) {
                                 booking={booking}
                                 onPress={() => navigation.navigate('BookingDetail', { bookingId: booking.id })}
                                 showDate={true}
+                                renderActions={() => {
+                                    // Only show actions for PENDING or PAID bookings
+                                    if (booking.status !== 'PENDING' && booking.status !== 'PAID') return null;
+
+                                    return (
+                                        <View className="flex-row gap-3 mt-2">
+                                            <View className="flex-1">
+                                                <Button
+                                                    onPress={() => handleApprove(booking.id)}
+                                                    variant="primary"
+                                                    size="sm"
+                                                    fullWidth
+                                                >
+                                                    {booking.status === 'PAID' ? 'Approve' : 'Accept'}
+                                                </Button>
+                                            </View>
+
+                                            <View className="flex-1">
+                                                <Button
+                                                    onPress={() => handleReject(booking.id, booking.status)}
+                                                    variant="danger"
+                                                    size="sm"
+                                                    fullWidth
+                                                >
+                                                    {booking.status === 'PAID' ? 'Refund & Cancel' : 'Reject'}
+                                                </Button>
+                                            </View>
+                                        </View>
+                                    );
+                                }}
                             />
                         ))}
                     </View>
