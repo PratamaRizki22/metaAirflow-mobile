@@ -768,8 +768,8 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                                                 </Text>
                                             </View>
                                         </View>
-                                        {ratingItem.comment && (
-                                            <Text className={`${secondaryTextColor}`}>{ratingItem.comment}</Text>
+                                        {ratingItem.review && (
+                                            <Text className={`${secondaryTextColor}`}>{ratingItem.review}</Text>
                                         )}
                                         <Text className={`text-xs ${secondaryTextColor} mt-2`}>
                                             {new Date(ratingItem.createdAt).toLocaleDateString('id-ID', {
