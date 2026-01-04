@@ -148,27 +148,31 @@ export default function MyTripsScreen({ navigation }: any) {
                 </Text>
 
                 {/* Filter Tabs */}
-                <View className="flex-row gap-2">
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} className="gap-2">
-                        {['PENDING', 'PAID', 'APPROVED', 'COMPLETED', 'REFUNDED', 'CANCELLED'].map((tab) => (
-                            <TouchableOpacity
-                                key={tab}
-                                onPress={() => setFilter(tab as any)}
-                                className={`px-4 py-3 rounded-xl ${filter === tab
-                                    ? 'bg-primary'
-                                    : isDark
-                                        ? 'bg-surface-dark'
-                                        : 'bg-gray-100'
-                                    }`}
-                            >
-                                <Text
-                                    className={`text-center text-xs font-semibold ${filter === tab ? 'text-white' : secondaryTextColor
+                <View className="flex-row">
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ paddingRight: 24 }}
+                    >
+                        <View className="flex-row gap-3">
+                            {['PENDING', 'PAID', 'APPROVED', 'COMPLETED', 'REFUNDED', 'CANCELLED'].map((tab) => (
+                                <TouchableOpacity
+                                    key={tab}
+                                    onPress={() => setFilter(tab as any)}
+                                    className={`px-5 py-2.5 rounded-xl border ${filter === tab
+                                        ? 'bg-[#0EA5E9] border-[#0EA5E9]'
+                                        : isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
                                         }`}
                                 >
-                                    {tab}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
+                                    <Text className={`font-visby-bold text-sm ${filter === tab
+                                        ? 'text-white'
+                                        : isDark ? 'text-gray-300' : 'text-gray-600'
+                                        }`}>
+                                        {tab}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
                     </ScrollView>
                 </View>
             </View>

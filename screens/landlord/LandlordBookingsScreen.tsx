@@ -12,7 +12,7 @@ import { BookingCard } from '../../components/booking';
 export function LandlordBookingsScreen({ navigation }: any) {
     const [loading, setLoading] = useState(true);
     const [bookings, setBookings] = useState<any[]>([]);
-    const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+    const [filter, setFilter] = useState<'all' | 'pending' | 'paid' | 'approved' | 'completed' | 'refunded' | 'rejected'>('all');
     const [refreshing, setRefreshing] = useState(false);
 
     const { bgColor, textColor, cardBg, isDark } = useThemeColors();
@@ -67,22 +67,23 @@ export function LandlordBookingsScreen({ navigation }: any) {
                 <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingRight: 24 }}
                 >
-                    <View className="flex-row gap-2">
-                        {['all', 'pending', 'approved', 'rejected'].map((status) => (
+                    <View className="flex-row gap-3">
+                        {['all', 'pending', 'paid', 'approved', 'completed', 'refunded'].map((status) => (
                             <TouchableOpacity
                                 key={status}
                                 onPress={() => setFilter(status as any)}
-                                className={`px-4 py-2 rounded-full ${filter === status
-                                    ? 'bg-primary'
-                                    : isDark ? 'bg-gray-700' : 'bg-gray-200'
+                                className={`px-5 py-2.5 rounded-xl border ${filter === status
+                                    ? 'bg-[#0EA5E9] border-[#0EA5E9]'
+                                    : isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
                                     }`}
                             >
-                                <Text className={`font-medium capitalize ${filter === status
+                                <Text className={`font-visby-bold text-sm ${filter === status
                                     ? 'text-white'
-                                    : isDark ? 'text-gray-300' : 'text-gray-700'
+                                    : isDark ? 'text-gray-300' : 'text-gray-600'
                                     }`}>
-                                    {status === 'all' ? 'All' : status}
+                                    {status.toUpperCase()}
                                 </Text>
                             </TouchableOpacity>
                         ))}
