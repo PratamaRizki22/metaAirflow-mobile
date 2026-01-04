@@ -25,7 +25,7 @@ export default function ManagePropertiesScreen({ navigation }: any) {
         try {
             setLoading(true);
             const response = await propertyService.getMyProperties(1, 50);
-            
+
             // Handle response properly
             if (response?.data?.properties) {
                 setProperties(response.data.properties);
@@ -124,6 +124,8 @@ export default function ManagePropertiesScreen({ navigation }: any) {
                     <Text
                         className={`text-lg flex-1 mr-2 ${textColor}`}
                         style={{ fontFamily: 'VisbyRound-Bold' }}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
                     >
                         {item.title}
                     </Text>
@@ -133,7 +135,11 @@ export default function ManagePropertiesScreen({ navigation }: any) {
                 {/* Location */}
                 <View className="flex-row items-center mb-3">
                     <Ionicons name="location" size={16} color="#EF4444" />
-                    <Text className={`ml-1 text-sm ${secondaryTextColor}`}>
+                    <Text
+                        className={`ml-1 text-sm ${secondaryTextColor} flex-1`}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                    >
                         {item.city}, {item.state}
                     </Text>
                 </View>
@@ -171,12 +177,12 @@ export default function ManagePropertiesScreen({ navigation }: any) {
                 {/* Reviews Info */}
                 {!loadingRating && rating && rating.totalReviews > 0 && (
                     <View className="flex-row items-center justify-between mb-3 bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg">
-                        <View className="flex-row items-center">
+                        <View className="flex-row items-center flex-1 mr-2">
                             <Ionicons name="star" size={16} color="#F59E0B" />
                             <Text className={`ml-1 text-sm font-semibold ${textColor}`}>
                                 {rating.averageRating.toFixed(1)}
                             </Text>
-                            <Text className={`ml-1 text-xs ${secondaryTextColor}`}>
+                            <Text className={`ml-1 text-xs ${secondaryTextColor}`} numberOfLines={1} ellipsizeMode="tail">
                                 ({rating.totalReviews} reviews)
                             </Text>
                         </View>

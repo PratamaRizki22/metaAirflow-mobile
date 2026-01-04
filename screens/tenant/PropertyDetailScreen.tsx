@@ -28,6 +28,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useFavorites } from '../../contexts/FavoritesContext';
 import { useThemeColors } from '../../hooks';
 import { LoadingState, ErrorState, Button } from '../../components/common';
+import { getImageSource, getApiBaseUrl, getImageFilename } from '../../utils/imageUtils';
 
 export default function PropertyDetailScreen({ route, navigation }: any) {
     const { propertyId } = route.params;
@@ -392,15 +393,48 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                                 setCurrentImageIndex(index);
                             }}
                             scrollEventThrottle={16}
-                            renderItem={({ item }) => {
-                                console.log('Rendering image:', item);
+                            renderItem={({ item, index }) => {
+                                const apiBaseUrl = getApiBaseUrl();
+                                const imageSource = getImageSource(item, apiBaseUrl);
+
+                                console.log(`[PropertyDetail] Image ${index + 1}:`, {
+                                    raw: item,
+                                    filename: getImageFilename(item),
+                                    source: imageSource?.uri,
+                                    baseUrl: apiBaseUrl
+                                });
+
+                                if (!imageSource) {
+                                    console.warn('[PropertyDetail] Invalid image source for:', item);
+                                    return (
+                                        <View
+                                            style={{ width: screenWidth, height: 300 }}
+                                            className="bg-gray-300 dark:bg-gray-700 justify-center items-center"
+                                        >
+                                            <Ionicons name="image-outline" size={80} color="#9CA3AF" />
+                                            <Text className="text-gray-500 dark:text-gray-400 mt-4">Invalid image</Text>
+                                        </View>
+                                    );
+                                }
+
                                 return (
                                     <Image
-                                        source={{ uri: item }}
+                                        source={imageSource}
                                         style={{ width: screenWidth, height: 300 }}
                                         resizeMode="cover"
-                                        onError={(error) => console.log('Image load error:', error.nativeEvent.error)}
-                                        onLoad={() => console.log('Image loaded successfully:', item)}
+                                        onError={(error) => {
+                                            console.error(`[PropertyDetail] Image ${index + 1} load error:`, {
+                                                url: imageSource.uri,
+                                                error: error.nativeEvent.error,
+                                                filename: getImageFilename(item)
+                                            });
+                                        }}
+                                        onLoad={() => {
+                                            console.log(`[PropertyDetail] Image ${index + 1} loaded:`, getImageFilename(item));
+                                        }}
+                                        onLoadStart={() => {
+                                            console.log(`[PropertyDetail] Image ${index + 1} loading...`, getImageFilename(item));
+                                        }}
                                     />
                                 );
                             }}

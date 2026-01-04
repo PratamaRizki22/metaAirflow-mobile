@@ -296,9 +296,9 @@ class PropertyService extends BaseService {
     async getMyProperties(page: number = 1, limit: number = 10): Promise<PropertiesResponse> {
         try {
             const response = await api.get<PropertiesResponse>(
-                `/v1/m/properties/my-properties?page=${page}&limit=${limit}`
+                `/v1/m/properties/my?page=${page}&limit=${limit}`
             );
-            
+
             // Check if response is successful
             if (!response.data.success) {
                 // Backend returned error with success: false
@@ -317,7 +317,7 @@ class PropertyService extends BaseService {
                     }
                 };
             }
-            
+
             return response.data;
         } catch (error: any) {
             console.error('Get my properties error:', error.response?.data || error.message);

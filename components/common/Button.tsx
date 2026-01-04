@@ -80,19 +80,19 @@ export function Button({
                 disabled={disabled || loading}
                 className={`${fullWidth ? 'w-full' : ''} ${className}`}
                 style={{
-                    borderRadius: 9999, // rounded-full equivalent
-                    overflow: 'hidden', // IMPORTANT: clip children
                     shadowColor: '#10A0F7',
-                    shadowOffset: { width: 4, height: 4 },
-                    shadowOpacity: 0.4,
-                    shadowRadius: 12,
+                    shadowOffset: { width: 0, height: 4 }, // Adjusted offset
+                    shadowOpacity: 0.3, // Slightly reduced opacity
+                    shadowRadius: 8,
                     elevation: 5,
+                    backgroundColor: 'transparent', // Important for shadow on some versions
                 }}
             >
                 <LinearGradient
                     colors={['#10A0F7', '#01E8AD']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
+                    style={{ borderRadius: 9999 }} // Apply border radius here
                     className={`
                         ${sizeStyles[size]}
                         ${fullWidth ? 'w-full' : ''}
