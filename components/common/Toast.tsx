@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
         top: 60,
     },
     bottomPosition: {
-        bottom: 100,
+        bottom: 120,
     },
     gradient: {
         flexDirection: 'row',

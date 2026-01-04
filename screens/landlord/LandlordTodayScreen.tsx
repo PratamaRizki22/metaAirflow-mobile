@@ -242,6 +242,85 @@ export function LandlordTodayScreen({ navigation }: any) {
                     </Text>
                 </View>
 
+                {/* Revenue Details Section */}
+                <View className="mb-6">
+                    <View className="flex-row items-center justify-between mb-4">
+                        <Text
+                            className={`text-xl ${textColor}`}
+                            style={{ fontFamily: 'VisbyRound-Bold' }}
+                        >
+                            Earnings Overview
+                        </Text>
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('PaymentHistory')}
+                            className="flex-row items-center"
+                        >
+                            <Text className="text-primary text-sm font-semibold mr-1">View All</Text>
+                            <Ionicons name="chevron-forward" size={16} color="#10A0F7" />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Revenue Stats Grid */}
+                    <View className="flex-row gap-3 mb-4">
+                        <View className={`flex-1 ${cardBg} p-4 rounded-2xl border ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+                            <View className="flex-row items-center mb-2">
+                                <View className="bg-green-500/10 p-2 rounded-full mr-2">
+                                    <Ionicons name="trending-up" size={16} color="#22c55e" />
+                                </View>
+                                <Text className="text-text-secondary-light dark:text-text-secondary-dark text-xs">
+                                    Total Earned
+                                </Text>
+                            </View>
+                            <Text
+                                className={`text-lg ${textColor}`}
+                                style={{ fontFamily: 'VisbyRound-Bold' }}
+                            >
+                                RM {stats.revenue.toLocaleString('en-MY', { minimumFractionDigits: 2 })}
+                            </Text>
+                            <Text className="text-green-500 text-xs mt-1">This month</Text>
+                        </View>
+
+                        <View className={`flex-1 ${cardBg} p-4 rounded-2xl border ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+                            <View className="flex-row items-center mb-2">
+                                <View className="bg-orange-500/10 p-2 rounded-full mr-2">
+                                    <Ionicons name="time-outline" size={16} color="#f97316" />
+                                </View>
+                                <Text className="text-text-secondary-light dark:text-text-secondary-dark text-xs">
+                                    Pending
+                                </Text>
+                            </View>
+                            <Text
+                                className={`text-lg ${textColor}`}
+                                style={{ fontFamily: 'VisbyRound-Bold' }}
+                            >
+                                {stats.pending}
+                            </Text>
+                            <Text className="text-orange-500 text-xs mt-1">Bookings</Text>
+                        </View>
+                    </View>
+
+                    {/* Quick Actions */}
+                    <View className="flex-row gap-3">
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('StripeConnect')}
+                            className={`flex-1 ${cardBg} p-4 rounded-2xl border ${isDark ? 'border-gray-700' : 'border-gray-200'} flex-row items-center justify-between`}
+                        >
+                            <View className="flex-row items-center">
+                                <View className="bg-primary/10 p-2 rounded-full mr-3">
+                                    <Ionicons name="wallet-outline" size={20} color="#10A0F7" />
+                                </View>
+                                <View>
+                                    <Text className={`text-sm font-semibold ${textColor}`}>Payouts</Text>
+                                    <Text className="text-text-secondary-light dark:text-text-secondary-dark text-xs">
+                                        Manage earnings
+                                    </Text>
+                                </View>
+                            </View>
+                            <Ionicons name="chevron-forward" size={20} color="#10A0F7" />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
                 {/* Today's Bookings */}
                 <Text
                     className={`text-xl mb-4 ${textColor}`}
