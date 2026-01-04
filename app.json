@@ -62,14 +62,17 @@
       "package": "com.pratamarizki22.rentverse",
       "permissions": [
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ],
       "softwareKeyboardLayoutMode": "resize"
     },
     "extra": {
       "eas": {
-        "projectId": "44fcd971-2279-4aec-b65b-e2bd19033fda"
+        "projectId": "e7a04756-0c07-4363-b185-c4bbcc221802"
       }
-    }
+    },
+    "owner": "capdmarshal"
   }
 }
