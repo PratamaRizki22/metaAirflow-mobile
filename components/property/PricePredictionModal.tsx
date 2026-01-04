@@ -215,12 +215,12 @@ export function PricePredictionModal({
                                         Recommended Price
                                     </Text>
                                     <Text className={`text-4xl font-bold ${textColor}`}>
-                                        MYR {prediction.predicted_price.toLocaleString('en-MY', {
+                                        MYR {(prediction.predicted_price || 0).toLocaleString('en-MY', {
                                             minimumFractionDigits: 2,
                                         })}
                                     </Text>
                                     <Text className="text-text-secondary-light dark:text-text-secondary-dark text-xs mt-1">
-                                        per night
+                                        per month
                                     </Text>
                                 </View>
 
@@ -228,29 +228,29 @@ export function PricePredictionModal({
                                 <View
                                     className="rounded-xl p-4 mb-4"
                                     style={{
-                                        backgroundColor: `${getConfidenceColor(prediction.confidence)}20`,
+                                        backgroundColor: `${getConfidenceColor(prediction.confidence_score || 0)}20`,
                                     }}
                                 >
                                     <View className="flex-row items-center justify-between mb-2">
                                         <Text
                                             className="font-semibold"
-                                            style={{ color: getConfidenceColor(prediction.confidence) }}
+                                            style={{ color: getConfidenceColor(prediction.confidence_score || 0) }}
                                         >
-                                            {getConfidenceLabel(prediction.confidence)}
+                                            {getConfidenceLabel(prediction.confidence_score || 0)}
                                         </Text>
                                         <Text
                                             className="font-bold"
-                                            style={{ color: getConfidenceColor(prediction.confidence) }}
+                                            style={{ color: getConfidenceColor(prediction.confidence_score || 0) }}
                                         >
-                                            {(prediction.confidence * 100).toFixed(0)}%
+                                            {((prediction.confidence_score || 0) * 100).toFixed(0)}%
                                         </Text>
                                     </View>
                                     <View className="h-2 bg-white/30 rounded-full overflow-hidden">
                                         <View
                                             className="h-full rounded-full"
                                             style={{
-                                                width: `${prediction.confidence * 100}%`,
-                                                backgroundColor: getConfidenceColor(prediction.confidence),
+                                                width: `${(prediction.confidence_score || 0) * 100}%`,
+                                                backgroundColor: getConfidenceColor(prediction.confidence_score || 0),
                                             }}
                                         />
                                     </View>
@@ -304,6 +304,6 @@ export function PricePredictionModal({
                     </ScrollView>
                 </View>
             </View>
-        </Modal>
+        </Modal >
     );
 }

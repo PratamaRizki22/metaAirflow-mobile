@@ -96,6 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     phone: userData.phone,
                     dateOfBirth: userData.dateOfBirth,
                     role: userData.role,
+                    isHost: userData.isHost,
                     isLandlord: userData.isHost || userData.isLandlord || false,
                 });
             } else {
@@ -122,6 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     phone: userData.phone,
                     dateOfBirth: userData.dateOfBirth,
                     role: userData.role,
+                    isHost: userData.isHost,
                     isLandlord: userData.isHost || userData.isLandlord || false,
                 });
             } else {
@@ -162,6 +164,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     phone: userData.phone,
                     dateOfBirth: userData.dateOfBirth,
                     role: userData.role,
+                    isHost: userData.isHost,
+                    isLandlord: userData.isHost || userData.isLandlord || false,
                 });
             } else {
                 throw new Error(response.message || 'Registration failed');
@@ -196,6 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 phone: userData.phone,
                 dateOfBirth: userData.dateOfBirth,
                 role: userData.role,
+                isHost: userData.isHost,
                 isLandlord: userData.isHost || userData.isLandlord || false, // Sync from backend using isHost
             });
         } catch (error) {
@@ -216,6 +221,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 phone: updatedUser.phone,
                 dateOfBirth: updatedUser.dateOfBirth,
                 role: updatedUser.role,
+                isHost: updatedUser.isHost,
+                isLandlord: updatedUser.isHost || updatedUser.isLandlord || false,
             });
         } catch (error) {
             console.error('Update profile failed:', error);
@@ -239,7 +246,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 phone: updatedUser.phone,
                 dateOfBirth: updatedUser.dateOfBirth,
                 role: updatedUser.role,
-                isLandlord: updatedUser.isHost || updatedUser.isLandlord || true, // Force true to reflect new state immediately
+                isHost: true, // Force true
+                isLandlord: true, // Force true
             });
 
             // Navigate to creating property handled by UI

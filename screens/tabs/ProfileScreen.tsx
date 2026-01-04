@@ -428,7 +428,11 @@ export function ProfileScreen({ navigation }: any) {
                         {isLoggedIn && (
                             <TouchableOpacity
                                 onPress={async () => {
-                                    await switchMode();
+                                    if (isTenantMode && !user?.isHost) {
+                                        navigation.navigate('BecomeHost');
+                                    } else {
+                                        await switchMode();
+                                    }
                                 }}
                                 className="rounded-full mt-5 mb-5"
                                 activeOpacity={0.8}

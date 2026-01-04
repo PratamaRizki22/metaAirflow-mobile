@@ -12,7 +12,7 @@ export interface PredictionInput {
 export interface PredictionResult {
     predicted_price: number;
     currency: string;
-    confidence: number;
+    confidence_score: number;
 }
 
 export interface PredictionStatus {

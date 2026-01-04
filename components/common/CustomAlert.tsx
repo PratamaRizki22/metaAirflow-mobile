@@ -77,26 +77,24 @@ export function CustomAlert({ visible, title, message, buttons = [], onDismiss }
 
                     {/* Buttons */}
                     {buttons.length > 0 && (
-                        <View className={`flex-row ${buttons.length === 1 ? 'justify-center' : 'justify-end'} gap-3`}>
+                        <View className={`flex-row ${buttons.length === 1 ? 'justify-center' : 'justify-between'} gap-3 w-full`}>
                             {buttons.map((button, index) => (
                                 <TouchableOpacity
                                     key={index}
                                     onPress={() => handleButtonPress(button)}
-                                    className={`px-6 py-3 rounded-xl ${button.style === 'default' || !button.style
-                                            ? 'bg-primary'
-                                            : isDark
-                                                ? 'bg-gray-700'
-                                                : 'bg-gray-200'
+                                    className={`px-4 py-3 rounded-xl flex-1 items-center justify-center ${button.style === 'default' || !button.style
+                                        ? 'bg-primary'
+                                        : isDark
+                                            ? 'bg-gray-700'
+                                            : 'bg-gray-200'
                                         }`}
-                                    style={{
-                                        minWidth: buttons.length === 1 ? 120 : 100,
-                                    }}
                                 >
                                     <Text
-                                        className={`text-center font-semibold ${button.style === 'default' || !button.style
-                                                ? 'text-white'
-                                                : getButtonStyle(button.style)
+                                        className={`text-center font-bold text-base ${button.style === 'default' || !button.style
+                                            ? 'text-white'
+                                            : getButtonStyle(button.style)
                                             }`}
+                                        numberOfLines={1}
                                     >
                                         {button.text}
                                     </Text>

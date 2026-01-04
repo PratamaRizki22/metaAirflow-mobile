@@ -555,7 +555,7 @@ export function SearchScreen({ navigation }: any) {
                     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: -1 }}>
                         <HomeBackground />
                     </View>
-                    <View className="px-6 pt-16 pb-10">
+                    <View className="px-6 pt-20 pb-10">
                         <Animated.View entering={FadeInDown.delay(100).springify()}>
                             <View className="flex-row items-center justify-between mb-6">
                                 <View className="flex-1">
@@ -585,7 +585,7 @@ export function SearchScreen({ navigation }: any) {
                             <TouchableOpacity
                                 onPress={() => navigation.navigate('SearchInput')}
                                 activeOpacity={0.9}
-                                className={`flex-row items-center rounded-2xl px-5 py-4 ${isDark ? 'bg-surface-dark' : 'bg-white'}`}
+                                className={`flex-row items-center rounded-2xl px-5 py-4 mt-4 ${isDark ? 'bg-surface-dark' : 'bg-white'}`}
                                 style={{
                                     shadowColor: '#000',
                                     shadowOffset: { width: 0, height: 4 },
@@ -604,7 +604,7 @@ export function SearchScreen({ navigation }: any) {
                 </View>
 
                 {/* Recent Searches & Content */}
-                <View style={{ marginTop: -20 }}>
+                <View style={{ marginTop: -10 }}>
                     <Animated.View entering={FadeInDown.delay(200).springify()}>
                         <RecentSearchesCard
                             onPress={(item) => navigation.navigate('MapSearchInfo', { searchQuery: item.title })}
