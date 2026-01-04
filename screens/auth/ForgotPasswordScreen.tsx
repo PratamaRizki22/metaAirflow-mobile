@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import authService from '../../services/authService';
 import { useToast } from '../../hooks/useToast';
 import { Toast } from '../../components/common';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface ForgotPasswordScreenProps {
     onBack: () => void;
@@ -30,6 +31,7 @@ export function ForgotPasswordScreen({
     const [emailSent, setEmailSent] = useState(false);
     const [fieldError, setFieldError] = useState(false);
     const { toast, showToast, hideToast } = useToast();
+    const { isDark } = useTheme();
 
     const handleSubmit = async () => {
         if (!email) {
@@ -68,9 +70,12 @@ export function ForgotPasswordScreen({
 
     return (
         <View className="flex-1">
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar
+                barStyle={isDark ? 'light-content' : 'dark-content'}
+                backgroundColor={isDark ? '#0F172A' : '#FFFFFF'}
+            />
             <LinearGradient
-                colors={['#FFFFFF', '#DAF3FF']}
+                colors={isDark ? ['#0F172A', '#1E293B'] : ['#FFFFFF', '#DAF3FF']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 className="flex-1"
@@ -87,7 +92,7 @@ export function ForgotPasswordScreen({
                         <View className="flex-1 px-6 pt-16">
                             {/* Logo */}
                             <View className="items-center mb-8">
-                                <Text className="text-2xl font-bold text-[#0f172a]">
+                                <Text className="text-2xl font-bold text-[#0f172a] dark:text-white">
                                     <Text style={{ color: '#10A0F7' }}>Rent</Text>verse
                                 </Text>
                             </View>
@@ -99,7 +104,7 @@ export function ForgotPasswordScreen({
                                 accessibilityLabel="Go back"
                                 accessibilityRole="button"
                             >
-                                <Ionicons name="arrow-back" size={24} color="#334155" />
+                                <Ionicons name="arrow-back" size={24} color={isDark ? '#FFFFFF' : '#334155'} />
                             </TouchableOpacity>
 
                             {/* Close Button */}
@@ -110,7 +115,7 @@ export function ForgotPasswordScreen({
                                     accessibilityLabel="Close"
                                     accessibilityRole="button"
                                 >
-                                    <Ionicons name="close" size={24} color="#334155" />
+                                    <Ionicons name="close" size={24} color={isDark ? '#FFFFFF' : '#334155'} />
                                 </TouchableOpacity>
                             )}
 
@@ -118,10 +123,10 @@ export function ForgotPasswordScreen({
                                 <>
                                     {/* Title */}
                                     <View className="items-center mb-8 mt-8">
-                                        <Text className="text-lg font-semibold text-[#0f172a] mb-2">
+                                        <Text className="text-lg font-semibold text-[#0f172a] dark:text-white mb-2">
                                             Forgot Password?
                                         </Text>
-                                        <Text className="text-sm text-[#475569] text-center">
+                                        <Text className="text-sm text-[#475569] dark:text-gray-400 text-center">
                                             Enter your email address and we'll send you{'\n'}
                                             instructions to reset your password
                                         </Text>
@@ -129,12 +134,12 @@ export function ForgotPasswordScreen({
 
                                     {/* Email Input */}
                                     <View className="mb-6">
-                                        <Text className="text-sm text-[#475569] mb-2">Email</Text>
+                                        <Text className="text-sm text-[#475569] dark:text-gray-300 mb-2">Email</Text>
                                         <TextInput
-                                            className={`bg-white border ${fieldError ? 'border-red-500' : 'border-[#10A0F7]'
-                                                } rounded-md px-4 py-3 text-[#64748b]`}
+                                            className={`bg-white dark:bg-surface-dark border ${fieldError ? 'border-red-500' : 'border-[#10A0F7]'
+                                                } rounded-md px-4 py-3 text-[#64748b] dark:text-white`}
                                             placeholder="someone123@gmail.com"
-                                            placeholderTextColor="#64748b"
+                                            placeholderTextColor={isDark ? '#9CA3AF' : '#64748b'}
                                             value={email}
                                             onChangeText={(text) => {
                                                 setEmail(text);
@@ -195,24 +200,24 @@ export function ForgotPasswordScreen({
                                     {/* Success State */}
                                     <View className="items-center mt-12">
                                         {/* Icon */}
-                                        <View className="w-20 h-20 rounded-full bg-[#10A0F7]/10 items-center justify-center mb-6">
+                                        <View className="w-20 h-20 rounded-full bg-[#10A0F7]/10 dark:bg-[#10A0F7]/20 items-center justify-center mb-6">
                                             <Ionicons name="mail-outline" size={40} color="#10A0F7" />
                                         </View>
 
                                         {/* Title */}
-                                        <Text className="text-xl font-semibold text-[#0f172a] mb-3">
+                                        <Text className="text-xl font-semibold text-[#0f172a] dark:text-white mb-3">
                                             Check Your Email
                                         </Text>
 
                                         {/* Message */}
-                                        <Text className="text-sm text-[#475569] text-center mb-8 px-4">
+                                        <Text className="text-sm text-[#475569] dark:text-gray-400 text-center mb-8 px-4">
                                             We've sent password reset instructions to{'\n'}
-                                            <Text className="font-semibold">{email}</Text>
+                                            <Text className="font-semibold text-[#0f172a] dark:text-white">{email}</Text>
                                         </Text>
 
                                         {/* Info Box */}
-                                        <View className="bg-[#FEF3C7] border border-[#F59E0B] rounded-lg p-4 mb-8">
-                                            <Text className="text-xs text-[#92400E] text-center">
+                                        <View className="bg-[#FEF3C7] dark:bg-yellow-900/30 border border-[#F59E0B] dark:border-yellow-700/50 rounded-lg p-4 mb-8">
+                                            <Text className="text-xs text-[#92400E] dark:text-yellow-200 text-center">
                                                 ✉️ Didn't receive the email? Check your spam folder or try again in a few minutes.
                                             </Text>
                                         </View>

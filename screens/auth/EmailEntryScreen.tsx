@@ -17,6 +17,7 @@ import authService from '../../services/authService';
 import { useToast } from '../../hooks/useToast';
 import { Toast } from '../../components/common';
 import { Button } from '../../components/common';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface EmailEntryScreenProps {
     onEmailNotRegistered: (email: string) => void;
@@ -37,6 +38,7 @@ export function EmailEntryScreen({
     const [isLoading, setIsLoading] = useState(false);
     const [fieldError, setFieldError] = useState(false);
     const { toast, showToast, hideToast } = useToast();
+    const { isDark } = useTheme();
 
     const handleNext = async () => {
         if (!email) {
@@ -73,9 +75,12 @@ export function EmailEntryScreen({
 
     return (
         <View className="flex-1">
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar
+                barStyle={isDark ? 'light-content' : 'dark-content'}
+                backgroundColor={isDark ? '#0F172A' : '#FFFFFF'}
+            />
             <LinearGradient
-                colors={['#FFFFFF', '#DAF3FF']}
+                colors={isDark ? ['#0F172A', '#1E293B'] : ['#FFFFFF', '#DAF3FF']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 className="flex-1"
@@ -92,7 +97,7 @@ export function EmailEntryScreen({
                         <View className="flex-1 px-6 pt-16">
                             {/* Logo */}
                             <View className="items-center mb-8">
-                                <Text className="text-2xl font-bold text-[#0f172a]">
+                                <Text className="text-2xl font-bold text-[#0f172a] dark:text-white">
                                     <Text style={{ color: '#10A0F7' }}>Rent</Text>verse
                                 </Text>
                             </View>
@@ -104,27 +109,27 @@ export function EmailEntryScreen({
                                 accessibilityLabel="Close auth"
                                 accessibilityRole="button"
                             >
-                                <Ionicons name="close" size={24} color="#334155" />
+                                <Ionicons name="close" size={24} color={isDark ? '#FFFFFF' : '#334155'} />
                             </TouchableOpacity>
 
                             {/* Title */}
                             <View className="items-center mb-12">
-                                <Text className="text-lg font-semibold text-[#0f172a] mb-2">
+                                <Text className="text-lg font-semibold text-[#0f172a] dark:text-white mb-2">
                                     Log in or Sign up
                                 </Text>
-                                <Text className="text-sm text-[#475569] text-center">
+                                <Text className="text-sm text-[#475569] dark:text-gray-400 text-center">
                                     Get the full experience in property search
                                 </Text>
                             </View>
 
                             {/* Email Input */}
                             <View className="mb-4">
-                                <Text className="text-sm text-[#475569] mb-2">Email</Text>
+                                <Text className="text-sm text-[#475569] dark:text-gray-300 mb-2">Email</Text>
                                 <TextInput
-                                    className={`bg-white border ${fieldError ? 'border-red-500' : 'border-[#10A0F7]'
-                                        } rounded-md px-4 py-3 text-[#64748b]`}
+                                    className={`bg-white dark:bg-surface-dark border ${fieldError ? 'border-red-500' : 'border-[#10A0F7]'
+                                        } rounded-md px-4 py-3 text-[#64748b] dark:text-white`}
                                     placeholder="someone123@gmail.com"
-                                    placeholderTextColor="#64748b"
+                                    placeholderTextColor={isDark ? '#9CA3AF' : '#64748b'}
                                     value={email}
                                     onChangeText={(text) => {
                                         setEmail(text);
@@ -167,16 +172,16 @@ export function EmailEntryScreen({
 
                             {/* Divider */}
                             <View className="flex-row items-center mb-8">
-                                <View className="flex-1 h-[1px] bg-[#cbd5e1]" />
-                                <Text className="mx-2 text-sm text-[#475569]">or</Text>
-                                <View className="flex-1 h-[1px] bg-[#cbd5e1]" />
+                                <View className="flex-1 h-[1px] bg-[#cbd5e1] dark:bg-gray-700" />
+                                <Text className="mx-2 text-sm text-[#475569] dark:text-gray-400">or</Text>
+                                <View className="flex-1 h-[1px] bg-[#cbd5e1] dark:bg-gray-700" />
                             </View>
 
                             {/* Google Sign In */}
                             <TouchableOpacity
                                 onPress={onGoogleSignIn}
                                 disabled={isLoading}
-                                className={`bg-white border border-[#cbd5e1] rounded-md py-3 flex-row items-center justify-center ${isLoading ? 'opacity-50' : ''
+                                className={`bg-white dark:bg-surface-dark border border-[#cbd5e1] dark:border-gray-700 rounded-md py-3 flex-row items-center justify-center ${isLoading ? 'opacity-50' : ''
                                     }`}
                                 style={{
                                     shadowColor: '#000',
@@ -189,12 +194,12 @@ export function EmailEntryScreen({
                                     source={{ uri: 'https://www.google.com/favicon.ico' }}
                                     style={{ width: 16, height: 16, marginRight: 8 }}
                                 />
-                                <Text className="text-[#475569] text-sm">Sign in with Google</Text>
+                                <Text className="text-[#475569] dark:text-gray-200 text-sm">Sign in with Google</Text>
                             </TouchableOpacity>
 
                             {/* Terms and Skip */}
                             <View className="mt-auto pb-8">
-                                <Text className="text-xs text-[#475569] text-center mb-4 leading-5">
+                                <Text className="text-xs text-[#475569] dark:text-gray-400 text-center mb-4 leading-5">
                                     By continuing to use our services, you agree to our{' '}
                                     <Text className="text-[#10A0F7] underline">Terms & Conditions</Text> and{' '}
                                     <Text className="text-[#10A0F7] underline">Privacy Policy</Text>
@@ -205,7 +210,7 @@ export function EmailEntryScreen({
                                     accessibilityRole="button"
                                     accessibilityLabel="Skip auth"
                                 >
-                                    <Text className="text-base text-[#94a3b8] text-center">Skip</Text>
+                                    <Text className="text-base text-[#94a3b8] dark:text-gray-500 text-center">Skip</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>

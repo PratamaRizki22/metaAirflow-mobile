@@ -15,6 +15,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import authService from '../../services/authService';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface RegisterScreenProps {
     email: string;
@@ -34,6 +35,7 @@ export function RegisterScreen({ email, onRegisterSuccess, onBack }: RegisterScr
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [fieldErrors, setFieldErrors] = useState<{ [key: string]: boolean }>({});
+    const { isDark } = useTheme();
 
     const handleRegister = async () => {
         setError('');
@@ -99,9 +101,12 @@ export function RegisterScreen({ email, onRegisterSuccess, onBack }: RegisterScr
 
     return (
         <View className="flex-1">
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar
+                barStyle={isDark ? 'light-content' : 'dark-content'}
+                backgroundColor={isDark ? '#0F172A' : '#FFFFFF'}
+            />
             <LinearGradient
-                colors={['#FFFFFF', '#DAF3FF']}
+                colors={isDark ? ['#0F172A', '#1E293B'] : ['#FFFFFF', '#DAF3FF']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 className="flex-1"
@@ -121,22 +126,22 @@ export function RegisterScreen({ email, onRegisterSuccess, onBack }: RegisterScr
                                 onPress={onBack}
                                 className="mb-6 w-6 h-6 items-center justify-center"
                             >
-                                <Ionicons name="chevron-back" size={24} color="#334155" />
+                                <Ionicons name="chevron-back" size={24} color={isDark ? '#FFFFFF' : '#334155'} />
                             </TouchableOpacity>
 
                             {/* Title */}
                             <View className="items-center mb-8">
-                                <Text className="text-lg font-semibold text-[#0f172a] mb-2">
+                                <Text className="text-lg font-semibold text-[#0f172a] dark:text-white mb-2">
                                     Sign Up
                                 </Text>
-                                <Text className="text-sm text-[#475569] text-center px-8">
+                                <Text className="text-sm text-[#475569] dark:text-gray-400 text-center px-8">
                                     Join anBacke journey in property search.
                                 </Text>
                             </View>
 
                             {error ? (
-                                <View className="bg-red-50 border border-red-300 rounded-lg p-4 mb-6">
-                                    <Text className="text-red-600">{error}</Text>
+                                <View className="bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-lg p-4 mb-6">
+                                    <Text className="text-red-600 dark:text-red-400">{error}</Text>
                                 </View>
                             ) : null}
 
@@ -144,12 +149,12 @@ export function RegisterScreen({ email, onRegisterSuccess, onBack }: RegisterScr
                             <View className="space-y-4">
                                 {/* First Name */}
                                 <View className="mb-4">
-                                    <Text className="text-sm text-[#475569] mb-2">First Name</Text>
+                                    <Text className="text-sm text-[#475569] dark:text-gray-300 mb-2">First Name</Text>
                                     <TextInput
-                                        className={`bg-white border ${fieldErrors.firstName ? 'border-red-500' : 'border-[#10A0F7]'
-                                            } rounded-md px-4 py-3 text-[#64748b]`}
+                                        className={`bg-white dark:bg-surface-dark border ${fieldErrors.firstName ? 'border-red-500' : 'border-[#10A0F7]'
+                                            } rounded-md px-4 py-3 text-[#64748b] dark:text-white`}
                                         placeholder="Someone"
-                                        placeholderTextColor="#64748b"
+                                        placeholderTextColor={isDark ? '#9CA3AF' : '#64748b'}
                                         value={firstName}
                                         onChangeText={(text) => {
                                             setFirstName(text);
@@ -161,12 +166,12 @@ export function RegisterScreen({ email, onRegisterSuccess, onBack }: RegisterScr
 
                                 {/* Last Name */}
                                 <View className="mb-4">
-                                    <Text className="text-sm text-[#475569] mb-2">Last Name</Text>
+                                    <Text className="text-sm text-[#475569] dark:text-gray-300 mb-2">Last Name</Text>
                                     <TextInput
-                                        className={`bg-white border ${fieldErrors.lastName ? 'border-red-500' : 'border-[#94a3b8]'
-                                            } rounded-md px-4 py-3 text-[#64748b]`}
+                                        className={`bg-white dark:bg-surface-dark border ${fieldErrors.lastName ? 'border-red-500' : 'border-[#94a3b8] dark:border-gray-600'
+                                            } rounded-md px-4 py-3 text-[#64748b] dark:text-white`}
                                         placeholder="Handsome"
-                                        placeholderTextColor="#64748b"
+                                        placeholderTextColor={isDark ? '#9CA3AF' : '#64748b'}
                                         value={lastName}
                                         onChangeText={(text) => {
                                             setLastName(text);
@@ -178,19 +183,19 @@ export function RegisterScreen({ email, onRegisterSuccess, onBack }: RegisterScr
 
                                 {/* Birthday */}
                                 <View className="mb-4">
-                                    <Text className="text-sm text-[#475569] mb-2">Birthday</Text>
+                                    <Text className="text-sm text-[#475569] dark:text-gray-300 mb-2">Birthday</Text>
                                     <TouchableOpacity
                                         onPress={() => !isLoading && setShowDatePicker(true)}
                                         disabled={isLoading}
                                     >
                                         <View
-                                            className={`bg-white border ${fieldErrors.dateOfBirth ? 'border-red-500' : 'border-[#94a3b8]'
+                                            className={`bg-white dark:bg-surface-dark border ${fieldErrors.dateOfBirth ? 'border-red-500' : 'border-[#94a3b8] dark:border-gray-600'
                                                 } rounded-md px-4 py-3 flex-row items-center justify-between`}
                                         >
-                                            <Text className={dateOfBirth ? 'text-[#0f172a]' : 'text-[#64748b]'}>
+                                            <Text className={dateOfBirth ? 'text-[#0f172a] dark:text-white' : 'text-[#64748b] dark:text-gray-400'}>
                                                 {dateOfBirth || '12/12/2012'}
                                             </Text>
-                                            <Ionicons name="calendar-outline" size={16} color="#475569" />
+                                            <Ionicons name="calendar-outline" size={16} color={isDark ? '#9CA3AF' : '#475569'} />
                                         </View>
                                     </TouchableOpacity>
                                     {showDatePicker && (
@@ -218,13 +223,13 @@ export function RegisterScreen({ email, onRegisterSuccess, onBack }: RegisterScr
 
                                 {/* Phone Number */}
                                 <View className="mb-4">
-                                    <Text className="text-sm text-[#475569] mb-2">Phone Number</Text>
+                                    <Text className="text-sm text-[#475569] dark:text-gray-300 mb-2">Phone Number</Text>
                                     <View className="relative">
                                         <TextInput
-                                            className={`bg-white border ${fieldErrors.phone ? 'border-red-500' : 'border-[#94a3b8]'
-                                                } rounded-md px-4 py-3 text-[#64748b]`}
+                                            className={`bg-white dark:bg-surface-dark border ${fieldErrors.phone ? 'border-red-500' : 'border-[#94a3b8] dark:border-gray-600'
+                                                } rounded-md px-4 py-3 text-[#64748b] dark:text-white`}
                                             placeholder="+62 812 3456 7890"
-                                            placeholderTextColor="#64748b"
+                                            placeholderTextColor={isDark ? '#9CA3AF' : '#64748b'}
                                             value={phone}
                                             onChangeText={(text) => {
                                                 setPhone(text);
@@ -238,13 +243,13 @@ export function RegisterScreen({ email, onRegisterSuccess, onBack }: RegisterScr
 
                                 {/* Password */}
                                 <View className="mb-4">
-                                    <Text className="text-sm text-[#475569] mb-2">Password</Text>
+                                    <Text className="text-sm text-[#475569] dark:text-gray-300 mb-2">Password</Text>
                                     <View className="relative">
                                         <TextInput
-                                            className={`bg-white border ${fieldErrors.password ? 'border-red-500' : 'border-[#94a3b8]'
-                                                } rounded-md px-4 py-3 pr-12 text-[#64748b]`}
+                                            className={`bg-white dark:bg-surface-dark border ${fieldErrors.password ? 'border-red-500' : 'border-[#94a3b8] dark:border-gray-600'
+                                                } rounded-md px-4 py-3 pr-12 text-[#64748b] dark:text-white`}
                                             placeholder="********"
-                                            placeholderTextColor="#64748b"
+                                            placeholderTextColor={isDark ? '#9CA3AF' : '#64748b'}
                                             value={password}
                                             onChangeText={(text) => {
                                                 setPassword(text);
@@ -261,7 +266,7 @@ export function RegisterScreen({ email, onRegisterSuccess, onBack }: RegisterScr
                                             <Ionicons
                                                 name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                                                 size={16}
-                                                color="#475569"
+                                                color={isDark ? '#D1D5DB' : '#475569'}
                                             />
                                         </TouchableOpacity>
                                     </View>
