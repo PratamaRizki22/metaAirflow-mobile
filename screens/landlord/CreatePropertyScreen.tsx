@@ -410,7 +410,7 @@ export default function CreatePropertyScreen({ navigation }: any) {
         <View className={`flex-1 ${bgColor}`}>
             {/* Header with Gradient */}
             <LinearGradient
-                colors={['#00D9A3', '#00BF8F']}
+                colors={['#10A0F7', '#01E8AD']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 className="pt-12 pb-6 px-6"
@@ -826,13 +826,14 @@ export default function CreatePropertyScreen({ navigation }: any) {
                         onPress={handleSubmit}
                         disabled={loading}
                         activeOpacity={0.8}
-                        className="mb-3"
+                        className="mb-3 rounded-full"
+                        style={{ overflow: 'hidden' }}
                     >
                         <LinearGradient
-                            colors={['#00D9A3', '#00B87C']}
-                            start={{ x: 0, y: 0 }}
+                            colors={['#10A0F7', '#01E8AD']}
+                            start={{ x: 0, y: 1 }}
                             end={{ x: 1, y: 0 }}
-                            className="py-4 rounded-xl items-center"
+                            className="py-4 items-center"
                         >
                             <Text className="text-white text-lg font-bold">
                                 {loading ? 'Creating...' : 'Create Property'}
@@ -842,7 +843,7 @@ export default function CreatePropertyScreen({ navigation }: any) {
 
                     <TouchableOpacity
                         onPress={() => navigation.goBack()}
-                        className={`py-4 rounded-xl items-center border ${borderColor}`}
+                        className={`py-4 rounded-full items-center border ${borderColor}`}
                     >
                         <Text className={secondaryTextColor}>Cancel</Text>
                     </TouchableOpacity>

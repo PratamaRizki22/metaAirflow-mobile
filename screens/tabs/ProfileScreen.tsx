@@ -44,11 +44,11 @@ const MenuItem = ({ icon, title, subtitle, onPress, showChevron = true, iconColo
                 <Ionicons name={icon} size={24} color={iconColor || '#6B7280'} />
             </View>
             <View className="flex-1">
-                <Text className="text-base font-medium" style={{ color: textColor || '#1F2937' }}>
+                <Text className="text-base font-medium dark:text-text-primary-dark" style={{ color: textColor }}>
                     {title}
                 </Text>
                 {subtitle && (
-                    <Text className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>
+                    <Text className="text-xs mt-0.5 dark:text-text-secondary-dark" style={{ color: '#9CA3AF' }}>
                         {subtitle}
                     </Text>
                 )}
@@ -61,7 +61,7 @@ const MenuItem = ({ icon, title, subtitle, onPress, showChevron = true, iconColo
 );
 
 export function ProfileScreen({ navigation }: any) {
-    const { theme, setTheme } = useTheme();
+    const { theme, setTheme, toggleTheme, isDark: isThemeDark } = useTheme();
     const { user, isLoggedIn, logout, refreshProfile } = useAuth();
     const { mode, switchMode, canSwitchMode, isLandlordMode, isTenantMode } = useMode();
     const [selectedLanguage, setSelectedLanguage] = useState<Language>('id');
@@ -128,6 +128,8 @@ export function ProfileScreen({ navigation }: any) {
 
     const textPrimaryColor = getColor('#1F2937', '#F1F5F9');
     const textSecondaryColor = getColor('#6B7280', '#CBD5E1');
+    const surfaceColor = getColor('#FFFFFF', '#1E293B');
+    const borderColor = getColor('#F3F4F6', '#334155');
     const iconColor = '#00B87C';
     const selectedLangData = languages.find(l => l.code === selectedLanguage);
 
@@ -145,7 +147,7 @@ export function ProfileScreen({ navigation }: any) {
     });
 
     return (
-        <View className="flex-1 bg-gray-50">
+        <View className="flex-1 bg-gray-50 dark:bg-background-dark">
             <Animated.ScrollView
                 className="flex-1"
                 contentContainerStyle={{ paddingBottom: 100 }}
@@ -183,10 +185,10 @@ export function ProfileScreen({ navigation }: any) {
                 {/* Profile Picture and Info - Overlapping the hero */}
                 <View className="items-center mb-6" style={{ zIndex: 10 }}>
                     {/* Profile Picture */}
-                    <View className="w-28 h-28 rounded-full bg-white items-center justify-center mb-3"
+                    <View className="w-28 h-28 rounded-full bg-white dark:bg-surface-dark items-center justify-center mb-3"
                         style={{
                             borderWidth: 4,
-                            borderColor: 'white',
+                            borderColor: isDark ? '#1E293B' : 'white',
                             shadowColor: '#000',
                             shadowOffset: { width: 0, height: 4 },
                             shadowOpacity: 0.15,
@@ -201,23 +203,23 @@ export function ProfileScreen({ navigation }: any) {
                                 </Text>
                             </View>
                         ) : (
-                            <Ionicons name="person-circle" size={100} color="#E5E7EB" />
+                            <Ionicons name="person" size={60} color="#9CA3AF" />
                         )}
                     </View>
 
                     {/* User Name and Role */}
                     {isLoggedIn ? (
                         <>
-                            <Text className="text-3xl font-bold text-gray-900 mb-1">
+                            <Text className="text-3xl font-bold text-gray-900 dark:text-text-primary-dark mb-1">
                                 {user?.name || `${user?.firstName} ${user?.lastName}`}
                             </Text>
-                            <Text className="text-xl text-gray-500">
+                            <Text className="text-xl text-gray-500 dark:text-text-secondary-dark">
                                 {user?.isLandlord ? 'Landlord' : 'Guest'}
                             </Text>
                         </>
                     ) : (
                         <>
-                            <Text className="text-xl font-bold text-gray-900 mb-2">Guest</Text>
+                            <Text className="text-xl font-bold text-gray-900 dark:text-text-primary-dark mb-2">Guest</Text>
                             <TouchableOpacity
                                 onPress={() => setShowAuthModal(true)}
                                 className="bg-[#00B87C] px-8 py-2.5 rounded-full flex-row items-center justify-center"
@@ -244,7 +246,7 @@ export function ProfileScreen({ navigation }: any) {
                     <View className="px-5">
                         {/* New to Rentverse Card - Only show if logged in and in guest/tenant mode */}
                         {isLoggedIn && isTenantMode && (
-                            <View className="bg-white rounded-2xl p-4 mb-5 flex-row items-center"
+                            <View className="bg-white dark:bg-surface-dark rounded-2xl p-4 mb-5 flex-row items-center"
                                 style={{
                                     shadowColor: '#000',
                                     shadowOffset: { width: 0, height: 2 },
@@ -259,10 +261,10 @@ export function ProfileScreen({ navigation }: any) {
                                     <Ionicons name="sparkles-outline" size={24} color="#0EA5E9" />
                                 </View>
                                 <View className="flex-1">
-                                    <Text className="text-base font-semibold text-gray-900 mb-0.5">
+                                    <Text className="text-base font-semibold text-gray-900 dark:text-text-primary-dark mb-0.5">
                                         New to Rentverse?
                                     </Text>
-                                    <Text className="text-xs text-gray-500">
+                                    <Text className="text-xs text-gray-500 dark:text-text-secondary-dark">
                                         Discover tips and best practices shared by top-rated hosts
                                     </Text>
                                 </View>
@@ -270,7 +272,7 @@ export function ProfileScreen({ navigation }: any) {
                         )}
 
                         {/* Menu Items Container */}
-                        <View className="bg-white rounded-2xl px-4 mb-5"
+                        <View className="bg-white dark:bg-surface-dark rounded-2xl px-4 mb-5"
                             style={{
                                 shadowColor: '#000',
                                 shadowOffset: { width: 0, height: 2 },
@@ -285,10 +287,20 @@ export function ProfileScreen({ navigation }: any) {
                                         icon="settings-outline"
                                         title="Account settings"
                                         onPress={() => navigation.navigate('EditProfile')}
-                                        iconColor="#6B7280"
-                                        textColor="#1F2937"
+                                        iconColor={textSecondaryColor}
+                                        textColor={textPrimaryColor}
                                     />
-                                    <View className="h-px bg-gray-100" />
+                                    <View className="h-px bg-gray-100 dark:bg-border-dark" />
+
+                                    <MenuItem
+                                        icon={isThemeDark ? "moon" : "sunny-outline"}
+                                        title={isThemeDark ? "Dark Mode" : "Light Mode"}
+                                        onPress={toggleTheme}
+                                        iconColor={isThemeDark ? "#818CF8" : "#F59E0B"}
+                                        textColor={textPrimaryColor}
+                                        showChevron={false}
+                                    />
+                                    <View className="h-px bg-gray-100 dark:bg-border-dark" />
 
                                     {/* Agent-specific menu items */}
                                     {isLandlordMode && (
@@ -297,10 +309,10 @@ export function ProfileScreen({ navigation }: any) {
                                                 icon="home-outline"
                                                 title="Hosting Resources"
                                                 onPress={() => { }}
-                                                iconColor="#6B7280"
-                                                textColor="#1F2937"
+                                                iconColor={textSecondaryColor}
+                                                textColor={textPrimaryColor}
                                             />
-                                            <View className="h-px bg-gray-100" />
+                                            <View className="h-px bg-gray-100 dark:bg-border-dark" />
                                         </>
                                     )}
 
@@ -308,10 +320,10 @@ export function ProfileScreen({ navigation }: any) {
                                         icon="help-circle-outline"
                                         title="Get help"
                                         onPress={() => navigation.navigate('GetHelp')}
-                                        iconColor="#6B7280"
-                                        textColor="#1F2937"
+                                        iconColor={textSecondaryColor}
+                                        textColor={textPrimaryColor}
                                     />
-                                    <View className="h-px bg-gray-100" />
+                                    <View className="h-px bg-gray-100 dark:bg-border-dark" />
 
                                     {/* Agent-specific menu items */}
                                     {isLandlordMode && (
@@ -320,10 +332,10 @@ export function ProfileScreen({ navigation }: any) {
                                                 icon="add-circle-outline"
                                                 title="Create a new listing"
                                                 onPress={() => navigation.navigate('CreateProperty')}
-                                                iconColor="#6B7280"
-                                                textColor="#1F2937"
+                                                iconColor={textSecondaryColor}
+                                                textColor={textPrimaryColor}
                                             />
-                                            <View className="h-px bg-gray-100" />
+                                            <View className="h-px bg-gray-100 dark:bg-border-dark" />
                                         </>
                                     )}
 
@@ -331,35 +343,35 @@ export function ProfileScreen({ navigation }: any) {
                                         icon="document-text-outline"
                                         title="Terms of Service"
                                         onPress={() => navigation.navigate('TermsOfService')}
-                                        iconColor="#6B7280"
-                                        textColor="#1F2937"
+                                        iconColor={textSecondaryColor}
+                                        textColor={textPrimaryColor}
                                     />
-                                    <View className="h-px bg-gray-100" />
+                                    <View className="h-px bg-gray-100 dark:bg-border-dark" />
 
                                     <MenuItem
                                         icon="lock-closed-outline"
                                         title="Privacy Policy"
                                         onPress={() => navigation.navigate('PrivacyPolicy')}
-                                        iconColor="#6B7280"
-                                        textColor="#1F2937"
+                                        iconColor={textSecondaryColor}
+                                        textColor={textPrimaryColor}
                                     />
-                                    <View className="h-px bg-gray-100" />
+                                    <View className="h-px bg-gray-100 dark:bg-border-dark" />
 
                                     <MenuItem
                                         icon="code-slash-outline"
                                         title="Open Source Licenses"
                                         onPress={() => navigation.navigate('OpenSourceLicenses')}
-                                        iconColor="#6B7280"
-                                        textColor="#1F2937"
+                                        iconColor={textSecondaryColor}
+                                        textColor={textPrimaryColor}
                                     />
-                                    <View className="h-px bg-gray-100" />
+                                    <View className="h-px bg-gray-100 dark:bg-border-dark" />
 
                                     <MenuItem
                                         icon="log-out-outline"
                                         title="Log Out"
                                         onPress={handleLogout}
-                                        iconColor="#6B7280"
-                                        textColor="#1F2937"
+                                        iconColor={textSecondaryColor}
+                                        textColor={textPrimaryColor}
                                     />
                                 </>
                             ) : (
@@ -368,35 +380,45 @@ export function ProfileScreen({ navigation }: any) {
                                         icon="help-circle-outline"
                                         title="Get help"
                                         onPress={() => navigation.navigate('GetHelp')}
-                                        iconColor="#6B7280"
-                                        textColor="#1F2937"
+                                        iconColor={textSecondaryColor}
+                                        textColor={textPrimaryColor}
                                     />
-                                    <View className="h-px bg-gray-100" />
+                                    <View className="h-px bg-gray-100 dark:bg-border-dark" />
+
+                                    <MenuItem
+                                        icon={isThemeDark ? "moon" : "sunny-outline"}
+                                        title={isThemeDark ? "Dark Mode" : "Light Mode"}
+                                        onPress={toggleTheme}
+                                        iconColor={isThemeDark ? "#818CF8" : "#F59E0B"}
+                                        textColor={textPrimaryColor}
+                                        showChevron={false}
+                                    />
+                                    <View className="h-px bg-gray-100 dark:bg-border-dark" />
 
                                     <MenuItem
                                         icon="document-text-outline"
                                         title="Terms of Service"
                                         onPress={() => navigation.navigate('TermsOfService')}
-                                        iconColor="#6B7280"
-                                        textColor="#1F2937"
+                                        iconColor={textSecondaryColor}
+                                        textColor={textPrimaryColor}
                                     />
-                                    <View className="h-px bg-gray-100" />
+                                    <View className="h-px bg-gray-100 dark:bg-border-dark" />
 
                                     <MenuItem
                                         icon="lock-closed-outline"
                                         title="Privacy Policy"
                                         onPress={() => navigation.navigate('PrivacyPolicy')}
-                                        iconColor="#6B7280"
-                                        textColor="#1F2937"
+                                        iconColor={textSecondaryColor}
+                                        textColor={textPrimaryColor}
                                     />
-                                    <View className="h-px bg-gray-100" />
+                                    <View className="h-px bg-gray-100 dark:bg-border-dark" />
 
                                     <MenuItem
                                         icon="code-slash-outline"
                                         title="Open Source Licenses"
                                         onPress={() => navigation.navigate('OpenSourceLicenses')}
-                                        iconColor="#6B7280"
-                                        textColor="#1F2937"
+                                        iconColor={textSecondaryColor}
+                                        textColor={textPrimaryColor}
                                     />
                                 </>
                             )}
@@ -452,8 +474,8 @@ export function ProfileScreen({ navigation }: any) {
                         onPress={() => setShowLanguageModal(false)}
                         className="flex-1 bg-black/50 justify-center items-center"
                     >
-                        <View className="w-80 rounded-3xl p-6 bg-white">
-                            <Text className="text-xl font-bold mb-6 text-center text-gray-900">
+                        <View className="w-80 rounded-3xl p-6 bg-white dark:bg-surface-dark">
+                            <Text className="text-xl font-bold mb-6 text-center text-gray-900 dark:text-text-primary-dark">
                                 Select Language
                             </Text>
 
@@ -464,7 +486,7 @@ export function ProfileScreen({ navigation }: any) {
                                         setSelectedLanguage(lang.code);
                                         setShowLanguageModal(false);
                                     }}
-                                    className={`flex-row items-center justify-between p-4 rounded-2xl mb-3 ${selectedLanguage === lang.code ? 'bg-primary' : 'bg-gray-50'
+                                    className={`flex-row items-center justify-between p-4 rounded-2xl mb-3 ${selectedLanguage === lang.code ? 'bg-primary' : 'bg-gray-50 dark:bg-background-dark'
                                         }`}
                                 >
                                     <View className="flex-row items-center">
@@ -474,7 +496,7 @@ export function ProfileScreen({ navigation }: any) {
                                             color={selectedLanguage === lang.code ? '#FFFFFF' : iconColor}
                                             style={{ marginRight: 12 }}
                                         />
-                                        <Text className={`text-base font-medium ${selectedLanguage === lang.code ? 'text-white' : 'text-gray-900'
+                                        <Text className={`text-base font-medium ${selectedLanguage === lang.code ? 'text-white' : 'text-gray-900 dark:text-text-primary-dark'
                                             }`}>
                                             {lang.name}
                                         </Text>

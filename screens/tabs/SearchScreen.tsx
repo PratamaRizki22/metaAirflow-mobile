@@ -125,26 +125,85 @@ export function SearchScreen({ navigation }: any) {
             setLoading(true);
             setError(null);
 
-            // Fetch all data in parallel
+            // 1. Define independent fetches
+            const propertyTypesPromise = propertyTypeService.getPropertyTypes().catch(() => []);
+            const popularLocationsPromise = locationService.getPopularLocations(10).catch(() => []);
+            const recentlyViewedPromise = isLoggedIn ? propertyService.getRecentlyViewedProperties(5).catch(() => ({ success: false, data: { properties: [] } })) : Promise.resolve({ success: false, data: { properties: [] } });
+            const collectionsPromise = isLoggedIn ? collectionService.getCollections().catch(() => ({ data: { collections: [] } })) : Promise.resolve({ data: { collections: [] } });
+            const topRatedPromise = propertyService.getMobileProperties(1, 3, { sortBy: 'rating' }).catch(() => ({ success: false, data: { properties: [] } }));
+
+            // 2. Optimized Location & Nearby Properties Flow
+            const locationAndNearbyPromise = (async () => {
+                try {
+                    const { status } = await Location.requestForegroundPermissionsAsync();
+                    if (status !== 'granted') {
+                        return { locationName: 'Malaysia', nearby: [], userCoords: null };
+                    }
+
+                    // Try last known position first (fastest)
+                    let location = await Location.getLastKnownPositionAsync({});
+                    if (!location) {
+                        // Fallback to current position (slower but accurate)
+                        location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+                    }
+
+                    const userCoords = {
+                        latitude: location.coords.latitude,
+                        longitude: location.coords.longitude
+                    };
+
+                    // Parallel: Reverse Geocode + Nearby Search
+                    const [address, nearbyResponse] = await Promise.all([
+                        Location.reverseGeocodeAsync({
+                            latitude: userCoords.latitude,
+                            longitude: userCoords.longitude,
+                        }).catch(() => null),
+                        propertyService.getNearbyProperties(
+                            userCoords.latitude,
+                            userCoords.longitude,
+                            50,
+                            5
+                        ).catch(() => ({ success: false, data: { properties: [] } }))
+                    ]);
+
+                    let locationName = 'Area Around You';
+                    if (address && address.length > 0) {
+                        locationName = address[0].region || address[0].city || address[0].country || 'Area Around You';
+                    }
+
+                    return {
+                        locationName,
+                        nearby: nearbyResponse.success ? nearbyResponse.data.properties : [],
+                        userCoords
+                    };
+
+                } catch (error) {
+                    console.log('Location/Nearby error:', error);
+                    return { locationName: 'Area Around You', nearby: [], userCoords: null };
+                }
+            })();
+
+            // 3. Wait for all promises
             const [
                 propertyTypesData,
                 popularLocationsData,
-                userLocationData,
                 recentlyViewedData,
-                collectionsData
+                collectionsData,
+                topRatedResponse,
+                locationResult
             ] = await Promise.all([
-                propertyTypeService.getPropertyTypes().catch(() => []),
-                locationService.getPopularLocations(10).catch(() => []),
-                getUserLocationAsync(),
-                isLoggedIn ? propertyService.getRecentlyViewedProperties(5).catch(() => ({ success: false, data: { properties: [] } })) : Promise.resolve({ success: false, data: { properties: [] } }),
-                isLoggedIn ? collectionService.getCollections().catch(() => ({ data: { collections: [] } })) : Promise.resolve({ data: { collections: [] } })
+                propertyTypesPromise,
+                popularLocationsPromise,
+                recentlyViewedPromise,
+                collectionsPromise,
+                topRatedPromise,
+                locationAndNearbyPromise
             ]);
 
-            // Set property types
+            // 4. Set State in Batches
             setPropertyTypes(propertyTypesData || []);
-
-            // Set popular locations and counts
             setPopularLocations(popularLocationsData || []);
+
             const counts: { [key: string]: number } = {};
             if (popularLocationsData && Array.isArray(popularLocationsData)) {
                 popularLocationsData.forEach(loc => {
@@ -153,19 +212,12 @@ export function SearchScreen({ navigation }: any) {
             }
             setLocationCounts(counts);
 
-            // Set user location
-            if (userLocationData) {
-                setUserLocationName(userLocationData);
-            }
+            setUserLocationName(locationResult.locationName);
 
-            // Set recently viewed
             if (recentlyViewedData.success && recentlyViewedData.data.properties) {
                 setRecentlyViewedProperties(recentlyViewedData.data.properties);
             }
 
-            // Set collections and build property ID set
-            // For SearchScreen, we only need to know which properties are in ANY collection
-            // to show the bookmark icon state correctly.
             const collectionsArray = collectionsData.data?.collections || [];
             const propertyIdSet = new Set<string>();
             collectionsArray.forEach((collection: any) => {
@@ -175,122 +227,39 @@ export function SearchScreen({ navigation }: any) {
             });
             setPropertiesInCollections(propertyIdSet);
 
-            // After user location is set, load featured properties
-            if (userLocationData && userLocationData !== 'Area Around You') {
-                await loadFeaturedProperties(userLocationData);
-            }
-        } catch (error) {
-            console.error('Error loading initial data:', error);
-            setError('Failed to load data. Please try again.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const getUserLocationAsync = async (): Promise<string> => {
-        try {
-            let { status } = await Location.requestForegroundPermissionsAsync();
-            if (status !== 'granted') {
-                return 'Malaysia'; // Fallback
-            }
-
-            let location = await Location.getCurrentPositionAsync({});
-            let address = await Location.reverseGeocodeAsync({
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude,
-            });
-
-            if (address && address.length > 0) {
-                const state = address[0].region || address[0].city || address[0].country;
-                if (state) {
-                    return state;
-                }
-            }
-            return 'Area Around You';
-        } catch (error) {
-            console.log('Error fetching location:', error);
-            return 'Area Around You';
-        }
-    };
-
-    const loadFeaturedProperties = async (locationName?: string) => {
-        try {
-            // Get user's current coordinates for nearby search
-            let userCoords: { latitude: number; longitude: number } | null = null;
-
-            try {
-                const { status } = await Location.requestForegroundPermissionsAsync();
-                if (status === 'granted') {
-                    const location = await Location.getCurrentPositionAsync({});
-                    userCoords = {
-                        latitude: location.coords.latitude,
-                        longitude: location.coords.longitude
-                    };
-                    console.log('User coordinates for nearby search:', userCoords);
-                }
-            } catch (error) {
-                console.log('Could not get user location for nearby search:', error);
-            }
-
-            // Load both in parallel
-            const [nearbyResponse, topRatedResponse] = await Promise.all([
-                // Fetch nearby properties if we have coordinates, otherwise fallback to city
-                userCoords
-                    ? propertyService.getNearbyProperties(
-                        userCoords.latitude,
-                        userCoords.longitude,
-                        50, // 50km radius (increased for better results)
-                        5   // limit 5 properties (maximum)
-                    ).then(response => {
-                        console.log('Nearby properties response:', response);
-                        return response;
-                    }).catch(error => {
-                        console.error('Nearby properties error:', error);
-                        return { success: false, data: { properties: [] } };
-                    })
-                    : propertyService.getMobileProperties(1, 5, {
-                        city: locationName || userLocationName,
-                        sortBy: 'rating',
-                    }).catch(() => ({ success: false, data: { properties: [] } })),
-                // Top rated from all locations
-                propertyService.getMobileProperties(1, 3, {
-                    sortBy: 'rating',
-                }).catch(() => ({ success: false, data: { properties: [] } }))
-            ]);
-
-            // Set nearby/popular properties
-            if (nearbyResponse.success && nearbyResponse.data.properties && nearbyResponse.data.properties.length > 0) {
-                console.log('Setting popular properties:', nearbyResponse.data.properties.length);
-                setPopularProperties(nearbyResponse.data.properties);
+            // Handle Nearby Properties (with fallback)
+            if (locationResult.nearby.length > 0) {
+                setPopularProperties(locationResult.nearby);
             } else {
-                console.log('No nearby properties found, trying fallback...');
-                // Fallback: try to get any properties sorted by rating
+                // Determine search location for fallback
+                const searchLoc = locationResult.locationName !== 'Area Around You' ? locationResult.locationName : 'Malaysia';
                 try {
                     const fallbackResponse = await propertyService.getMobileProperties(1, 5, {
+                        city: searchLoc,
                         sortBy: 'rating',
                     });
                     if (fallbackResponse.success && fallbackResponse.data.properties) {
-                        console.log('Fallback properties loaded:', fallbackResponse.data.properties.length);
                         setPopularProperties(fallbackResponse.data.properties);
                     } else {
                         setPopularProperties([]);
                     }
-                } catch (error) {
-                    console.error('Fallback properties error:', error);
+                } catch (e) {
                     setPopularProperties([]);
                 }
             }
 
-            // Set top rated properties from all locations
+            // Set Top Rated
             if (topRatedResponse.success && topRatedResponse.data.properties) {
                 setTopRatedProperties(topRatedResponse.data.properties);
             } else {
                 setTopRatedProperties([]);
             }
+
         } catch (error) {
-            console.error('Failed to load featured properties:', error);
-            setPopularProperties([]);
-            setTopRatedProperties([]);
+            console.error('Error loading initial data:', error);
+            setError('Failed to load data. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 

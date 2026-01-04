@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, TouchableOpacity, Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -59,7 +60,7 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
 
             // Landlord Mode Tabs
             case 'Today':
-                return <HomeIcon {...iconProps} />;
+                return <Ionicons name="document-text-outline" size={24} color={iconProps.color} />;
             case 'Properties':
                 return <HomeIcon {...iconProps} />;
             case 'Bookings':

@@ -10,7 +10,7 @@ export function useThemeColors() {
     return {
         // Background colors
         bgColor: isDark ? 'bg-background-dark' : 'bg-background-light',
-        cardBg: isDark ? 'bg-card-dark' : 'bg-card-light',
+        cardBg: isDark ? 'bg-surface-dark' : 'bg-card-light',
         surfaceBg: isDark ? 'bg-surface-dark' : 'bg-surface-light',
 
         // Text colors
