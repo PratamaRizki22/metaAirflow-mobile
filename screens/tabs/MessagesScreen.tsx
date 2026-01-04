@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, Alert, TextInput } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, Alert, TextInput, RefreshControl, Modal, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -51,6 +51,17 @@ export function MessagesScreen({ navigation }: any) {
 
     const { bgColor, textColor, cardBg } = useThemeColors();
 
+    const [rawConversations, setRawConversations] = useState<Conversation[]>([]);
+    const [refreshing, setRefreshing] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [selectedUserChats, setSelectedUserChats] = useState<Conversation[]>([]);
+
+    const onRefresh = React.useCallback(async () => {
+        setRefreshing(true);
+        await loadConversations();
+        setRefreshing(false);
+    }, [user]);
+
     useEffect(() => {
         if (user) {
             loadConversations();
@@ -62,52 +73,85 @@ export function MessagesScreen({ navigation }: any) {
             setLoading(true);
             const response = await messageService.getConversations();
             const conversationsData = response.data || [];
-            const localConversations: Conversation[] = conversationsData.map((conv: ServiceConversation) => ({
-                id: conv.id,
-                propertyId: conv.propertyId,
-                propertyTitle: 'Property',
-                propertyImage: undefined,
-                otherUserId: conv.tenantId,
-                otherUserName: 'User',
-                lastMessage: conv.lastMessage?.content || '',
-                timestamp: conv.updatedAt,
-                unreadCount: conv.unreadCount,
-                unread: conv.unreadCount > 0,
-                hasActiveBooking: true,
-            }));
-            setConversations(localConversations);
+
+            // 1. Process ALL conversations first (Parsing & Formatting)
+            const allParsedConversations: Conversation[] = conversationsData.map((conv: any) => {
+                const isMeTenant = conv.tenantId === user?.id;
+                const otherUser = isMeTenant ? conv.landlord : conv.tenant;
+                if (!otherUser) return null;
+
+                const otherUserId = otherUser.id;
+                let lastMessageText = conv.lastMessage?.content || '';
+
+                const msgType = (conv.lastMessage?.type as any)?.toUpperCase();
+                if (msgType === 'SYSTEM') {
+                    try {
+                        if (lastMessageText.trim().startsWith('{')) {
+                            const parsed = JSON.parse(lastMessageText);
+                            parsed.title ? lastMessageText = `Asking about ${parsed.title}` : lastMessageText = 'System Message';
+                        }
+                    } catch (e) { }
+                } else if (msgType === 'IMAGE') {
+                    lastMessageText = 'Sent an image';
+                }
+
+                const firstName = otherUser.firstName || '';
+                const lastName = otherUser.lastName || '';
+                const fullName = `${firstName} ${lastName}`.trim();
+
+                return {
+                    id: conv.id,
+                    propertyId: conv.propertyId,
+                    propertyTitle: conv.property?.title || 'Property',
+                    propertyImage: undefined,
+                    otherUserId: otherUserId,
+                    otherUserName: fullName || 'User',
+                    otherUserAvatar: otherUser.avatar,
+                    lastMessage: lastMessageText,
+                    timestamp: conv.updatedAt || conv.createdAt,
+                    unreadCount: conv.unreadCount,
+                    unread: conv.unreadCount > 0,
+                    hasActiveBooking: true,
+                };
+            }).filter((c: any) => c !== null) as Conversation[];
+
+            setRawConversations(allParsedConversations);
+
+            // 2. Group by User for Display (Latest conversation per user)
+            const groupedMap = new Map<string, Conversation>();
+            allParsedConversations.forEach(c => {
+                if (groupedMap.has(c.otherUserId)) {
+                    const existing = groupedMap.get(c.otherUserId)!;
+                    if (new Date(c.timestamp).getTime() > new Date(existing.timestamp).getTime()) {
+                        groupedMap.set(c.otherUserId, c);
+                    }
+                } else {
+                    groupedMap.set(c.otherUserId, c);
+                }
+            });
+
+            const sortedConversations = Array.from(groupedMap.values()).sort((a, b) =>
+                new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+            );
+
+            setConversations(sortedConversations);
         } catch (error: any) {
             console.error('Error loading conversations:', error);
             setConversations([]);
         } finally {
-            setLoading(false);
+            if (!refreshing) setLoading(false);
         }
     };
 
-    const handleConversationPress = (conversation: Conversation) => {
-        if (!conversation.hasActiveBooking) {
-            Alert.alert(
-                'Booking Required',
-                'You need an active booking to chat with this property owner. Would you like to book now?',
-                [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                        text: 'Book Now',
-                        onPress: () => navigation.navigate('PropertyDetail', {
-                            propertyId: conversation.propertyId
-                        })
-                    }
-                ]
-            );
-            return;
-        }
-
+    const handleConversationPress = (conv: Conversation) => {
+        // Navigate directly to the latest conversation, overwriting older ones in the list view
         navigation.navigate('ChatDetail', {
-            conversationId: conversation.id,
-            propertyId: conversation.propertyId,
-            otherUserId: conversation.otherUserId,
-            otherUserName: conversation.otherUserName,
-            hasActiveBooking: conversation.hasActiveBooking,
+            conversationId: conv.id,
+            propertyId: conv.propertyId, // Also useful
+            otherUserId: conv.otherUserId, // CRITICAL: Added this
+            otherUserName: conv.otherUserName,
+            otherUserAvatar: conv.otherUserAvatar,
+            propertyTitle: conv.propertyTitle,
         });
     };
 
@@ -120,7 +164,17 @@ export function MessagesScreen({ navigation }: any) {
     });
 
     return (
-        <ScrollView className={`flex-1 ${bgColor}`}>
+        <ScrollView
+            className={`flex-1 ${bgColor}`}
+            refreshControl={
+                <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    colors={['#00D9A3']}
+                    tintColor={isDark ? '#FFFFFF' : '#00D9A3'}
+                />
+            }
+        >
             <View className="px-6 pt-16 pb-6">
                 {/* Header */}
                 <Text className={`text-3xl font-bold mb-6 ${textColor}`} style={{ fontFamily: 'VisbyRound-Bold' }}>
@@ -181,7 +235,7 @@ export function MessagesScreen({ navigation }: any) {
 
                         {filter === 'all' && (
                             <TouchableOpacity
-                                onPress={() => navigation.navigate('Search')}
+                                onPress={() => navigation.navigate('Explore')}
                                 className="bg-primary px-8 py-4 rounded-xl"
                             >
                                 <Text className="text-white font-semibold text-base" style={{ fontFamily: 'VisbyRound-Bold' }}>
@@ -223,10 +277,12 @@ export function MessagesScreen({ navigation }: any) {
                                 {/* Content */}
                                 <View className="flex-1">
                                     <View className="flex-row justify-between items-start mb-1">
-                                        <Text className={`font-bold text-base ${textColor}`} style={{ fontFamily: 'VisbyRound-Bold' }}>
-                                            {conversation.otherUserName}
-                                        </Text>
-                                        <Text className="text-primary text-xs" style={{ fontFamily: 'VisbyRound-Medium' }}>
+                                        <View className="flex-1 mr-2">
+                                            <Text className={`font-bold text-base ${textColor}`} style={{ fontFamily: 'VisbyRound-Bold' }} numberOfLines={1}>
+                                                {conversation.otherUserName}
+                                            </Text>
+                                        </View>
+                                        <Text className="text-primary text-xs shrink-0" style={{ fontFamily: 'VisbyRound-Medium' }}>
                                             {formatTime(conversation.timestamp)}
                                         </Text>
                                     </View>
@@ -239,6 +295,7 @@ export function MessagesScreen({ navigation }: any) {
                                         numberOfLines={1}
                                         style={{ fontFamily: conversation.unread ? 'VisbyRound-Medium' : 'VisbyRound-Regular' }}
                                     >
+
                                         {conversation.lastMessage}
                                     </Text>
                                 </View>
@@ -259,6 +316,61 @@ export function MessagesScreen({ navigation }: any) {
                 {/* Bottom Padding */}
                 <TabBarBottomSpacer />
             </View>
+
+            {/* Selection Modal for Multiple Consultations */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View className="flex-1 justify-end bg-black/50">
+                    <View className={`${isDark ? 'bg-gray-900' : 'bg-white'} rounded-t-3xl p-6 h-[50%]`}>
+                        <View className="flex-row justify-between items-center mb-4">
+                            <Text className={`text-xl font-bold ${textColor}`} style={{ fontFamily: 'VisbyRound-Bold' }}>
+                                Select Topic
+                            </Text>
+                            <TouchableOpacity onPress={() => setModalVisible(false)}>
+                                <Ionicons name="close" size={24} color={isDark ? '#FFF' : '#000'} />
+                            </TouchableOpacity>
+                        </View>
+                        <Text className="text-gray-500 mb-4">
+                            You have multiple chats with {selectedUserChats[0]?.otherUserName}. Choose one:
+                        </Text>
+
+                        <FlatList
+                            data={selectedUserChats}
+                            keyExtractor={(item) => item.id}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    className={`p-4 mb-3 rounded-xl border ${isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}
+                                    onPress={() => {
+                                        setModalVisible(false);
+                                        navigation.navigate('ChatDetail', {
+                                            conversationId: item.id,
+                                            otherUserName: item.otherUserName,
+                                            otherUserAvatar: item.otherUserAvatar,
+                                            propertyTitle: item.propertyTitle,
+                                        });
+                                    }}
+                                >
+                                    <Text className={`font-bold text-base ${isDark ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: 'VisbyRound-Bold' }}>
+                                        🏠 {item.propertyTitle}
+                                    </Text>
+                                    <View className="flex-row justify-between mt-1">
+                                        <Text className="text-gray-500 text-sm flex-1" numberOfLines={1}>
+                                            {item.lastMessage}
+                                        </Text>
+                                        <Text className="text-primary text-xs ml-2">
+                                            {formatTime(item.timestamp)}
+                                        </Text>
+                                    </View>
+                                </TouchableOpacity>
+                            )}
+                        />
+                    </View>
+                </View>
+            </Modal>
         </ScrollView>
     );
 }

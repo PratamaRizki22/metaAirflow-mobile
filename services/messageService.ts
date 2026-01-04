@@ -50,11 +50,11 @@ class MessageService {
     /**
      * Send a message
      */
-    async sendMessage(conversationId: string, content: string, type: 'text' | 'image' = 'text'): Promise<{ success: boolean; data: Message }> {
+    async sendMessage(conversationId: string, content: string, type: 'text' | 'image' | 'system' = 'text'): Promise<{ success: boolean; data: Message }> {
         try {
             const response = await api.post(`/v1/m/conversations/${conversationId}/messages`, {
                 content,
-                type
+                type: type.toUpperCase() // Convert to uppercase for Prisma Enum (TEXT, IMAGE)
             });
             return response.data;
         } catch (error: any) {

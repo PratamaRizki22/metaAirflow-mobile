@@ -23,7 +23,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MapLibreGL from '@maplibre/maplibre-react-native';
 import * as Location from 'expo-location';
 import { MAPTILER_API_KEY } from '@env';
-import { propertyService, favoriteService, bookingService, reviewService } from '../../services';
+import { propertyService, favoriteService, bookingService, reviewService, messageService } from '../../services';
 import { useAuth } from '../../contexts/AuthContext';
 import { useFavorites } from '../../contexts/FavoritesContext';
 import { useThemeColors } from '../../hooks';
@@ -31,7 +31,7 @@ import { LoadingState, ErrorState, Button } from '../../components/common';
 
 export default function PropertyDetailScreen({ route, navigation }: any) {
     const { propertyId } = route.params;
-    const { isLoggedIn } = useAuth();
+    const { isLoggedIn, user } = useAuth();
     const { isFavorited: isInFavorites, toggleFavorite } = useFavorites();
 
     const [property, setProperty] = useState<any>(null);
@@ -230,6 +230,84 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
             propertyTitle: property.title || 'Property',
             price: property.price || 0,
         });
+    };
+
+    const handleChatOwner = async () => {
+        if (!isLoggedIn) {
+            Alert.alert(
+                'Login Required',
+                'Please login to chat with the owner',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Login', onPress: () => navigation.navigate('Auth') },
+                ]
+            );
+            return;
+        }
+
+        try {
+            // Check if user is the owner
+            if (user?.id === property.ownerId) {
+                Alert.alert('Error', 'You cannot chat with yourself');
+                return;
+            }
+
+            const response = await messageService.createConversation(propertyId);
+
+            if (response.success && response.data) {
+                const conversation = response.data;
+
+                // Auto-send context bubble content if context has changed
+                try {
+                    const history = await messageService.getMessages(conversation.id, 1, 1);
+                    const lastMsg = history.data.messages.length > 0 ? history.data.messages[0] : null;
+
+                    let shouldSendCard = true;
+
+                    // Check if the last message is already about this property to avoid duplicates
+                    if (lastMsg && ((lastMsg.type as string).toUpperCase() === 'SYSTEM')) {
+                        try {
+                            const content = JSON.parse(lastMsg.content);
+                            if (content.propertyId === property.id) {
+                                shouldSendCard = false;
+                            }
+                        } catch (e) {
+                            // Content not JSON, ignore
+                        }
+                    }
+
+                    if (shouldSendCard) {
+                        // Create structured property enquiry data for Rich Card rendering
+                        const propertyCardData = {
+                            title: property.title,
+                            price: property.price,
+                            image: property.images && property.images.length > 0 ? property.images[0] : null,
+                            propertyId: property.id,
+                            address: `${property.city || ''}, ${property.state || ''}`,
+                            status: property.status // Send dynamic status
+                        };
+
+                        const messageContent = JSON.stringify(propertyCardData);
+
+                        // Send as SYSTEM message (so we can render it specially as a Card)
+                        await messageService.sendMessage(conversation.id, messageContent, 'system');
+                    }
+                } catch (err) {
+                    console.log('Failed to auto-send enquiry:', err);
+                }
+
+                navigation.navigate('ChatDetail', {
+                    conversationId: conversation.id,
+                    propertyId: propertyId,
+                    otherUserId: property.ownerId || property.owner?.id,
+                    otherUserName: `${property.owner?.firstName} ${property.owner?.lastName}`,
+                    hasActiveBooking: true // Let backend handle restrictions if any, assume true for UI to enable input
+                });
+            }
+        } catch (error: any) {
+            console.error('Chat error:', error);
+            Alert.alert('Error', 'Failed to start chat. ' + (error.message || ''));
+        }
     };
 
     const handleRateProperty = () => {
@@ -704,6 +782,18 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                             name={isInFavorites(propertyId) ? 'heart' : 'heart-outline'}
                             size={24}
                             color={isInFavorites(propertyId) ? '#EF4444' : '#9CA3AF'}
+                        />
+                    </TouchableOpacity>
+
+                    {/* Chat Button */}
+                    <TouchableOpacity
+                        onPress={handleChatOwner}
+                        className={`w-14 h-14 rounded-2xl items-center justify-center border-2 border-gray-300 ${cardBg}`}
+                    >
+                        <Ionicons
+                            name="chatbubble-outline"
+                            size={24}
+                            color={isDark ? '#FFF' : '#374151'}
                         />
                     </TouchableOpacity>
 

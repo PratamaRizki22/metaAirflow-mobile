@@ -240,6 +240,22 @@ class BookingService extends BaseService {
     }
 
     /**
+     * Request refund (tenant) - Updated to use new refund workflow
+     */
+    async requestRefund(bookingId: string, reason: string): Promise<any> {
+        try {
+            const response = await api.post('/refunds/request', {
+                leaseId: bookingId,
+                reason
+            });
+            return response.data;
+        } catch (error: any) {
+            console.error('Request refund error:', error.response?.data || error.message);
+            throw this.handleError(error);
+        }
+    }
+
+    /**
      * Get rental agreement PDF
      */
     async getRentalAgreementPDF(bookingId: string): Promise<any> {

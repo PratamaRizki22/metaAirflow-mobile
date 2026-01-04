@@ -3,12 +3,13 @@ import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useThemeColors } from '../../hooks';
-import { messageService, Conversation } from '../../services';
+import { messageService, refundService, Conversation, type RefundRequest } from '../../services';
 import { LoadingState } from '../../components/common';
 
 export function LandlordInboxScreen({ navigation }: any) {
     const { bgColor, textColor, cardBg, isDark } = useThemeColors();
     const [conversations, setConversations] = useState<Conversation[]>([]);
+    const [refundRequests, setRefundRequests] = useState<RefundRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -21,11 +22,17 @@ export function LandlordInboxScreen({ navigation }: any) {
     const loadConversations = async () => {
         try {
             setLoading(true);
-            const response = await messageService.getConversations();
-            setConversations(response.data || []);
+            const [conversationsResponse, refundRequestsResponse] = await Promise.all([
+                messageService.getConversations(),
+                refundService.getRefundRequests()
+            ]);
+            
+            setConversations(conversationsResponse.data || []);
+            setRefundRequests(refundRequestsResponse || []);
         } catch (error) {
-            console.error('Error loading conversations:', error);
+            console.error('Error loading data:', error);
             setConversations([]);
+            setRefundRequests([]);
         } finally {
             setLoading(false);
         }
@@ -83,6 +90,41 @@ export function LandlordInboxScreen({ navigation }: any) {
                 <Text className="text-text-secondary-light dark:text-text-secondary-dark mb-6">
                     Messages from your tenants
                 </Text>
+
+                {/* Refund Requests Section */}
+                <View className="mb-6">
+                    <View className="flex-row items-center justify-between mb-4">
+                        <Text className={`text-lg font-semibold ${textColor}`}>
+                            Refund Requests
+                        </Text>
+                        {refundRequests.filter(r => r.status === 'PENDING').length > 0 && (
+                            <View className="bg-red-500 rounded-full px-2 py-1">
+                                <Text className="text-white text-xs font-bold">
+                                    {refundRequests.filter(r => r.status === 'PENDING').length}
+                                </Text>
+                            </View>
+                        )}
+                    </View>
+
+                    {refundRequests.filter(r => r.status === 'PENDING').length === 0 ? (
+                        <View className={`${cardBg} p-4 rounded-2xl`}>
+                            <Text className="text-gray-500 text-center">No pending refund requests</Text>
+                        </View>
+                    ) : (
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('RefundRequests')}
+                            className={`${cardBg} p-4 rounded-2xl flex-row items-center justify-between`}
+                        >
+                            <View className="flex-row items-center">
+                                <Ionicons name="card-outline" size={24} color="#EF4444" />
+                                <Text className={`ml-3 font-medium ${textColor}`}>
+                                    View Refund Requests ({refundRequests.filter(r => r.status === 'PENDING').length})
+                                </Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                        </TouchableOpacity>
+                    )}
+                </View>
 
                 {conversations.length === 0 ? (
                     /* Empty State */

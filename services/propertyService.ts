@@ -36,6 +36,7 @@ export interface Property {
     areaSqm: number;
     furnished: boolean;
     isAvailable: boolean;
+    autoApproval: boolean;
     status: PropertyStatus;
     images: string[];
     amenities?: Amenity[];
@@ -47,6 +48,13 @@ export interface Property {
     };
     createdAt: string;
     updatedAt: string;
+}
+
+export interface OccupiedDate {
+    start: string;
+    end: string;
+    status: string;
+    tenantName: string;
 }
 
 export interface CreatePropertyRequest {
@@ -428,6 +436,32 @@ class PropertyService extends BaseService {
         } catch (error: any) {
             console.error('Get occupied dates error:', error.response?.data || error.message);
             throw this.handleError(error);
+        }
+    }
+
+    // Check property availability for date range
+    async checkAvailability(propertyId: string, startDate: string, endDate: string): Promise<boolean> {
+        try {
+            const response = await this.api.get(`/bookings/check-availability/${propertyId}`, {
+                params: { startDate, endDate }
+            });
+            return response.data.data.available;
+        } catch (error) {
+            console.error('Check availability error:', error);
+            throw error;
+        }
+    }
+
+    // Get occupied dates for property calendar
+    async getOccupiedDates(propertyId: string, startMonth?: string, endMonth?: string): Promise<OccupiedDate[]> {
+        try {
+            const response = await this.api.get(`/bookings/occupied-dates/${propertyId}`, {
+                params: { startMonth, endMonth }
+            });
+            return response.data.data;
+        } catch (error) {
+            console.error('Get occupied dates error:', error);
+            throw error;
         }
     }
 }
