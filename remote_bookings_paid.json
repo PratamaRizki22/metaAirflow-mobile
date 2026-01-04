@@ -1,0 +1,53 @@
+{
+  "success": true,
+  "data": {
+    "bookings": [
+      {
+        "id": "c608b120-996c-41bd-947c-46dbee3f960b",
+        "code": "BK-MJYZZDZS",
+        "startDate": "2026-01-21T00:00:00.000Z",
+        "endDate": "2026-01-22T00:00:00.000Z",
+        "rentAmount": "5200",
+        "currencyCode": "MYR",
+        "securityDeposit": null,
+        "status": "PAID",
+        "notes": null,
+        "message": null,
+        "hasReview": false,
+        "paymentStatus": "paid",
+        "totalPrice": "5200",
+        "approvedAt": null,
+        "rejectedAt": null,
+        "rejectionReason": null,
+        "cancelledAt": null,
+        "cancellationReason": null,
+        "tenantSignatureUrl": "AGREED_VIA_CHECKBOX",
+        "signedAgreementUrl": null,
+        "signedAt": "2026-01-04T00:32:42.196Z",
+        "createdAt": "2026-01-04T00:32:42.138Z",
+        "updatedAt": "2026-01-04T00:32:52.917Z",
+        "propertyId": "bca35533-57d6-4199-923c-1b87d1e6f337",
+        "tenantId": "eb4c756e-6418-4c4f-83ba-9e06d5b7e5fa",
+        "landlordId": "20c13558-5e95-40c1-b7be-6b3dbc4778ef",
+        "property": {
+          "id": "bca35533-57d6-4199-923c-1b87d1e6f337",
+          "title": "Executive Apartment in Bangsar",
+          "city": "Kuala Lumpur",
+          "currencyCode": "MYR"
+        },
+        "tenant": {
+          "id": "eb4c756e-6418-4c4f-83ba-9e06d5b7e5fa",
+          "name": "Ardhito Diederich",
+          "email": "ardhito476@gmail.com",
+          "profilePicture": null
+        },
+        "landlord": {
+          "id": "20c13558-5e95-40c1-b7be-6b3dbc4778ef",
+          "name": "Test User",
+          "email": "testuser@rentverse.com",
+          "profilePicture": null
+        }
+      }
+    ]
+  }
+}

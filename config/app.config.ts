@@ -14,7 +14,7 @@ const ENV = __DEV__ ? 'development' : 'production';
 const API_CONFIG = {
     development: {
         // DEVELOPMENT: Using deployed backend public domain (HTTPS)
-        baseURL: 'https://rentverse-api.loseyourip.com/api',
+        baseURL: API_BASE_URL || 'https://rentverse-api.loseyourip.com/api',
         timeout: 30000, // Increased to 30 seconds for payment operations
     },
     production: {

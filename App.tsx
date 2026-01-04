@@ -136,7 +136,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
-        <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder'}>
+        <StripeProvider publishableKey={(STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder').trim()}>
           <ThemeProvider>
             <AuthProvider>
               <ModeProvider>

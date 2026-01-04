@@ -55,7 +55,6 @@ export function PaymentScreen({
             } = await stripeService.getPaymentSheetParams(bookingId);
 
             console.log('💳 Payment Intent ID:', paymentIntent);
-            console.log('🔑 Backend returned Publishable Key:', publishableKey ? `${publishableKey.substring(0, 10)}...` : 'Missing');
 
             // Save payment intent ID for confirmation later
             setPaymentIntentId(paymentIntent);

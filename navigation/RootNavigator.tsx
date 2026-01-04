@@ -22,6 +22,7 @@ import GetHelpScreen from '../screens/profile/GetHelpScreen';
 import TermsOfServiceScreen from '../screens/profile/TermsOfServiceScreen';
 import PrivacyPolicyScreen from '../screens/profile/PrivacyPolicyScreen';
 import OpenSourceLicensesScreen from '../screens/profile/OpenSourceLicensesScreen';
+import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
 import PaymentDetailScreen from '../screens/payment/PaymentDetailScreen';
 import PaymentScreenWrapper from '../screens/payment/PaymentScreenWrapper';
 import BookingDetailScreen from '../screens/booking/BookingDetailScreen';
@@ -38,6 +39,7 @@ import { OfflineBanner, GradientHeader } from '../components/common';
 import { useNetwork } from '../hooks';
 import { useTheme } from '../contexts/ThemeContext';
 import { useMode } from '../contexts/ModeContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const Stack = createStackNavigator();
 
@@ -45,6 +47,7 @@ export function RootNavigator() {
     const { isOffline } = useNetwork();
     const { isDark } = useTheme();
     const { isSwitchingMode, mode } = useMode();
+    const { user } = useAuth();
 
     return (
         <View style={{ flex: 1 }}>
@@ -63,10 +66,17 @@ export function RootNavigator() {
                     },
                 }}
             >
-                {/* Main Tab Navigator */}
+                {/* Main Tab Navigator or Admin Dashboard based on Role */}
                 <Stack.Screen
                     name="MainTabs"
-                    component={MainTabNavigator}
+                    component={user?.role === 'ADMIN' ? AdminDashboardScreen : MainTabNavigator}
+                    options={{ headerShown: false }}
+                />
+
+                {/* Admin Screens */}
+                <Stack.Screen
+                    name="AdminDashboard"
+                    component={AdminDashboardScreen}
                     options={{ headerShown: false }}
                 />
 

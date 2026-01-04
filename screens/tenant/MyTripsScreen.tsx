@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, RefreshControl, Alert, Image } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl, Alert, Image, ScrollView } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,7 +18,7 @@ export default function MyTripsScreen({ navigation }: any) {
     const [bookings, setBookings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [filter, setFilter] = useState<'REFUNDED' | 'PENDING' | 'APPROVED' | 'COMPLETED' | 'CANCELLED'>('REFUNDED');
+    const [filter, setFilter] = useState<'REFUNDED' | 'PENDING' | 'PAID' | 'APPROVED' | 'COMPLETED' | 'CANCELLED'>('PAID');
     const { toast, showToast, hideToast } = useToast();
 
     // Load bookings when screen gains focus
@@ -95,6 +95,7 @@ export default function MyTripsScreen({ navigation }: any) {
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'PENDING': return '#FF9500';
+            case 'PAID': return '#007AFF'; // Blue for Paid
             case 'APPROVED': return '#34C759';
             case 'REJECTED': return '#FF3B30';
             case 'CANCELLED': return '#9CA3AF';
@@ -106,6 +107,7 @@ export default function MyTripsScreen({ navigation }: any) {
     const getStatusIcon = (status: string) => {
         switch (status) {
             case 'PENDING': return 'time-outline';
+            case 'PAID': return 'cash-outline';
             case 'APPROVED': return 'checkmark-circle';
             case 'REJECTED': return 'close-circle';
             case 'CANCELLED': return 'ban';
@@ -147,25 +149,27 @@ export default function MyTripsScreen({ navigation }: any) {
 
                 {/* Filter Tabs */}
                 <View className="flex-row gap-2">
-                    {['REFUNDED', 'PENDING', 'APPROVED', 'COMPLETED', 'CANCELLED'].map((tab) => (
-                        <TouchableOpacity
-                            key={tab}
-                            onPress={() => setFilter(tab as any)}
-                            className={`flex-1 py-3 rounded-xl ${filter === tab
-                                ? 'bg-primary'
-                                : isDark
-                                    ? 'bg-surface-dark'
-                                    : 'bg-gray-100'
-                                }`}
-                        >
-                            <Text
-                                className={`text-center text-xs font-semibold ${filter === tab ? 'text-white' : secondaryTextColor
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} className="gap-2">
+                        {['PENDING', 'PAID', 'APPROVED', 'COMPLETED', 'REFUNDED', 'CANCELLED'].map((tab) => (
+                            <TouchableOpacity
+                                key={tab}
+                                onPress={() => setFilter(tab as any)}
+                                className={`px-4 py-3 rounded-xl ${filter === tab
+                                    ? 'bg-primary'
+                                    : isDark
+                                        ? 'bg-surface-dark'
+                                        : 'bg-gray-100'
                                     }`}
                             >
-                                {tab}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
+                                <Text
+                                    className={`text-center text-xs font-semibold ${filter === tab ? 'text-white' : secondaryTextColor
+                                        }`}
+                                >
+                                    {tab}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
                 </View>
             </View>
 
