@@ -9,6 +9,7 @@ import { useFavorites } from '../../contexts/FavoritesContext';
 import { useThemeColors } from '../../hooks';
 import { LoadingState, EmptyState, NoFavoritesIllustration, Button, ConfirmationBottomSheet } from '../../components/common';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export function FavoritesScreen({ navigation }: any) {
     const { isDark } = useTheme();
@@ -111,6 +112,8 @@ export function FavoritesScreen({ navigation }: any) {
             Alert.alert('Error', error.message || 'Failed to rename collection');
         }
     };
+
+    const insets = useSafeAreaInsets();
 
     const { bgColor, textColor, cardBg } = useThemeColors();
 
@@ -282,9 +285,9 @@ export function FavoritesScreen({ navigation }: any) {
                                     navigation.navigate('AllWishlist', { favorites });
                                 } else if (item.type === 'collection') {
                                     // Navigate to Collection Detail screen
-                                    navigation.navigate('CollectionDetail', { 
+                                    navigation.navigate('CollectionDetail', {
                                         collectionId: item.id,
-                                        collectionName: item.name 
+                                        collectionName: item.name
                                     });
                                 } else {
                                     console.log('Open Collection:', item.name);
@@ -359,7 +362,8 @@ export function FavoritesScreen({ navigation }: any) {
                         <TouchableOpacity
                             activeOpacity={1}
                             onPress={(e) => e.stopPropagation()}
-                            className={`w-full ${bgColor} rounded-t-3xl p-6 pb-10 shadow-xl`}
+                            className={`w-full ${bgColor} rounded-t-3xl p-6 shadow-xl`}
+                            style={{ paddingBottom: Math.max(insets.bottom, 20) + 20 }}
                         >
                             <Text className={`text-xl font-['VisbyRound-Bold'] mb-6 ${textColor}`}>
                                 Make new collection
@@ -428,7 +432,8 @@ export function FavoritesScreen({ navigation }: any) {
                     <TouchableOpacity
                         activeOpacity={1}
                         onPress={(e) => e.stopPropagation()}
-                        className={`w-full ${bgColor} rounded-t-3xl p-6 pb-24 shadow-xl`}
+                        className={`w-full ${bgColor} rounded-t-3xl p-6 shadow-xl`}
+                        style={{ paddingBottom: Math.max(insets.bottom, 20) + 20 }}
                     >
                         {/* Collection Info */}
                         <View className="mb-4">
@@ -498,7 +503,8 @@ export function FavoritesScreen({ navigation }: any) {
                         <TouchableOpacity
                             activeOpacity={1}
                             onPress={(e) => e.stopPropagation()}
-                            className={`w-full ${bgColor} rounded-t-3xl p-6 pb-24 shadow-xl`}
+                            className={`w-full ${bgColor} rounded-t-3xl p-6 shadow-xl`}
+                            style={{ paddingBottom: Math.max(insets.bottom, 20) + 20 }}
                         >
                             <Text className={`text-xl font-['VisbyRound-Bold'] mb-6 ${textColor}`}>
                                 Rename collection
