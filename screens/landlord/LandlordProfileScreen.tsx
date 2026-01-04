@@ -16,8 +16,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { userService, LandlordProfile, LandlordProperty, LandlordTestimonial } from '../../services';
+import { userService, messageService, LandlordProfile, LandlordProperty, LandlordTestimonial } from '../../services';
 import { useThemeColors } from '../../hooks';
+import { useAuth } from '../../contexts/AuthContext';
 import { LoadingState, ErrorState } from '../../components/common';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -25,6 +26,7 @@ const { width: screenWidth } = Dimensions.get('window');
 export default function LandlordProfileScreen({ route, navigation }: any) {
     const { landlordId } = route.params;
     const insets = useSafeAreaInsets();
+    const { user: currentUser } = useAuth();
 
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<LandlordProfile | null>(null);
@@ -82,9 +84,42 @@ export default function LandlordProfileScreen({ route, navigation }: any) {
         }
     };
 
-    const handleMessage = () => {
-        // TODO: Navigate to chat/message screen
-        Alert.alert('Coming Soon', 'Messaging feature will be available soon');
+    const handleMessage = async () => {
+        try {
+            // Check if user is trying to message themselves
+            if (landlordId === currentUser?.id) {
+                Alert.alert('Cannot Message Yourself', 'You cannot send messages to yourself.');
+                return;
+            }
+
+            // Get any property from this landlord to create conversation
+            if (properties.length === 0) {
+                Alert.alert('No Properties', 'This agent has no active properties to inquire about.');
+                return;
+            }
+
+            const propertyId = properties[0].id;
+
+            // Create or get conversation
+            const response = await messageService.createConversation(propertyId);
+
+            if (response.success && response.data) {
+                const conversation = response.data;
+
+                // Navigate to chat
+                navigation.navigate('ChatDetail', {
+                    conversationId: conversation.id,
+                    propertyId: propertyId,
+                    otherUserId: landlordId,
+                    otherUserName: `${user.firstName} ${user.lastName}`,
+                    otherUserAvatar: user.profilePicture,
+                    hasActiveBooking: false,
+                });
+            }
+        } catch (error: any) {
+            console.error('Create conversation error:', error);
+            Alert.alert('Error', error.message || 'Failed to start conversation');
+        }
     };
 
     const handlePropertyPress = (propertyId: string) => {

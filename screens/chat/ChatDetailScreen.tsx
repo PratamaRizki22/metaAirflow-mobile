@@ -10,7 +10,9 @@ import {
     Alert,
     ActivityIndicator,
     Image,
-    SafeAreaView
+    SafeAreaView,
+    Keyboard,
+    InputAccessoryView
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -111,6 +113,7 @@ export default function ChatDetailScreen({ route, navigation }: any) {
     const [loading, setLoading] = useState(false);
     const [sending, setSending] = useState(false);
     const [sentMessagesCount, setSentMessagesCount] = useState(0);
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
 
     const flatListRef = useRef<FlatList>(null);
 
@@ -149,6 +152,31 @@ export default function ChatDetailScreen({ route, navigation }: any) {
             socket.off('receive_message');
         };
     }, [socket, conversationId]);
+
+    // Keyboard Event Listeners - IMPROVED
+    useEffect(() => {
+        const keyboardWillShow = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+            (e) => {
+                setKeyboardHeight(e.endCoordinates.height);
+                setTimeout(() => {
+                    flatListRef.current?.scrollToEnd({ animated: true });
+                }, 100);
+            }
+        );
+
+        const keyboardWillHide = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+            () => {
+                setKeyboardHeight(0);
+            }
+        );
+
+        return () => {
+            keyboardWillShow.remove();
+            keyboardWillHide.remove();
+        };
+    }, []);
 
     const loadMessages = async () => {
         try {
@@ -337,13 +365,12 @@ export default function ChatDetailScreen({ route, navigation }: any) {
     };
 
     return (
-        <KeyboardAvoidingView
-            className={`flex-1 ${bgColor}`}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-        >
-            {/* Header */}
-            <View className={`pt-14 pb-4 px-4 ${cardBg} border-b border-gray-200 dark:border-gray-700`}>
+        <View className={`flex-1 ${bgColor}`}>
+            {/* Header - Fixed di atas */}
+            <View
+                className={`pb-4 px-4 ${cardBg} border-b border-gray-200 dark:border-gray-700`}
+                style={{ paddingTop: insets.top + 16 }}
+            >
                 <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center flex-1">
                         <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
@@ -362,11 +389,9 @@ export default function ChatDetailScreen({ route, navigation }: any) {
                         )}
 
                         <View>
-                            <View
-                                className="flex-row items-center"
-                            >
+                            <View className="flex-row items-center">
                                 <Text className={`text-lg font-bold ${textColor}`} style={{ fontFamily: 'VisbyRound-Bold' }}>
-                                    {otherUserName}
+                                    {otherUserId === user?.id ? 'Me' : otherUserName}
                                 </Text>
                             </View>
 
@@ -394,60 +419,71 @@ export default function ChatDetailScreen({ route, navigation }: any) {
                 </View>
             </View>
 
-            {/* Messages List */}
-            {loading ? (
-                <View className="flex-1 justify-center items-center">
-                    <ActivityIndicator size="large" color="#00D9A3" />
-                </View>
-            ) : (
-                <FlatList
-                    ref={flatListRef}
-                    data={messages}
-                    renderItem={renderMessage}
-                    keyExtractor={(item) => item.id}
-                    contentContainerStyle={{ paddingVertical: 16 }}
-                    onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-                    onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
-                    ListEmptyComponent={
-                        <View className="items-center py-10">
-                            <Ionicons name="chatbubbles-outline" size={64} color="#9CA3AF" />
-                            <Text className="text-text-secondary-light dark:text-text-secondary-dark mt-4 text-base" style={{ fontFamily: 'VisbyRound-Medium' }}>
-                                No messages yet
-                            </Text>
-                        </View>
-                    }
-                />
-            )}
-
-            {/* Input Area */}
-            <View
-                className={`flex-row items-center px-4 pt-3 ${cardBg} border-t border-gray-200 dark:border-gray-700`}
-                style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+            {/* KeyboardAvoidingView untuk Chat Area + Input */}
+            <KeyboardAvoidingView
+                className={`flex-1 ${cardBg}`}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : -25}
             >
-                <TextInput
-                    className={`flex-1 ${isDark ? 'bg-gray-800' : 'bg-gray-100'} rounded-full px-4 py-3 mr-3 ${textColor}`}
-                    style={{ fontFamily: 'VisbyRound-Regular', fontSize: 14 }}
-                    placeholder="Type a message..."
-                    placeholderTextColor="#9CA3AF"
-                    value={inputText}
-                    onChangeText={setInputText}
-                    multiline
-                    maxLength={500}
-                />
-                <TouchableOpacity
-                    onPress={handleSend}
-                    disabled={sending || !inputText.trim()}
-                    className={`w-12 h-12 rounded-full items-center justify-center ${inputText.trim() ? 'bg-primary' : 'bg-gray-400'
-                        }`}
-                >
-                    {sending ? (
-                        <ActivityIndicator size="small" color="#FFFFFF" />
+                <View className="flex-1">
+                    {/* Messages List */}
+                    {loading ? (
+                        <View className="flex-1 justify-center items-center">
+                            <ActivityIndicator size="large" color="#00D9A3" />
+                        </View>
                     ) : (
-                        <Ionicons name="send" size={20} color="#FFFFFF" />
+                        <FlatList
+                            ref={flatListRef}
+                            data={messages}
+                            renderItem={renderMessage}
+                            keyExtractor={(item) => item.id}
+                            contentContainerStyle={{ paddingVertical: 16, flexGrow: 1 }}
+                            className="flex-1"
+                            keyboardShouldPersistTaps="handled"
+                            keyboardDismissMode="interactive"
+                            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+                            onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
+                            ListEmptyComponent={
+                                <View className="items-center py-10">
+                                    <Ionicons name="chatbubbles-outline" size={64} color="#9CA3AF" />
+                                    <Text className="text-text-secondary-light dark:text-text-secondary-dark mt-4 text-base" style={{ fontFamily: 'VisbyRound-Medium' }}>
+                                        No messages yet
+                                    </Text>
+                                </View>
+                            }
+                        />
                     )}
-                </TouchableOpacity>
-            </View>
 
-        </KeyboardAvoidingView>
+                    {/* Input Area - Natural Bottom */}
+                    <View
+                        className={`flex-row items-center px-4 py-3 ${cardBg} border-t border-gray-200 dark:border-gray-700`}
+                        style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+                    >
+                        <TextInput
+                            className={`flex-1 ${isDark ? 'bg-gray-800' : 'bg-gray-100'} rounded-full px-4 py-3 mr-3 ${textColor}`}
+                            style={{ fontFamily: 'VisbyRound-Regular', fontSize: 14 }}
+                            placeholder="Type a message..."
+                            placeholderTextColor="#9CA3AF"
+                            value={inputText}
+                            onChangeText={setInputText}
+                            multiline
+                            maxLength={500}
+                        />
+                        <TouchableOpacity
+                            onPress={handleSend}
+                            disabled={sending || !inputText.trim()}
+                            className={`w-12 h-12 rounded-full items-center justify-center ${inputText.trim() ? 'bg-primary' : 'bg-gray-400'
+                                }`}
+                        >
+                            {sending ? (
+                                <ActivityIndicator size="small" color="#FFFFFF" />
+                            ) : (
+                                <Ionicons name="send" size={20} color="#FFFFFF" />
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </KeyboardAvoidingView>
+        </View>
     );
 }

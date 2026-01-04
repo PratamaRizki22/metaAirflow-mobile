@@ -16,6 +16,26 @@ export interface Conversation {
     propertyId: string;
     tenantId: string;
     landlordId: string;
+    tenant?: {
+        id: string;
+        name: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        profilePicture?: string;
+    };
+    landlord?: {
+        id: string;
+        name: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        profilePicture?: string;
+    };
+    property?: {
+        title: string;
+        images?: string[];
+    };
     lastMessage?: Message;
     unreadCount: number;
     createdAt: string;

@@ -359,6 +359,9 @@ class StripeService {
             const response = await api.post('/v1/m/payments/connect/create', {
                 email,
                 country: country || 'MY',
+                // Deep Link for Mobile App Redirection
+                returnUrl: 'rentverse://stripe-connect-callback',
+                refreshUrl: 'rentverse://stripe-connect-refresh',
             });
             return response.data.data || response.data;
         } catch (error: any) {

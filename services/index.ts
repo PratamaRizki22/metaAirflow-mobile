@@ -15,4 +15,5 @@ export { amenityService } from './amenityService';
 export { propertyTypeService } from './propertyTypeService';
 export { locationService, type Location } from './locationService';
 export { refundService, type RefundRequest } from './refundService';
+export { stripeConnectService, type StripeConnectStatus, type OnboardingResult } from './stripeConnectService';
 export { default as api } from './api';

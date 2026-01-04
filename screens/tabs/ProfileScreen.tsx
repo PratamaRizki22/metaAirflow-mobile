@@ -217,8 +217,22 @@ export function ProfileScreen({ navigation }: any) {
                         </>
                     ) : (
                         <>
-                            <Text className="text-xl font-bold text-gray-900 mb-1">Guest</Text>
-                            <Text className="text-sm text-gray-500">Sign in to continue</Text>
+                            <Text className="text-xl font-bold text-gray-900 mb-2">Guest</Text>
+                            <TouchableOpacity
+                                onPress={() => setShowAuthModal(true)}
+                                className="bg-[#00B87C] px-8 py-2.5 rounded-full flex-row items-center justify-center"
+                                activeOpacity={0.8}
+                                style={{
+                                    shadowColor: '#00B87C',
+                                    shadowOffset: { width: 0, height: 4 },
+                                    shadowOpacity: 0.25,
+                                    shadowRadius: 8,
+                                    elevation: 4,
+                                }}
+                            >
+                                <Ionicons name="log-in-outline" size={20} color="white" style={{ marginRight: 8 }} />
+                                <Text className="text-white font-bold text-base">Sign In</Text>
+                            </TouchableOpacity>
                         </>
                     )}
                 </View>

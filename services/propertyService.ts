@@ -298,7 +298,7 @@ class PropertyService extends BaseService {
             const response = await api.get<PropertiesResponse>(
                 `/v1/m/properties/my-properties?page=${page}&limit=${limit}`
             );
-            
+
             // Check if response is successful
             if (!response.data.success) {
                 // Backend returned error with success: false
@@ -317,7 +317,7 @@ class PropertyService extends BaseService {
                     }
                 };
             }
-            
+
             return response.data;
         } catch (error: any) {
             console.error('Get my properties error:', error.response?.data || error.message);
@@ -417,12 +417,15 @@ class PropertyService extends BaseService {
 
     /**
      * Get occupied dates for a property
+     * Returns different formats based on parameters:
+     * - No dates params: Returns { occupiedPeriods: [...] } for CreateBookingScreen
+     * - With dates params: Returns OccupiedDate[] for DateRangePicker
      */
     async getOccupiedDates(
         propertyId: string,
         startDate?: string,
         endDate?: string
-    ): Promise<{ occupiedPeriods: { startDate: string; endDate: string; status: string }[] }> {
+    ): Promise<{ occupiedPeriods: { startDate: string; endDate: string; status: string }[] } | OccupiedDate[]> {
         try {
             const params: any = {};
             if (startDate) params.startDate = startDate;
@@ -432,36 +435,13 @@ class PropertyService extends BaseService {
                 `/v1/m/properties/${propertyId}/occupied-dates`,
                 { params }
             );
+
+            // Return the data as-is from backend
+            // Backend should return appropriate format based on params
             return response.data.data;
         } catch (error: any) {
             console.error('Get occupied dates error:', error.response?.data || error.message);
             throw this.handleError(error);
-        }
-    }
-
-    // Check property availability for date range
-    async checkAvailability(propertyId: string, startDate: string, endDate: string): Promise<boolean> {
-        try {
-            const response = await this.api.get(`/bookings/check-availability/${propertyId}`, {
-                params: { startDate, endDate }
-            });
-            return response.data.data.available;
-        } catch (error) {
-            console.error('Check availability error:', error);
-            throw error;
-        }
-    }
-
-    // Get occupied dates for property calendar
-    async getOccupiedDates(propertyId: string, startMonth?: string, endMonth?: string): Promise<OccupiedDate[]> {
-        try {
-            const response = await this.api.get(`/bookings/occupied-dates/${propertyId}`, {
-                params: { startMonth, endMonth }
-            });
-            return response.data.data;
-        } catch (error) {
-            console.error('Get occupied dates error:', error);
-            throw error;
         }
     }
 }
