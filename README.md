@@ -35,7 +35,8 @@ Aplikasi mobile RentVerse dibangun menggunakan React Native dengan Expo, diranca
 ### Prasyarat
 - Node.js (v18+)
 - npm atau yarn
-- Expo Go App (di HP) atau Android Emulator / iOS Simulator
+- Android Studio (untuk Emulator) atau HP Android dengan USB Debugging
+- Java Development Kit (JDK 17)
 
 ### Instalasi & Setup
 
@@ -57,14 +58,18 @@ Aplikasi mobile RentVerse dibangun menggunakan React Native dengan Expo, diranca
    Pastikan `API_BASE_URL` mengarah ke backend Anda (gunakan IP address komputer jika testing di device fisik, e.g., `http://192.168.1.x:3000`).
 
 4. **Jalankan Aplikasi:**
+   Untuk menjalankan development build dengan native code (direkomendasikan):
    ```bash
-   npm start
+   npx expo run:android
+   ```
+   Atau jika ingin menggunakan Expo Go (terbatas, mungkin beberapa fitur native tidak jalan):
+   ```bash
+   npx expo start
    ```
 
 5. **Buka di Device:**
-   - **Fisik (HP):** Scan QR code yang muncul di terminal menggunakan aplikasi Expo Go.
-   - **Emulator (Android):** Tekan `a` di terminal.
-   - **Simulator (iOS):** Tekan `i` di terminal (hanya di macOS).
+   - **Emulator (Android):** Command `npx expo run:android` akan otomatis membuka emulator jika sudah disetup.
+   - **Fisik (HP):** Sambungkan HP via USB dan pastikan USB debugging aktif.
 
 ## 📁 Struktur Direktori
 
@@ -96,8 +101,8 @@ listingProperty/
 - **Masalah Network/Koneksi Backend:**
   Jika aplikasi tidak bisa connect ke backend saat dijalankan di HP fisik, pastikan HP dan Laptop berada di jaringan Wi-Fi yang sama, dan ganti `localhost` di `.env` dengan IP address laptop Anda.
 
-- **Masalah Map tidak muncul:**
-  Pastikan Anda memiliki koneksi internet yang stabil untuk memuat tiles peta.
+- **Build Error:**
+  Pastikan folder `android` tergenerate dengan benar dan SDK Android sudah terinstall. Anda bisa coba jalankan `npx expo prebuild --clean` lalu `npx expo run:android` lagi.
 
 - **Stripe Error:**
   Pastikan `STRIPE_PUBLISHABLE_KEY` sudah benar di `.env`.
