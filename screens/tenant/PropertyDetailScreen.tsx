@@ -174,6 +174,13 @@ export default function PropertyDetailScreen({ route, navigation }: any) {
                 setPropertyRating(ratingResponse.data);
             }
 
+            // Record property view for "Recently Viewed" tracking (fire and forget)
+            if (isLoggedIn) {
+                propertyService.recordPropertyView(propertyId).catch(err =>
+                    console.warn('Failed to record property view:', err)
+                );
+            }
+
         } catch (error: any) {
             Alert.alert('Error', error.message || 'Failed to load property details');
         } finally {

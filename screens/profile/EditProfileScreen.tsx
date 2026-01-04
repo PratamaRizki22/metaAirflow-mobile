@@ -25,11 +25,28 @@ export default function EditProfileScreen({ navigation }: any) {
 
     useEffect(() => {
         if (user) {
+            // Convert dateOfBirth from ISO format to YYYY-MM-DD
+            let formattedDate = '';
+            if (user.dateOfBirth) {
+                try {
+                    const date = new Date(user.dateOfBirth);
+                    if (!isNaN(date.getTime())) {
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        formattedDate = `${year}-${month}-${day}`;
+                    }
+                } catch (e) {
+                    console.warn('Error formatting date from user data:', e);
+                    formattedDate = '';
+                }
+            }
+
             setFormData({
                 firstName: user.firstName || '',
                 lastName: user.lastName || '',
                 phone: user.phone || '',
-                dateOfBirth: user.dateOfBirth || '',
+                dateOfBirth: formattedDate,
             });
             setProfilePicture(user.avatar || null);
         }
@@ -85,9 +102,14 @@ export default function EditProfileScreen({ navigation }: any) {
             Alert.alert('Error', 'Please enter your last name');
             return false;
         }
-        if (formData.dateOfBirth && !/^\d{4}-\d{2}-\d{2}$/.test(formData.dateOfBirth)) {
-            Alert.alert('Error', 'Date of birth must be in format YYYY-MM-DD');
-            return false;
+        if (formData.dateOfBirth) {
+            const trimmedDate = formData.dateOfBirth.trim();
+            console.log('Validating date:', JSON.stringify(trimmedDate), 'Length:', trimmedDate.length);
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmedDate)) {
+                console.error('Date validation failed for:', trimmedDate);
+                Alert.alert('Error', `Date of birth must be in format YYYY-MM-DD\n\nCurrent value: "${trimmedDate}"`);
+                return false;
+            }
         }
         return true;
     };
@@ -100,11 +122,31 @@ export default function EditProfileScreen({ navigation }: any) {
             // Upload profile picture if changed
             const avatarUrl = await uploadProfilePicture();
 
+            // Format date of birth to YYYY-MM-DD if it exists
+            let formattedDateOfBirth = formData.dateOfBirth ? formData.dateOfBirth.trim() : undefined;
+            if (formattedDateOfBirth) {
+                console.log('Processing date:', JSON.stringify(formattedDateOfBirth));
+                try {
+                    // Try to parse and format the date
+                    const date = new Date(formattedDateOfBirth);
+                    if (!isNaN(date.getTime())) {
+                        // Format to YYYY-MM-DD
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        formattedDateOfBirth = `${year}-${month}-${day}`;
+                        console.log('Formatted date:', formattedDateOfBirth);
+                    }
+                } catch (e) {
+                    console.warn('Date parsing error:', e);
+                }
+            }
+
             const updateData: any = {
-                firstName: formData.firstName,
-                lastName: formData.lastName,
-                phone: formData.phone || undefined,
-                dateOfBirth: formData.dateOfBirth || undefined,
+                firstName: formData.firstName.trim(),
+                lastName: formData.lastName.trim(),
+                phone: formData.phone?.trim() || undefined,
+                dateOfBirth: formattedDateOfBirth || undefined,
             };
 
             if (avatarUrl) {
@@ -234,7 +276,16 @@ export default function EditProfileScreen({ navigation }: any) {
                     <TextInput
                         placeholder="YYYY-MM-DD (e.g., 1990-01-15)"
                         placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                        value={formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString().split('T')[0] : ''}
+                        value={(() => {
+                            if (!formData.dateOfBirth) return '';
+                            try {
+                                const date = new Date(formData.dateOfBirth);
+                                if (isNaN(date.getTime())) return formData.dateOfBirth;
+                                return date.toISOString().split('T')[0];
+                            } catch {
+                                return formData.dateOfBirth;
+                            }
+                        })()}
                         onChangeText={(text) => setFormData({ ...formData, dateOfBirth: text })}
                         className={`${inputBg} border ${borderColor} rounded-xl px-4 py-3 ${textColor}`}
                     />

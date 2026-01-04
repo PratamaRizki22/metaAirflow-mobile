@@ -10,6 +10,7 @@ import { useThemeColors } from '../../hooks';
 import { LoadingState, EmptyState, NoFavoritesIllustration, Button, ConfirmationBottomSheet } from '../../components/common';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CollectionModal } from '../../components/collection';
 
 export function FavoritesScreen({ navigation }: any) {
     const { isDark } = useTheme();
@@ -22,7 +23,6 @@ export function FavoritesScreen({ navigation }: any) {
 
     // Modal State
     const [isModalVisible, setModalVisible] = useState(false);
-    const [collectionName, setCollectionName] = useState('');
     const maxLength = 20;
 
     // Custom Collections State
@@ -36,27 +36,7 @@ export function FavoritesScreen({ navigation }: any) {
     const [renameValue, setRenameValue] = useState('');
     const [longPressedItem, setLongPressedItem] = useState<string | null>(null);
 
-    const handleCreateCollection = async () => {
-        if (!collectionName.trim()) return;
 
-        try {
-            const response = await collectionService.createCollection(collectionName.trim());
-
-            // Add to local state
-            setCustomCollections([...customCollections, {
-                ...response.data,
-                type: 'collection',
-                count: 0,
-                image: null
-            }]);
-
-            setCollectionName('');
-            setModalVisible(false);
-            Alert.alert('Success', 'Collection created successfully');
-        } catch (error: any) {
-            Alert.alert('Error', error.message || 'Failed to create collection');
-        }
-    };
 
     const handleLongPressCollection = (collection: any) => {
         // Don't show menu for "All Wishlist" or "Add New" button
@@ -225,7 +205,10 @@ export function FavoritesScreen({ navigation }: any) {
 
     return (
         <View className={`flex-1 ${bgColor}`}>
-            <View className="px-6 pt-12 pb-4 flex-row items-center justify-between relative bg-transparent z-10">
+            <View
+                className="px-6 pb-4 flex-row items-center justify-between relative bg-transparent z-10"
+                style={{ paddingTop: insets.top + 10 }}
+            >
                 {/* Empty View for spacing to balance the header */}
                 <View className="w-8" />
 
@@ -342,80 +325,16 @@ export function FavoritesScreen({ navigation }: any) {
                 }}
             />
 
-            {/* Create Collection Modal */}
-            <Modal
-                animationType="fade"
-                transparent={true}
+            {/* Create Collection Modal (Reusable) */}
+            <CollectionModal
                 visible={isModalVisible}
-                onRequestClose={() => setModalVisible(false)}
-            >
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0}
-                    className="flex-1"
-                >
-                    <TouchableOpacity
-                        activeOpacity={1}
-                        onPress={() => setModalVisible(false)}
-                        className="flex-1 justify-end bg-black/50"
-                    >
-                        <TouchableOpacity
-                            activeOpacity={1}
-                            onPress={(e) => e.stopPropagation()}
-                            className={`w-full ${bgColor} rounded-t-3xl p-6 shadow-xl`}
-                            style={{ paddingBottom: Math.max(insets.bottom, 20) + 20 }}
-                        >
-                            <Text className={`text-xl font-['VisbyRound-Bold'] mb-6 ${textColor}`}>
-                                Make new collection
-                            </Text>
-
-                            <View className="mb-2">
-                                <TextInput
-                                    className={`border ${isDark ? 'border-gray-600 text-white' : 'border-gray-200 text-gray-800'} rounded-xl px-4 py-3 font-['VisbyRound-Regular']`}
-                                    placeholder="Collection name"
-                                    placeholderTextColor={isDark ? '#9CA3AF' : '#9CA3AF'}
-                                    value={collectionName}
-                                    onChangeText={setCollectionName}
-                                    maxLength={maxLength}
-                                    autoFocus
-                                />
-                                <Text className={`text-right text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                                    {collectionName.length}/{maxLength}
-                                </Text>
-                            </View>
-
-                            <Text className={`text-sm mb-8 leading-5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                                Only you can see this Collection, unless you share it with others.
-                            </Text>
-
-                            <View className="flex-row gap-3">
-                                <View className="flex-1">
-                                    <Button
-                                        onPress={() => {
-                                            setModalVisible(false);
-                                            setCollectionName('');
-                                        }}
-                                        variant="secondary"
-                                        className={isDark ? 'bg-gray-800' : 'bg-gray-100'}
-                                    >
-                                        Cancel
-                                    </Button>
-                                </View>
-
-                                <View className="flex-1">
-                                    <Button
-                                        onPress={handleCreateCollection}
-                                        disabled={!collectionName.trim()}
-                                        variant={collectionName.trim() ? "primary" : "outline"}
-                                    >
-                                        Create
-                                    </Button>
-                                </View>
-                            </View>
-                        </TouchableOpacity>
-                    </TouchableOpacity>
-                </KeyboardAvoidingView>
-            </Modal>
+                onClose={() => setModalVisible(false)}
+                initialMode="create"
+                onCollectionCreated={() => {
+                    loadCollections();
+                    setModalVisible(false);
+                }}
+            />
 
             {/* Collection Menu Bottom Sheet */}
             <Modal

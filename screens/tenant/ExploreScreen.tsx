@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, TextInput, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, TextInput, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { propertyService } from '../../services';
 import { useUserLocation } from '../../hooks';
@@ -9,6 +9,7 @@ export default function ExploreScreen({ navigation }: any) {
     const { isDark } = useTheme();
     const [properties, setProperties] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [isReady, setIsReady] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [filters, setFilters] = useState({
@@ -26,9 +27,12 @@ export default function ExploreScreen({ navigation }: any) {
         loadProperties();
     }, []);
 
-    const loadProperties = async (lat?: number, lng?: number) => {
+    const loadProperties = async (lat?: number, lng?: number, forceRefresh = false) => {
         try {
-            setLoading(true);
+            // Don't show loading spinner if we have cached data (unless force refresh)
+            if (properties.length === 0 || forceRefresh) {
+                setLoading(true);
+            }
             setIsReady(false);
 
             const queryFilters = {
@@ -42,19 +46,16 @@ export default function ExploreScreen({ navigation }: any) {
             }
 
             const response = await propertyService.getMobileProperties(1, 20, queryFilters);
-
-            // Wait minimum 500ms to prevent flickering
-            const minLoadTime = new Promise(resolve => setTimeout(resolve, 500));
-            await minLoadTime;
-
             setProperties(response.data.properties);
         } catch (error: any) {
             console.error('ExploreScreen - Get mobile properties error:', error);
-            setProperties([]); // Set empty array on error
+            // Don't clear existing data on error, just show error message
+            if (properties.length === 0) {
+                setProperties([]);
+            }
         } finally {
             setLoading(false);
-            // Small delay to ensure everything is rendered
-            setTimeout(() => setIsReady(true), 100);
+            setIsReady(true);
         }
     };
 
@@ -79,10 +80,17 @@ export default function ExploreScreen({ navigation }: any) {
         navigation.navigate('PropertyDetail', { propertyId });
     };
 
+    const handleRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await loadProperties(filters.latitude, filters.longitude, true);
+        setRefreshing(false);
+    }, [filters.latitude, filters.longitude]);
+
     const bgColor = isDark ? 'bg-background-dark' : 'bg-background-light';
     const textColor = isDark ? 'text-text-primary-dark' : 'text-text-primary-light';
 
-    if (loading || !isReady) {
+    // Show loading only on first load
+    if (loading && properties.length === 0) {
         return (
             <View className={`flex-1 justify-center items-center ${bgColor}`}>
                 <ActivityIndicator size="large" color="#00D9A3" />
@@ -180,6 +188,20 @@ export default function ExploreScreen({ navigation }: any) {
                         No properties found
                     </Text>
                 }
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={handleRefresh}
+                        colors={['#00D9A3']}
+                        tintColor="#00D9A3"
+                    />
+                }
+                // Performance optimizations
+                removeClippedSubviews={true}
+                maxToRenderPerBatch={10}
+                updateCellsBatchingPeriod={50}
+                initialNumToRender={10}
+                windowSize={5}
             />
         </View>
     );

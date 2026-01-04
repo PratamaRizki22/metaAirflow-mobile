@@ -11,7 +11,6 @@ import {
     ActivityIndicator,
     Alert,
     Modal,
-    Platform,
     ImageBackground,
 } from 'react-native';
 import * as Location from 'expo-location';
@@ -37,6 +36,7 @@ import { DEFAULT_IMAGES } from '../../constants/images';
 import { PropertyCardSkeleton } from '../../components/common/Skeleton';
 import { IconButton, ChipButton, TabBarBottomSpacer } from '../../components/common';
 import { HomeBackground } from '../../components/common/HomeBackground';
+import { CollectionModal } from '../../components/collection';
 import { useDebounce, useThemeColors } from '../../hooks';
 import { propertyService, propertyTypeService, locationService, collectionService, Location as LocationData } from '../../services';
 
@@ -86,7 +86,7 @@ export function SearchScreen({ navigation }: any) {
     const [searchFilters, setSearchFilters] = useState<any>({});
     const [propertyTypes, setPropertyTypes] = useState<any[]>([]);
     const [recentlyViewedProperties, setRecentlyViewedProperties] = useState<any[]>([]);
-    const [popularProperties, setPopularProperties] = useState<any[]>([]); // Properties from user location
+    const [popularProperties, setPopularProperties] = useState<any[]>([]); // Nearby properties based on distance
     const [topRatedProperties, setTopRatedProperties] = useState<any[]>([]); // Top rated from all locations
 
     // Filter bottom sheet states
@@ -112,9 +112,6 @@ export function SearchScreen({ navigation }: any) {
     // Collection modal states
     const [showCollectionModal, setShowCollectionModal] = useState(false);
     const [selectedPropertyForCollection, setSelectedPropertyForCollection] = useState<string | null>(null);
-    const [collections, setCollections] = useState<any[]>([]);
-    const [newCollectionName, setNewCollectionName] = useState('');
-    const [showCreateCollection, setShowCreateCollection] = useState(false);
     const [propertiesInCollections, setPropertiesInCollections] = useState<Set<string>>(new Set());
 
     // Debounce search query to reduce API calls
@@ -167,8 +164,9 @@ export function SearchScreen({ navigation }: any) {
             }
 
             // Set collections and build property ID set
+            // For SearchScreen, we only need to know which properties are in ANY collection
+            // to show the bookmark icon state correctly.
             const collectionsArray = collectionsData.data?.collections || [];
-            setCollections(collectionsArray);
             const propertyIdSet = new Set<string>();
             collectionsArray.forEach((collection: any) => {
                 if (collection.propertyIds && Array.isArray(collection.propertyIds)) {
@@ -217,24 +215,70 @@ export function SearchScreen({ navigation }: any) {
 
     const loadFeaturedProperties = async (locationName?: string) => {
         try {
-            const location = locationName || userLocationName;
-            
+            // Get user's current coordinates for nearby search
+            let userCoords: { latitude: number; longitude: number } | null = null;
+
+            try {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status === 'granted') {
+                    const location = await Location.getCurrentPositionAsync({});
+                    userCoords = {
+                        latitude: location.coords.latitude,
+                        longitude: location.coords.longitude
+                    };
+                    console.log('User coordinates for nearby search:', userCoords);
+                }
+            } catch (error) {
+                console.log('Could not get user location for nearby search:', error);
+            }
+
             // Load both in parallel
-            const [locationResponse, topRatedResponse] = await Promise.all([
-                propertyService.getMobileProperties(1, 3, {
-                    city: location,
-                    sortBy: 'rating',
-                }).catch(() => ({ success: false, data: { properties: [] } })),
+            const [nearbyResponse, topRatedResponse] = await Promise.all([
+                // Fetch nearby properties if we have coordinates, otherwise fallback to city
+                userCoords
+                    ? propertyService.getNearbyProperties(
+                        userCoords.latitude,
+                        userCoords.longitude,
+                        50, // 50km radius (increased for better results)
+                        5   // limit 5 properties (maximum)
+                    ).then(response => {
+                        console.log('Nearby properties response:', response);
+                        return response;
+                    }).catch(error => {
+                        console.error('Nearby properties error:', error);
+                        return { success: false, data: { properties: [] } };
+                    })
+                    : propertyService.getMobileProperties(1, 5, {
+                        city: locationName || userLocationName,
+                        sortBy: 'rating',
+                    }).catch(() => ({ success: false, data: { properties: [] } })),
+                // Top rated from all locations
                 propertyService.getMobileProperties(1, 3, {
                     sortBy: 'rating',
                 }).catch(() => ({ success: false, data: { properties: [] } }))
             ]);
 
-            // Set popular properties from user's location
-            if (locationResponse.success && locationResponse.data.properties) {
-                setPopularProperties(locationResponse.data.properties);
+            // Set nearby/popular properties
+            if (nearbyResponse.success && nearbyResponse.data.properties && nearbyResponse.data.properties.length > 0) {
+                console.log('Setting popular properties:', nearbyResponse.data.properties.length);
+                setPopularProperties(nearbyResponse.data.properties);
             } else {
-                setPopularProperties([]);
+                console.log('No nearby properties found, trying fallback...');
+                // Fallback: try to get any properties sorted by rating
+                try {
+                    const fallbackResponse = await propertyService.getMobileProperties(1, 5, {
+                        sortBy: 'rating',
+                    });
+                    if (fallbackResponse.success && fallbackResponse.data.properties) {
+                        console.log('Fallback properties loaded:', fallbackResponse.data.properties.length);
+                        setPopularProperties(fallbackResponse.data.properties);
+                    } else {
+                        setPopularProperties([]);
+                    }
+                } catch (error) {
+                    console.error('Fallback properties error:', error);
+                    setPopularProperties([]);
+                }
             }
 
             // Set top rated properties from all locations
@@ -244,7 +288,7 @@ export function SearchScreen({ navigation }: any) {
                 setTopRatedProperties([]);
             }
         } catch (error) {
-            console.log('Failed to load featured properties:', error);
+            console.error('Failed to load featured properties:', error);
             setPopularProperties([]);
             setTopRatedProperties([]);
         }
@@ -261,13 +305,7 @@ export function SearchScreen({ navigation }: any) {
         };
     }, []);
 
-    // Debug collections state
-    useEffect(() => {
-        console.log('Collections state updated:', collections.length, 'collections');
-        if (collections.length > 0) {
-            console.log('First collection:', collections[0]);
-        }
-    }, [collections]);
+
 
     // Load all initial data on mount
     useEffect(() => {
@@ -368,11 +406,9 @@ export function SearchScreen({ navigation }: any) {
         if (!isLoggedIn) return;
         try {
             const response = await collectionService.getCollections();
-            console.log('Collections response:', JSON.stringify(response, null, 2));
             const collectionsData = response.data?.collections || [];
-            console.log('Collections data:', collectionsData);
-            setCollections(collectionsData);
-            
+            // setCollections(collectionsData); // Keep this line to update the collections state
+
             // Build set of all property IDs in any collection
             const propertyIdSet = new Set<string>();
             collectionsData.forEach((collection: any) => {
@@ -381,99 +417,42 @@ export function SearchScreen({ navigation }: any) {
                 }
             });
             setPropertiesInCollections(propertyIdSet);
-            console.log('Properties in collections:', propertyIdSet.size);
         } catch (error) {
             console.error('Failed to load collections:', error);
         }
     }, [isLoggedIn]);
 
-    const handleAddToCollection = useCallback((propertyId: string) => {
+    const handleAddToCollection = useCallback(async (propertyId: string) => {
         if (!isLoggedIn) {
             Alert.alert('Login Required', 'Please login to add properties to collections');
             return;
         }
-        
-        // Check if property is already in any collection
-        if (propertiesInCollections.has(propertyId)) {
-            // Property is in collection, ask to remove
-            Alert.alert(
-                'Remove from Collection',
-                'This property is already in a collection. Do you want to remove it?',
-                [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                        text: 'Remove',
-                        style: 'destructive',
-                        onPress: async () => {
-                            try {
-                                // Find which collection(s) contain this property
-                                const collectionsWithProperty = collections.filter(c => 
-                                    c.propertyIds?.includes(propertyId)
-                                );
-                                
-                                // Remove from all collections
-                                for (const collection of collectionsWithProperty) {
-                                    await collectionService.removePropertyFromCollection(collection.id, propertyId);
-                                }
-                                
-                                Alert.alert('Success', 'Property removed from collection(s)');
-                                // Reload collections to update the state
-                                await loadCollections();
-                            } catch (error: any) {
-                                Alert.alert('Error', error.message || 'Failed to remove property from collection');
-                            }
-                        }
-                    }
-                ]
-            );
-        } else {
-            // Property not in collection, show modal to add
-            setSelectedPropertyForCollection(propertyId);
-            setShowCollectionModal(true);
-            loadCollections();
-        }
-    }, [isLoggedIn, propertiesInCollections, collections, loadCollections]);
 
-    const handleSelectCollection = useCallback(async (collectionId: string) => {
-        if (!selectedPropertyForCollection) {
-            console.log('No property selected for collection');
-            return;
-        }
-        console.log('Adding property to collection:', {
-            collectionId,
-            propertyId: selectedPropertyForCollection
-        });
+        // Check if property is already in any collection using our Set
+        // Note: This simple check might need refinement if you want to know WHICH collection
+        // But for the search screen, we mainly care if it IS bookmarked or not.
+        // If we want to allow adding to MULTIPLE collections, we should just show the modal directly.
+
+        // For now, let's just open the modal to let user manage it
+        setSelectedPropertyForCollection(propertyId);
+        setShowCollectionModal(true);
+    }, [isLoggedIn]);
+
+    const handleCollectionSelected = useCallback(async (collectionId: string) => {
+        if (!selectedPropertyForCollection) return;
+
         try {
-            const response = await collectionService.addPropertyToCollection(collectionId, selectedPropertyForCollection);
-            console.log('Add to collection response:', response);
+            await collectionService.addPropertyToCollection(collectionId, selectedPropertyForCollection);
             Alert.alert('Success', 'Property added to collection');
             setShowCollectionModal(false);
             setSelectedPropertyForCollection(null);
-            // Reload collections to update the count
+            // Reload collections to update the bookmark icons
             await loadCollections();
         } catch (error: any) {
             console.error('Add to collection error:', error);
             Alert.alert('Error', error.message || 'Failed to add property to collection');
         }
     }, [selectedPropertyForCollection, loadCollections]);
-
-    const handleCreateCollection = useCallback(async () => {
-        if (!newCollectionName.trim()) {
-            Alert.alert('Error', 'Please enter a collection name');
-            return;
-        }
-        try {
-            const response = await collectionService.createCollection(newCollectionName.trim());
-            setNewCollectionName('');
-            setShowCreateCollection(false);
-            await loadCollections();
-            if (selectedPropertyForCollection && response.data?.id) {
-                await handleSelectCollection(response.data.id);
-            }
-        } catch (error: any) {
-            Alert.alert('Error', error.message || 'Failed to create collection');
-        }
-    }, [newCollectionName, selectedPropertyForCollection, loadCollections, handleSelectCollection]);
 
     const clearAllFilters = useCallback(() => {
         setSearchFilters({});
@@ -670,7 +649,7 @@ export function SearchScreen({ navigation }: any) {
                                     />
                                 ))
                             ) : (
-                                <View 
+                                <View
                                     className={`rounded-2xl overflow-hidden ${isDark ? 'bg-surface-dark' : 'bg-white'}`}
                                     style={{
                                         width: 200,
@@ -682,10 +661,10 @@ export function SearchScreen({ navigation }: any) {
                                     }}
                                 >
                                     <View className={`w-full h-32 ${isDark ? 'bg-gray-800' : 'bg-gray-100'} items-center justify-center`}>
-                                        <Ionicons 
-                                            name="eye-off-outline" 
-                                            size={40} 
-                                            color={isDark ? '#4B5563' : '#D1D5DB'} 
+                                        <Ionicons
+                                            name="eye-off-outline"
+                                            size={40}
+                                            color={isDark ? '#4B5563' : '#D1D5DB'}
                                         />
                                     </View>
                                     <View className="p-3">
@@ -754,7 +733,7 @@ export function SearchScreen({ navigation }: any) {
                 {selectedCategory === 'all' && (
                     <View className="px-6 mb-4 mt-6">
                         <Text className={`text-xl font-bold ${textColor}`}>
-                            Popular Property in Your Location
+                            Popular Nearby Properties
                         </Text>
                     </View>
                 )}
@@ -793,7 +772,7 @@ export function SearchScreen({ navigation }: any) {
                                     />
                                 ))
                             ) : (
-                                <View 
+                                <View
                                     className={`rounded-2xl overflow-hidden ${isDark ? 'bg-surface-dark' : 'bg-white'}`}
                                     style={{
                                         width: 200,
@@ -805,10 +784,10 @@ export function SearchScreen({ navigation }: any) {
                                     }}
                                 >
                                     <View className={`w-full h-32 ${isDark ? 'bg-gray-800' : 'bg-gray-100'} items-center justify-center`}>
-                                        <Ionicons 
-                                            name="home-outline" 
-                                            size={40} 
-                                            color={isDark ? '#4B5563' : '#D1D5DB'} 
+                                        <Ionicons
+                                            name="home-outline"
+                                            size={40}
+                                            color={isDark ? '#4B5563' : '#D1D5DB'}
                                         />
                                     </View>
                                     <View className="p-3">
@@ -980,7 +959,7 @@ export function SearchScreen({ navigation }: any) {
                         </View>
 
                         {/* Properties List */}
-                        <ScrollView 
+                        <ScrollView
                             className="flex-1 px-6 pt-4"
                             showsVerticalScrollIndicator={true}
                             contentContainerStyle={{ paddingBottom: 20 }}
@@ -1038,168 +1017,16 @@ export function SearchScreen({ navigation }: any) {
             </Modal>
 
             {/* Collection Selection Modal */}
-            <Modal
+            <CollectionModal
                 visible={showCollectionModal}
-                transparent
-                animationType="slide"
-                onRequestClose={() => {
+                onClose={() => {
                     setShowCollectionModal(false);
                     setSelectedPropertyForCollection(null);
-                    setShowCreateCollection(false);
-                    setNewCollectionName('');
                 }}
-            >
-                <View className="flex-1 bg-black/50 justify-end">
-                    <View
-                        className={`rounded-t-3xl ${isDark ? 'bg-surface-dark' : 'bg-white'} px-6 py-6`}
-                        style={{
-                            maxHeight: '70%',
-                            shadowColor: '#000',
-                            shadowOffset: { width: 0, height: -4 },
-                            shadowOpacity: 0.1,
-                            shadowRadius: 12,
-                            elevation: 20,
-                        }}
-                    >
-                        {/* Header */}
-                        <View className="flex-row items-center justify-between mb-4">
-                            <Text className={`text-xl font-bold ${textColor}`}>
-                                {showCreateCollection ? 'Create Collection' : 'Add to Collection'}
-                            </Text>
-                            <TouchableOpacity
-                                onPress={() => {
-                                    setShowCollectionModal(false);
-                                    setSelectedPropertyForCollection(null);
-                                    setShowCreateCollection(false);
-                                    setNewCollectionName('');
-                                }}
-                            >
-                                <Ionicons name="close" size={24} color={isDark ? '#FFF' : '#000'} />
-                            </TouchableOpacity>
-                        </View>
-
-                        {showCreateCollection ? (
-                            /* Create New Collection Form */
-                            <View className="mb-4">
-                                <Text className={`text-sm font-medium mb-2 ${secondaryTextColor}`}>
-                                    Collection Name
-                                </Text>
-                                <TextInput
-                                    value={newCollectionName}
-                                    onChangeText={setNewCollectionName}
-                                    placeholder="Enter collection name"
-                                    placeholderTextColor="#9CA3AF"
-                                    className={`px-4 py-3 rounded-xl border ${
-                                        isDark
-                                            ? 'bg-gray-800 border-gray-700 text-white'
-                                            : 'bg-gray-50 border-gray-200 text-gray-900'
-                                    }`}
-                                    autoFocus
-                                />
-                                <View className="flex-row gap-3 mt-4">
-                                    <TouchableOpacity
-                                        onPress={() => {
-                                            setShowCreateCollection(false);
-                                            setNewCollectionName('');
-                                        }}
-                                        className={`flex-1 py-3 rounded-xl border ${
-                                            isDark ? 'border-gray-700' : 'border-gray-200'
-                                        }`}
-                                    >
-                                        <Text className={`text-center font-semibold ${textColor}`}>
-                                            Cancel
-                                        </Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        onPress={handleCreateCollection}
-                                        className="flex-1 py-3 rounded-xl bg-primary"
-                                    >
-                                        <Text className="text-center font-semibold text-white">
-                                            Create
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        ) : (
-                            <>
-                                {/* Create New Collection Button */}
-                                <TouchableOpacity
-                                    onPress={() => setShowCreateCollection(true)}
-                                    className={`flex-row items-center p-4 rounded-xl mb-4 border-2 border-dashed ${
-                                        isDark ? 'border-gray-700 bg-gray-800/50' : 'border-gray-300 bg-gray-50'
-                                    }`}
-                                >
-                                    <View className="w-12 h-12 rounded-full bg-primary/10 items-center justify-center mr-3">
-                                        <Ionicons name="add" size={24} color="#00D9A3" />
-                                    </View>
-                                    <View className="flex-1">
-                                        <Text className={`text-base font-semibold ${textColor}`}>
-                                            Create New Collection
-                                        </Text>
-                                        <Text className={`text-sm ${secondaryTextColor}`}>
-                                            Organize your favorites
-                                        </Text>
-                                    </View>
-                                </TouchableOpacity>
-
-                                {/* Collections List */}
-                                {collections.length > 0 ? (
-                                    <View style={{ maxHeight: 400 }}>
-                                        <ScrollView
-                                            showsVerticalScrollIndicator={true}
-                                            nestedScrollEnabled={true}
-                                        >
-                                            {collections.map((collection) => {
-                                                console.log('Rendering collection:', collection.name);
-                                                return (
-                                                    <TouchableOpacity
-                                                        key={collection.id}
-                                                        onPress={() => {
-                                                            console.log('Collection tapped:', collection.id);
-                                                            handleSelectCollection(collection.id);
-                                                        }}
-                                                        className={`flex-row items-center p-4 rounded-xl mb-3 ${
-                                                            isDark ? 'bg-gray-800' : 'bg-gray-50'
-                                                        }`}
-                                                        activeOpacity={0.7}
-                                                    >
-                                                        <View className="w-12 h-12 rounded-full bg-primary/10 items-center justify-center mr-3">
-                                                            <Ionicons name="folder" size={24} color="#00D9A3" />
-                                                        </View>
-                                                        <View className="flex-1">
-                                                            <Text className={`text-base font-semibold ${textColor}`}>
-                                                                {collection.name}
-                                                            </Text>
-                                                            <Text className={`text-sm ${secondaryTextColor}`}>
-                                                                {collection._count?.favorites || 0} properties
-                                                            </Text>
-                                                        </View>
-                                                        <Ionicons
-                                                            name="chevron-forward"
-                                                            size={20}
-                                                            color={isDark ? '#9CA3AF' : '#6B7280'}
-                                                        />
-                                                    </TouchableOpacity>
-                                                );
-                                            })}
-                                        </ScrollView>
-                                    </View>
-                                ) : (
-                                    <View className="items-center justify-center py-12">
-                                        <Ionicons name="folder-outline" size={64} color="#9CA3AF" />
-                                        <Text className={`text-lg font-semibold mt-4 ${textColor}`}>
-                                            No Collections Yet
-                                        </Text>
-                                        <Text className={`text-sm mt-2 ${secondaryTextColor} text-center`}>
-                                            Create a collection to organize{'\n'}your favorite properties
-                                        </Text>
-                                    </View>
-                                )}
-                            </>
-                        )}
-                    </View>
-                </View>
-            </Modal>
+                onCollectionSelected={handleCollectionSelected}
+                onCollectionCreated={loadCollections}
+                selectedPropertyId={selectedPropertyForCollection}
+            />
         </View>
     );
 }

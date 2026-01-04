@@ -352,6 +352,22 @@ class PropertyService extends BaseService {
         }
     }
 
+    /**
+     * Record property view (for Recently Viewed tracking)
+     */
+    async recordPropertyView(propertyId: string): Promise<{ success: boolean }> {
+        try {
+            const response = await api.post<{ success: boolean }>(
+                `/v1/m/properties/${propertyId}/view`
+            );
+            return response.data;
+        } catch (error: any) {
+            // Silently fail - don't disrupt user experience if tracking fails
+            console.warn('Record property view error:', error.response?.data || error.message);
+            return { success: false };
+        }
+    }
+
 
 
 

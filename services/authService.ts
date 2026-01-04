@@ -137,19 +137,26 @@ class AuthService extends BaseService {
      */
     async updateProfile(data: UpdateProfileRequest): Promise<User> {
         try {
+            console.log('🔄 [AuthService] Updating profile:', data);
+
             // Backend returns: { success: true, data: { user: User } }
-            const response = await api.patch<{ success: boolean; message: string; data: { user: User } }>('/v1/m/users/profile', data);
+            const response = await api.put<{ success: boolean; message?: string; data: { user: User } | User }>('/v1/m/users/profile', data);
+
+            console.log('✅ [AuthService] Update profile response:', JSON.stringify(response.data, null, 2));
 
             if (response.data.success && response.data.data) {
-                // Update local storage with updated user data
-                const userData = response.data.data.user;
-                await AsyncStorage.setItem('userData', JSON.stringify(userData));
-                return userData;
+                // Handle both { data: { user: ... } } and { data: ... } structures to be safe
+                const userData = (response.data.data as any).user || response.data.data;
+
+                if (userData) {
+                    await AsyncStorage.setItem('userData', JSON.stringify(userData));
+                    return userData as User;
+                }
             }
 
-            throw new Error('Failed to update profile');
+            throw new Error(response.data.message || 'Failed to update profile');
         } catch (error: any) {
-            console.error('Update profile error:', error.response?.data || error.message);
+            console.error('❌ [AuthService] Update profile error:', error.response?.data || error.message);
             throw this.handleError(error);
         }
     }
