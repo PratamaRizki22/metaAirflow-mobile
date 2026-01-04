@@ -86,7 +86,7 @@ export default function BookingDetailScreen({ route, navigation }: any) {
         try {
             await bookingService.requestRefund(bookingId, reason);
             showToast('Refund request sent to landlord for approval', 'success');
-            
+
             setTimeout(() => {
                 loadBookingDetail();
             }, 1500);
@@ -244,14 +244,15 @@ export default function BookingDetailScreen({ route, navigation }: any) {
     const isValidCheckIn = !isNaN(checkInDate.getTime());
     const isValidCheckOut = !isNaN(checkOutDate.getTime());
 
-    const nights = isValidCheckIn && isValidCheckOut
-        ? Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
+    // Calculate months instead of nights
+    const months = isValidCheckIn && isValidCheckOut
+        ? Math.round((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24 * 30))
         : 0;
 
-    // Calculate price per night if we have valid data
-    const pricePerNight = nights > 0 && booking.totalPrice
-        ? Number(booking.totalPrice) / nights
-        : Number(booking.property?.pricePerNight || 0);
+    // Calculate price per month if we have valid data
+    const pricePerMonth = months > 0 && booking.totalPrice
+        ? Number(booking.totalPrice) / months
+        : Number(booking.property?.pricePerNight || 0); // Backend might still use pricePerNight field name
 
     return (
         <View className={`flex-1 ${isDark ? 'bg-background-dark' : 'bg-gray-50'}`}>
@@ -360,7 +361,7 @@ export default function BookingDetailScreen({ route, navigation }: any) {
                                 Duration
                             </Text>
                             <Text className={`font-['VisbyRound-Bold'] text-base ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                {nights > 0 ? `${nights} night${nights > 1 ? 's' : ''}` : 'Invalid duration'}
+                                {months > 0 ? `${months} month${months > 1 ? 's' : ''}` : 'Invalid duration'}
                             </Text>
                         </View>
 
@@ -390,11 +391,11 @@ export default function BookingDetailScreen({ route, navigation }: any) {
 
                         <View className="flex-row justify-between mb-3">
                             <Text className={`font-['VisbyRound-Regular'] ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                                RM {pricePerNight > 0 ? pricePerNight.toLocaleString('en-MY', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : '0'} x {nights > 0 ? nights : 'NaN'} nights
+                                RM {pricePerMonth > 0 ? pricePerMonth.toLocaleString('en-MY', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : '0'} x {months > 0 ? months : 'NaN'} month{months > 1 ? 's' : ''}
                             </Text>
                             <Text className={`font-['VisbyRound-Medium'] ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                                RM {nights > 0 && pricePerNight > 0
-                                    ? (pricePerNight * nights).toLocaleString('en-MY', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+                                RM {months > 0 && pricePerMonth > 0
+                                    ? (pricePerMonth * months).toLocaleString('en-MY', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
                                     : 'NaN'
                                 }
                             </Text>

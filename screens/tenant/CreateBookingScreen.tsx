@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
-import { DateRangePicker } from '../../components/booking';
+import { DatePicker } from '../../components/booking';
 import { bookingService, propertyService } from '../../services';
 import { useToast } from '../../hooks/useToast';
 import { Toast, Button } from '../../components/common';
@@ -12,11 +12,12 @@ import { Toast, Button } from '../../components/common';
 export default function CreateBookingScreen({ route, navigation }: any) {
     const { propertyId, propertyTitle, price } = route.params;
     const { isDark } = useTheme();
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
+    const [checkInDate, setCheckInDate] = useState('');
+    const [monthsDuration, setMonthsDuration] = useState(1);
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showMonthPicker, setShowMonthPicker] = useState(false);
     const [agreedToTerms, setAgreedToTerms] = useState(false);
     const [blockedDates, setBlockedDates] = useState<string[]>([]);
     const { toast, showToast, hideToast } = useToast();
@@ -32,12 +33,13 @@ export default function CreateBookingScreen({ route, navigation }: any) {
         loadOccupiedDates();
     }, [propertyId]);
 
+
     const loadOccupiedDates = async () => {
         try {
             const data = await propertyService.getOccupiedDates(propertyId);
-            if (data?.occupiedPeriods) {
+            if (data && 'occupiedPeriods' in data && Array.isArray(data.occupiedPeriods)) {
                 const dates: string[] = [];
-                data.occupiedPeriods.forEach(period => {
+                data.occupiedPeriods.forEach((period: { startDate: string; endDate: string }) => {
                     let currentDate = new Date(period.startDate);
                     const endDate = new Date(period.endDate);
 
@@ -53,19 +55,15 @@ export default function CreateBookingScreen({ route, navigation }: any) {
         }
     };
 
-    const calculateNights = () => {
-        if (!startDate || !endDate) return 0;
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        const nights = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-        return nights;
+    const calculateCheckOutDate = () => {
+        if (!checkInDate) return '';
+        const checkIn = new Date(checkInDate);
+        checkIn.setMonth(checkIn.getMonth() + monthsDuration);
+        return checkIn.toISOString().split('T')[0];
     };
 
     const calculateTotal = () => {
-        const nights = calculateNights();
-        // Assuming price is monthly, calculate daily rate
-        const dailyRate = price / 30;
-        return nights * dailyRate;
+        return price * monthsDuration;
     };
 
     const formatDate = (dateString: string) => {
@@ -79,14 +77,13 @@ export default function CreateBookingScreen({ route, navigation }: any) {
         });
     };
 
-    const handleDateConfirm = (start: string, end: string) => {
-        setStartDate(start);
-        setEndDate(end);
+    const handleDateConfirm = (date: string) => {
+        setCheckInDate(date);
     };
 
     const handleSubmit = async () => {
-        if (!startDate || !endDate) {
-            Alert.alert('Error', 'Please select check-in and check-out dates');
+        if (!checkInDate) {
+            Alert.alert('Error', 'Please select check-in date and rental duration');
             return;
         }
 
@@ -95,13 +92,15 @@ export default function CreateBookingScreen({ route, navigation }: any) {
             return;
         }
 
+        const checkOutDate = calculateCheckOutDate();
+
         setLoading(true);
         try {
             // Check availability first
             const availabilityResult = await propertyService.checkAvailability(
                 propertyId,
-                startDate,
-                endDate
+                checkInDate,
+                checkOutDate
             );
 
             if (!availabilityResult.available) {
@@ -117,8 +116,8 @@ export default function CreateBookingScreen({ route, navigation }: any) {
             // Create booking
             const response = await bookingService.createBooking({
                 propertyId,
-                startDate,
-                endDate,
+                startDate: checkInDate,
+                endDate: checkOutDate,
                 message: message || undefined,
             });
 
@@ -169,42 +168,49 @@ export default function CreateBookingScreen({ route, navigation }: any) {
                     <View className="flex-row items-center mb-3">
                         <Ionicons name="calendar-outline" size={20} color="#00D9A3" />
                         <Text className={`text-lg font-bold ml-2 ${textColor}`}>
-                            Your Trip
+                            Your Rental Period
                         </Text>
                     </View>
 
-                    <TouchableOpacity
-                        onPress={() => setShowDatePicker(true)}
-                        className={`${cardBg} rounded-2xl p-4`}
-                    >
-                        <View className="flex-row justify-between items-center mb-3">
-                            <View className="flex-1">
-                                <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm mb-1">
-                                    CHECK-IN
-                                </Text>
-                                <Text className={`text-base font-semibold ${textColor}`}>
-                                    {formatDate(startDate)}
-                                </Text>
-                            </View>
-                            <Ionicons name="arrow-forward" size={20} color="#9CA3AF" />
-                            <View className="flex-1 items-end">
-                                <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm mb-1">
-                                    CHECK-OUT
-                                </Text>
-                                <Text className={`text-base font-semibold ${textColor}`}>
-                                    {formatDate(endDate)}
-                                </Text>
-                            </View>
-                        </View>
+                    <View className="gap-3">
+                        <TouchableOpacity
+                            onPress={() => setShowDatePicker(true)}
+                            className={`${cardBg} rounded-2xl p-4`}
+                        >
+                            <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm mb-1">
+                                CHECK-IN DATE
+                            </Text>
+                            <Text className={`text-base font-semibold ${textColor}`}>
+                                {formatDate(checkInDate)}
+                            </Text>
+                        </TouchableOpacity>
 
-                        {startDate && endDate && (
-                            <View className="bg-primary/10 px-3 py-2 rounded-lg">
-                                <Text className="text-primary text-center font-medium">
-                                    {calculateNights()} {calculateNights() === 1 ? 'night' : 'nights'}
+                        <TouchableOpacity
+                            onPress={() => setShowMonthPicker(true)}
+                            className={`${cardBg} rounded-2xl p-4`}
+                        >
+                            <Text className="text-text-secondary-light dark:text-text-secondary-dark text-sm mb-1">
+                                RENTAL DURATION
+                            </Text>
+                            <View className="flex-row items-center justify-between">
+                                <Text className={`text-base font-semibold ${textColor}`}>
+                                    {monthsDuration} {monthsDuration === 1 ? 'Month' : 'Months'}
+                                </Text>
+                                <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
+                            </View>
+                        </TouchableOpacity>
+
+                        {checkInDate && (
+                            <View className="bg-primary/10 px-4 py-3 rounded-xl">
+                                <Text className="text-text-secondary-light dark:text-text-secondary-dark text-xs mb-1">
+                                    Check-out date
+                                </Text>
+                                <Text className="text-primary text-base font-semibold">
+                                    {formatDate(calculateCheckOutDate())}
                                 </Text>
                             </View>
                         )}
-                    </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* Message */}
@@ -228,7 +234,7 @@ export default function CreateBookingScreen({ route, navigation }: any) {
                 </View>
 
                 {/* Price Breakdown */}
-                {startDate && endDate && (
+                {checkInDate && (
                     <View className="px-6 mb-6">
                         <View className="flex-row items-center mb-3">
                             <Ionicons name="cash-outline" size={20} color="#00D9A3" />
@@ -239,10 +245,10 @@ export default function CreateBookingScreen({ route, navigation }: any) {
                         <View className={`${cardBg} rounded-2xl p-4`}>
                             <View className="flex-row justify-between mb-3">
                                 <Text className="text-text-secondary-light dark:text-text-secondary-dark">
-                                    RM {(price / 30).toFixed(2)} x {calculateNights()} nights
+                                    RM {price.toLocaleString('en-MY')} x {monthsDuration} {monthsDuration === 1 ? 'month' : 'months'}
                                 </Text>
                                 <Text className={textColor}>
-                                    RM {calculateTotal().toFixed(2)}
+                                    RM {calculateTotal().toLocaleString('en-MY')}
                                 </Text>
                             </View>
                             <View className="border-t border-gray-300 dark:border-gray-700 my-3" />
@@ -251,7 +257,7 @@ export default function CreateBookingScreen({ route, navigation }: any) {
                                     Total
                                 </Text>
                                 <Text className={`text-lg font-bold ${textColor}`}>
-                                    RM {calculateTotal().toFixed(2)}
+                                    RM {calculateTotal().toLocaleString('en-MY')}
                                 </Text>
                             </View>
                         </View>
@@ -309,7 +315,7 @@ export default function CreateBookingScreen({ route, navigation }: any) {
                     onPress={handleSubmit}
                     variant="primary"
                     size="lg"
-                    disabled={!startDate || !endDate || !agreedToTerms}
+                    disabled={!checkInDate || !agreedToTerms}
                     loading={loading}
                     fullWidth
                 >
@@ -317,16 +323,64 @@ export default function CreateBookingScreen({ route, navigation }: any) {
                 </Button>
             </View>
 
-            {/* Date Range Picker Modal */}
-            <DateRangePicker
+            {/* Date Picker Modal */}
+            <DatePicker
                 visible={showDatePicker}
                 onClose={() => setShowDatePicker(false)}
                 onConfirm={handleDateConfirm}
                 minDate={new Date().toISOString().split('T')[0]}
                 blockedDates={blockedDates}
-                initialStartDate={startDate}
-                initialEndDate={endDate}
+                initialDate={checkInDate}
+                title="Select Check-in Date"
             />
+
+            {/* Month Duration Picker Modal */}
+            <Modal
+                visible={showMonthPicker}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setShowMonthPicker(false)}
+            >
+                <View className="flex-1 justify-end bg-black/50">
+                    <View className={`${cardBg} rounded-t-3xl p-6`} style={{ paddingBottom: Math.max(insets.bottom, 24) }}>
+                        <View className="flex-row items-center justify-between mb-4">
+                            <Text className={`text-xl font-bold ${textColor}`}>
+                                Select Duration
+                            </Text>
+                            <TouchableOpacity onPress={() => setShowMonthPicker(false)}>
+                                <Ionicons name="close" size={28} color={isDark ? '#9CA3AF' : '#6B7280'} />
+                            </TouchableOpacity>
+                        </View>
+                        <FlatList
+                            data={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
+                            keyExtractor={(item) => item.toString()}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        setMonthsDuration(item);
+                                        setShowMonthPicker(false);
+                                    }}
+                                    className={`py-4 px-4 rounded-xl mb-2 ${monthsDuration === item
+                                        ? 'bg-primary'
+                                        : isDark
+                                            ? 'bg-surface-dark'
+                                            : 'bg-gray-100'
+                                        }`}
+                                >
+                                    <Text
+                                        className={`text-center font-semibold ${monthsDuration === item
+                                            ? 'text-white'
+                                            : textColor
+                                            }`}
+                                    >
+                                        {item} {item === 1 ? 'Month' : 'Months'}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+                        />
+                    </View>
+                </View>
+            </Modal>
 
             {/* Toast Notification */}
             <Toast

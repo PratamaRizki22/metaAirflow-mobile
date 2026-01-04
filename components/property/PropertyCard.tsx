@@ -156,9 +156,14 @@ export const PropertyCard = React.memo(function PropertyCard({
                         >
                             {property.title}
                         </Text>
-                        <Text className="text-primary font-bold text-base mb-2">
-                            {formatPrice(property.price)}
-                        </Text>
+                        <View className="mb-2">
+                            <Text className="text-primary font-bold text-base">
+                                {formatPrice(property.price)}
+                            </Text>
+                            <Text className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                per month
+                            </Text>
+                        </View>
                         <View className="flex-row items-center">
                             <Ionicons name="location-outline" size={14} color="#9CA3AF" />
                             <Text
@@ -307,9 +312,14 @@ export const PropertyCard = React.memo(function PropertyCard({
                         </View>
                     </View>
 
-                    <Text className="text-primary font-bold text-2xl mb-4">
-                        {formatPrice(property.price)}
-                    </Text>
+                    <View className="mb-4">
+                        <Text className="text-primary font-bold text-2xl">
+                            {formatPrice(property.price)}
+                        </Text>
+                        <Text className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            per month
+                        </Text>
+                    </View>
 
                     {/* Property Details */}
                     <View className="flex-row items-center justify-between">
