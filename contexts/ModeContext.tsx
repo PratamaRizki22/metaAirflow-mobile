@@ -31,6 +31,15 @@ export function ModeProvider({ children }: { children: ReactNode }) {
             // Only proceed if auth loading is done
             if (isLoading) return;
 
+            // If no user (not logged in), FORCE tenant mode
+            if (!user) {
+                if (mode !== 'tenant') {
+                    setMode('tenant');
+                    await AsyncStorage.setItem(MODE_STORAGE_KEY, 'tenant');
+                }
+                return;
+            }
+
             try {
                 const savedMode = await AsyncStorage.getItem(MODE_STORAGE_KEY);
 
