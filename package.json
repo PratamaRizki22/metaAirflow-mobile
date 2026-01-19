@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "android": "expo run:android",
+    "android:prod": "set APP_ENV=production && expo run:android --variant release",
     "ios": "expo run:ios",
     "start": "expo start",
     "prebuild": "expo prebuild",

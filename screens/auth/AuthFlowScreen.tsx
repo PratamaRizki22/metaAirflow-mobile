@@ -107,6 +107,7 @@ export function AuthFlowScreen({ onAuthSuccess, onClose }: AuthFlowScreenProps) 
                 email={email}
                 onBack={handleBackToEmail}
                 onLoginSuccess={onAuthSuccess}
+                onForgotPassword={handleForgotPassword}
             />
         );
     }

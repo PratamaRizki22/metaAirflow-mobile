@@ -7,7 +7,7 @@ module.exports = function (api) {
     'module:react-native-dotenv',
     {
       moduleName: '@env',
-      path: '.env.local',
+      path: process.env.APP_ENV === 'production' ? '.env.production' : '.env.local',
       safe: false,
       allowUndefined: true,
     },

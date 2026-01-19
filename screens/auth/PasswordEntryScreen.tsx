@@ -23,12 +23,14 @@ interface PasswordEntryScreenProps {
     email: string;
     onBack: () => void;
     onLoginSuccess: () => void;
+    onForgotPassword: () => void;
 }
 
 export function PasswordEntryScreen({
     email,
     onBack,
     onLoginSuccess,
+    onForgotPassword,
 }: PasswordEntryScreenProps) {
     const { refreshProfile } = useAuth();
     const [password, setPassword] = useState('');
@@ -55,9 +57,16 @@ export function PasswordEntryScreen({
                 setTimeout(() => {
                     onLoginSuccess();
                 }, 1000);
+            } else {
+                throw new Error(response.message || 'Login failed');
             }
         } catch (err: any) {
-            showToast(err.message || 'Login failed. Please try again.', 'error');
+            const errorMessage = err.message || 'Login failed. Please try again.';
+            if (errorMessage === "Invalid credentials") {
+                showToast("Password doesn't match. Consider forgot password?", 'error');
+            } else {
+                showToast(errorMessage, 'error');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -135,7 +144,10 @@ export function PasswordEntryScreen({
                             </View>
 
                             {/* Forgot Password */}
-                            <TouchableOpacity className="mb-6">
+                            <TouchableOpacity
+                                onPress={onForgotPassword}
+                                className="mb-6"
+                            >
                                 <Text className="text-sm text-[#10A0F7] underline">
                                     Forgot Password?
                                 </Text>
